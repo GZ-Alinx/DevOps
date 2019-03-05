@@ -7,12 +7,12 @@ def alinx(a):
 alinx(999)
 
 #*args 可以传入列表、元组作为参数  **kwargs 可以传入字典作为参数
-
-def dl(a,d,*kwargs):
+d = 1
+def dl(a,*args):
     kv = a + d
     print("你输入的值和 = %s"%kv)
     return kv
 
-Sum = dl(a,d = int(input("Plaese input :")))
+Sum = dl(a = int(input("Plaese input :")))
 print(Sum)
 
