@@ -5,3 +5,4 @@ def alinx(a):
 alinx(100)
 
 print("修改")
+print("修改1")
