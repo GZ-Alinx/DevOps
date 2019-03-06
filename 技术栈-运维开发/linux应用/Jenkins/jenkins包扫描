@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+
+name=( operate-api-1.1.0.jar commodity-api-1.1.0.jar)
+
+#遍历变量查找文件并移动到指定文件夹
+for var in ${name[@]}
+	do
+          find /root/.jenkins/workspace/api/ -name $var |xargs -I {} mv {} /root/jenkins/pro/page
+          if [ $? -eq 0 ];then
+                  echo -e "${var[$i]}\t Success"
+          else
+                  echo -e "${var[$i]}\t Fail"
+          fi
+
+	done
+	if [ $? -eq 0 ];then
+		echo "page move is ok ~ `date`" >> /root/jenkins/page8/page.log
+	fi
+
+	python /opt/jenkins/python/ok.py
