@@ -1,0 +1,153 @@
+1.数据库准备与配置：
+# mysql -uroot -p
+mysql> create database zabbix character set utf8 collate utf8_bin;   //创建数据库zabbix
+mysql> grant all privileges on zabbix.* to zabbix@localhost identified by 'password';     //zabbix 用户授权
+
+
+
+
+2.编译安装zabbix
+wget https://sourceforge.net/projects/zabbix/files/latest/download/zabbix-3.4.13.tar.gz //下载zabbix源码包
+                tar zxf zabbix-3.4.12.tar.gz -C /usr/local/src/   //解压包到指定目录
+cd /usr/local/src/zabbix-3.4.12/        //进入zabbix解压目录
+导入数据
+mysql -uzabbix -phcchcchcc zabbix < database/mysql/schema.sql
+mysql -uzabbix -phcchcchcc zabbix < database/mysql/images.sql
+mysql -uzabbix -phcchcchcc zabbix < database/mysql/data.sql
+如果在做分布式的环境中，Proxy 服务器只需要一个数据库 schema，代理者 agent 不需要数据库!Server 必须 三个数据库同时拥有
+Zabbix    同时支持很多类型数据库，可以通过查阅帮助：
+https://www.zabbix.com/documentation/2.4/manual/appendix/install/db_scripts
+
+yum install -y net-snmp-devel      //net-snmp-config 依赖
+
+./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --with-mysql=/usr/local/mysql/bin/mysql_config --with-net-snmp --with-libcurl
+
+
+编译错误：configure: error: Unable to use libevent (libevent check failed)
+接触错误：yum install -y libevent*
+
+
+重新编译：
+./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --with-mysql=/usr/local/mysql/bin/mysql_config --with-net-snmp --with-libcurl
+***********************************************************
+*            Now run 'make install'                       *
+*                                                         *
+*            Thank you for using Zabbix!                  *
+*              <http://www.zabbix.com>                    *
+***********************************************************
+
+
+make install    //没有make 直接make install
+
+编译结束：
+make[2]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
+make[1]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
+make[1]: 进入目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 进入目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 对“install-exec-am”无需做任何事。
+make[2]: 对“install-data-am”无需做任何事。
+make[2]: 离开目录“/usr/local/src/zabbix-3.4.12”
+make[1]: 离开目录“/usr/local/src/zabbix-3.4.12”
+ls /usr/local/zabbix/
+bin  etc  lib  sbin  share
+
+
+
+配置zabbix server
+配置文件路径：
+vim /usr/local/zabbix/etc/zabbix_server.conf
+Server=127.0.0.1   #默认监控服务器自己，这三行不用改
+ServerActive=127.0.0.1
+Hostname=Zabbix server
+
+UnsafeUserParameters=1   #允许所有的字符是在用户定义的参数，参数传递，也就是支持自定义脚本
+
+配置文件中的内容参数全部都在这里需要改什么可以查资料 哈哈哈
+
+zabbix agent 类似 配置服务器为zabbix主控端ip地址
+
+
+启动zabbix
+/usr/local/zabbix/sbin/zabbix_server
+
+或者通过启动脚本启动 zabbix
+Zabbix  默认有部分启动脚本，如果你自己也可以通过脚本的方式来实现，可以使用他的模板来实现 脚本在源码目录的 misc/init.d/下面(使用 fedora 下面的 core 即可，也可以使用 fedroa core5 的脚本均可)
+
+cd /usr/local/src/zabbix-3.4.12/misc/init.d/
+cp fedora/core/zabbix_server /etc/init.d/
+cp fedora/core/zabbix_agentd /etc/init.d/
+
+vim /etc/init.d/zabbix_server
+BASEDIR=/usr/local/zabbix  #找到此行，并修改
+ vim /etc/init.d/zabbix_agentd
+BASEDIR=/usr/local/zabbix  #找到此行，并修改
+
+启动：/etc/init.d/zabbix_server start   /etc/init.d/zabbix_agentd start
+问题：启动后没有zabbix-server端的监听
+库文件移动过去
+ls /usr/local/mysql/lib/
+ln -s /usr/local/mysql/lib/libmysqlclient.so.20 /usr/lib64/
+/etc/init.d/zabbix_server restart
+
+
+检查配置文件的： 配置监听端口、数据库信息
+
+启动无端口问题！！！
+zabbix_server可以正常启动，mysql也可以正常启动，但是netstat 10051就是不出来服务，然后网上一堆各种方法，有权限不对的，最后锁定了问题，zabbix_server.conf没有指定mysql.sock的路径，所以修改这个参数即可：
+                 vim /usr/local/zabbix/etc/zabbix_server.conf
+DBSocket=/tmp/mysql.sock 取消注释
+
+
+
+
+
+进入页面配置
+http://192.168.99.209/setup.php
+
+
+
+
+
+编辑 php.ini 文件，修改环境
+post_max_size = 16M    #修改
+max_execution_time = 300 #修改
+max_input_time = 300   #修改
+date.timezone = Asia/Shanghai   #此行有注释，去注释并修改
+always_populate_raw_post_data = -1    #此行取消注释即可
+
+重启php-fpm
+/etc/init.d/php-fpm restart
+
+
+
+
+
+
+
+出去刷新页面按照说明 下载文件并上传即可
+
+
+
+登录 Web默认用户名密码
+用户名：Admin
+密码：zabbix
+
+
+
+
+可以修改成为中文
+
+
+
+
+
+报表有乱码可以改一下
+
+
+
+
+
+DejaVuSans.ttf 替换此文件即可完成完成
+
+/usr/local/nginx/html/fonts/
+widnows7系统本地字体：
