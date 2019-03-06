@@ -1,0 +1,51 @@
+
+mysql数据备份
+
+
+1.物理备份
+2.逻辑备份
+
+物理备份：  直接拷贝数据库文件 + 二进制日志文件
+逻辑备份：  mysqldump 命令方式重新把数据生产sql指令到文件中
+    冷备： 热备： 温备：
+
+数据库小于5G建议使用 mysqldump逻辑备份方式； 否则建议使用物理备份，直接拷贝数据文件+二进制日志文件
+
+mysqldump备份脚本：
+
+
+
+
+"""
+#!/bin/bash
+
+user="root"
+passwd="123456"
+cmd="/usr/local/mysql/bin/mysqldump"
+time=`date +%Y%h%D`
+database="数据库名称"
+
+backurl="/opt/data"
+if [ -d ${backurl}];
+    then
+    else
+    mkdir ${backurl}
+    fi
+
+for i in ${database[@]}
+    do
+    ${cmd} -u${user} -p${passwd} ${i} > ${backurl}/${database}/${time}.sql
+    done
+
+if [ $? -eq 0 ];
+    then
+    echo -e "\033[32m Mysql backup Success! \033[0m"
+    else
+    echo -e "\033[31m Mysql backup Fail~ \033[0m"
+fi
+"""
+
+
+物理备份:
+
+zip -r ${database}${time}.zip /mysqlurl/data/${database}
