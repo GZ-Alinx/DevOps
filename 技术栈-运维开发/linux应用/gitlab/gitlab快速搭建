@@ -1,0 +1,88 @@
+阿里云教程链接：https://yq.aliyun.com/articles/74395
+
+简书教程链接：https://www.jianshu.com/p/808fbf9d972f
+
+
+
+最近DevOps非常火, 而GitLab作为其中重要一环, 也越来越受重视, 与SVN相比, GitLab同样提供完美的用户权限管理, 与Git相比, 除了涵盖Git所有功能, 同时又提供方便的后台管理, 非常适合企业使用, 下面简单介绍下GitLab的搭建, 当然, 官方文档有提供相应的方法, 但实际操作过程中, 并没有那么顺利.
+
+1. 安装相关依赖
+yum install curl policycoreutils openssh-server openssh-clients -y
+# 确保sshd启动(正常情况下, sshd是启动的)
+systemctl enable sshd
+systemctl start sshd
+
+另外如果开启了防火墙, 注意设置防火墙的规则
+
+
+
+
+
+2. 引入yum源, 并安装gitlab
+curl -sS https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.rpm.sh | sudo bash
+yum install gitlab-ce -y
+# 配置并启动
+gitlab-ctl reconfigure
+
+如果设备配置比较低, 会在启动过程中卡死, 建议最低双核2G内存
+
+如果当前服务器的80和8080端口均未被占用, 则直接可以通过服务器的ip或域名访问到后台
+http://ip或域名
+
+
+
+
+
+3. 使用主机的nginx
+一般情况下, 我们希望通过自己nginx统一管理站点, 而不需要使用gitlab附带的, 这个时候我们要停用gitlab的nginx, 并配置我们自己的反向代理, 配置文件大致是这样
+server {
+listen 80;
+server_name gitlab.yinnote.com;
+
+location / {
+proxy_pass http://127.0.0.1:18080;
+}
+}
+之后, 我们在修改gitlab的配置文件
+vi /etc/gitlab/gitlab.rb # 依次找到修改
+# 指定host地址
+external_url 'http://gitlab.yinnote.com'
+ # 修改时区
+gitlab_rails['time_zone'] = 'PRC'
+# 关闭附带的nginx
+nginx['enable'] = false
+
+如果我们的8080端口也被其他程序占用了, 比如说我们有启动着的tomcat, 那么, 我们还需要修改unicorn的端口
+
+# 同样找到并修改
+unicorn['port'] = 18080
+
+
+之后就可以重新加载配置文件并重启服务了
+
+gitlab-ctl reconfigure
+gitlab-ctl restart
+正常情况下, 我们应该可以通过 http://gitlab.yinnote.com 访问到后台, 但实际情况会出现错误
+
+坑 1
+语法错误
+
+这种情况, 我们只要重新执行一下npm安装依赖包即可
+cd /opt/gitlab/embedded/service/gitlab-rails
+npm install
+# 重启服务
+gitlab-ctl restart
+注意, npm一定要配置国内镜像仓库, 否则会执行很慢, 另外, 执行过程中, 可能会报一些错, 这个可以暂不理会, 是由于nodejs版本造成的
+
+坑 2
+网页加载不出来：  程序启动比较慢，等几分钟就好。
+
+完成上述情况, 我们的确可以正常访问, 但当我们打开chrome的控制台, 去查看页面资源加载情况, 会出现
+
+
+我们看到很多422的错误, 这里主要是/assets/webpack文件夹下的内容加载不了, 这个是由于rails里面的CSP安全策略, 不加载 js, 不过我们可以通过配置nginx, 让/assets为静态站点目录, 即在nginx配置文件中加上
+location /assets {
+root /opt/gitlab/embedded/service/gitlab-rails/public;
+index index.html;
+}
+这个时候, 我们的静态资源文件通过nginx去访问, rails仍然可以保留自己的安全策略

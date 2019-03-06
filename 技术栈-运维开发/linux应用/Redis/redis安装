@@ -1,0 +1,68 @@
+官网地址： https://redis.io
+
+二进制安装下载，解压，编译:
+$ wget http://download.redis.io/releases/redis-3.2.5.tar.gz
+$ tar xzf redis-3.2.5.tar.gz
+$ cd redis-3.2.5
+$ make
+
+如果报错一般是gcc编译器的问题
+
+更新编译器
+yum install -y gcc*
+
+
+二进制文件是编译完成后在src目录下，通过下面的命令启动Redis服务：
+$ src/redis-server
+
+主配置文件redis/redis.conf
+启动文件redis/src/redis-server
+停止文件redis/src/redis-cli
+
+
+
+# vim /usr/local/redis/redis.conf
+参数设置：
+
+        日志设置：
+ logfile “”  日志路径
+
+        加密码：
+ requirepass myRedis
+
+        开通访问权限
+        默认是 bind 127.0.0.1   改为： bind 0.0.0.0
+
+        daemonize yes   修改为yes  后台启动
+
+        src/redis-server redis.conf           启动时指配置文件
+
+
+把redis命添加到PATH中
+ # vim /etc/profile
+        export PATH=$PATH:/usr/local/redis/src
+
+        启动
+# redis-server /usr/local/redis/redis.conf          指定redis 配置文件
+        停止
+        # redis-cli shutdown   执行redis-cli 加上shutdown
+
+        测试是否可用
+        redis-cli -h 127.0.0.1 -p 6379 -a my_redis
+
+
+你可以使用内置的客户端命令redis-cli进行使用：
+$ src/redis-cli
+redis> set foo bar
+OK
+redis> get foo
+"bar"
+
+
+
+
+持久化配置：
+
+开启AOF持久化：
+        你可以通过修改配置文件来打开 AOF 功能：appendonly yes 从现在开始， 每当 Redis 执行一个改变数据集的命令时（比如 SET）， 这个命令就会被追加到 AOF 文件的末尾。
+        这样的话，当 Redis 重新启时， 程序就可以通过重新执行 AOF 文件中的命令来达到重建数据集的目的。

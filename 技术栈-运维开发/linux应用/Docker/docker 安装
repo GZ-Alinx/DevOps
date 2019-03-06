@@ -1,0 +1,34 @@
+安装docker源 From 阿里云
+
+curl -o /etc/yum.repos.d/docker.repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum makecache fast 缓存到本地
+yum install docker-ce -y
+
+装载失败一般是旧的版本没有卸载干净
+rpm -qa | grep docker
+
+
+
+阿里云扩展源epel
+        curl -o /etc/yum.repos.d/epel.repo http://mirrors.aliyun.com/repo/epel-7.repo
+
+
+
+#docker yum源
+cat >> /etc/yum.repos.d/docker.repo <<EOF
+[docker-repo]
+name=Docker Repository
+baseurl=http://mirrors.aliyun.com/docker-engine/yum/repo/main/centos/7
+enabled=1
+gpgcheck=0
+EOF
+
+阿里云镜像加速：
+
+vim /etc/docker/daemon.json
+{
+  "registry-mirrors": ["https://5uuoznyf.mirror.aliyuncs.com"]
+}
+
+systemctl daemon-reload
+systemctl restart docker

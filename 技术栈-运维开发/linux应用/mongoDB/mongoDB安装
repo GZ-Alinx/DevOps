@@ -1,0 +1,76 @@
+官方站点：https://www.mongodb.com
+
+###############################
+####      mongodb数据库安装         ####
+###############################
+
+安装工具
+yum install -y wget curl htop
+
+下载源码包
+wget https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-rhel70-4.0.1.tgz
+
+解压包
+tar zxf mongodb-linux-x86_64-rhel70-4.0.1.tgz -C /usr/local/
+cd /usr/local/
+
+做好软连接
+ln -sv mongodb-linux-x86_64-rhel70-4.0.1 mongdb
+cd mongdb
+
+创建目录logs、db
+mkdir logs db
+cd bin/
+vim mongdb.conf
+     # idae - MongoDB config start
+     # 设置数据文件的存放目录（根据实际的db文件夹的路径填写）
+     dbpath = /usr/local/mongodb/db
+     # 设置日志文件的存放目录及其日志文件名（根据实际的logs文件夹的路径填写）
+     logpath = /usr/local/mongodb/logs/mongodb.log
+     # 设置端口号（默认的端口号是 27017）
+     port = 27017
+     # 设置为以守护进程的方式运行，即在后台运行 fork = true
+     # nohttpinterface = true
+     # nohttpinterface = true
+     # idae - MongoDB config end
+
+启动mongodb
+./mongod --config mongodb.conf
+
+附：参数解释:
+--dbpath 数据库路径(数据文件)
+--logpath 日志文件路径
+--master 指定为主机器
+--slave 指定为从机器
+--source 指定主机器的IP地址
+--pologSize 指定日志文件大小不超过64M.因为resync是非常操作量大且耗时，最好通过设置一个足够大的oplogSize来避免resync(默认的 oplog大小是空闲磁盘大小的5%)。
+--logappend 日志文件末尾添加，即使用追加的方式写日志
+--journal 启用日志
+--port 启用端口号
+--fork 在后台运行
+--only 指定只复制哪一个数据库
+--slavedelay 指从复制检测的时间间隔
+--auth 是否需要验证权限登录(用户名和密码)
+--syncdelay 数据写入硬盘的时间（秒），0是不等待，直接写入
+--notablescan 不允许表扫描
+--maxConns 最大的并发连接数，默认2000
+--pidfilepath 指定进程文件，不指定则不产生进程文件
+--bind_ip 绑定IP，绑定后只能绑定的IP访问服务
+
+
+
+systemctl stop firewalld.service
+
+启动报错：
+
+
+待解决：
+
+
+
+是因为配置里面 配置问题 改成一下设置就OK：
+
+dbpath = /usr/local/mongodb/db
+logpath = /usr/local/mongodb/logs/mongodb.log
+port = 27017
+fork = true

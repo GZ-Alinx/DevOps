@@ -1,0 +1,77 @@
+Jenkins版本下载：http://mirrors.jenkins.io/war-stable/
+
+两种安装方式：
+1、yum安装；
+2、源码包启动安装；
+3、启动问题集合；
+
+1、yum 安装
+
+以下是添加最新的jenkins的源并安装
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+sudo yum install jenkins
+
+如果需要稳定版本，命令如下
+安装Jenkins长期稳定版本的源，参考下面命令安装
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo http://pkg.jenkins-ci.org/redhat-stable/jenkins.repo
+sudo rpm --import https://jenkins-ci.org/redhat/jenkins-ci.org.key
+sudo yum install jenkins
+
+
+安装完成之后运行如下命令启动
+/etc/init.d/jenkins start
+systemctl enable jenkins
+
+
+浏览器访问IP+8080即可访问。
+
+2、源码包启动方式安装
+wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
+nohup java -jar jenkins.war >/dev/null 2>&1 &
+ss -ntlp | grep 8080
+
+
+浏览器访问IP+8080即可访问。
+
+3、启动问题集合
+
+
+
+显示离线，是因为更新链接是https类型改为http即可
+
+更新地址改成国内地址即可下载拉取工具
+find / -name hudson.model.UpdateCenter.xml
+vim ~/.jenkins/hudson.model.UpdateCenter.xml
+vim /var/lib/jenkins/hudson.model.UpdateCenter.xml
+
+
+<?xml version='1.1' encoding='UTF-8'?>
+<sites>
+  <site>
+    <id>default</id>
+    <url>http://mirror.esuni.jp/jenkins/updates/update-center.json</url>
+  </site>
+</sites>
+
+解决上述问题方法：
+1)    修改/var/lib/jenkins/updates/default.json
+jenkins在下载插件之前会先检查网络连接，其会读取这个文件中的网址。默认是：
+访问谷歌，这就很坑了，服务器网络又不能FQ，肯定监测失败呀，不得不说jenkins的开发者脑子锈了，所以将图下的google改为www.baidu.com即可，更改完重启服务。
+2)    修改/var/lib/jenkins/hudson.model.UpdateCenter.xml
+该文件为jenkins下载插件的源地址，改地址默认jenkins默认为：https://updates.jenkins.io/update-center.json，就是因为https的问题，此处我们将其改为http即可，之后重启jenkins服务即可。
+其他国内备用地址（也可以选择使用）：
+https://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
+http://mirror.esuni.jp/jenkins/updates/update-center.json
+
+博客： https://www.cnblogs.com/forever521Lee/p/9356212.html
+
+
+
+其他国内备用地址（也可以选择使用）：
+https://mirrors.tuna.tsinghua.edu.cn/jenkins/updates/update-center.json
+http://mirror.esuni.jp/jenkins/updates/update-center.json
+
+重启jenkins 即可生效

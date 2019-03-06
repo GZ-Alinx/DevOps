@@ -1,0 +1,311 @@
+iaas      基础设施架构
+paas      平台即架构
+saas      软件即服务
+
+Ansible 是一款无agent（代理）端部署结构的自动化软件，结合ssh就可以直接进行操作
+只需要做好与节点之间的免密码登录即可
+于2012.3.9 发布
+
+
+安装:  yum install -y ansible
+查看信息：yum info ansible
+
+查看ansible包括的文件列表
+rpm -ql ansible | less
+
+/etc/ansible/ansible.cfg        //主配置文件 （保持默认）
+/etc/ansible/hosts                 //主机清单
+/etc/ansible/roles/                //存放角色的目录
+/usr/bin/ansible-doc            //帮助文档工具
+/usr/bin/ansible-playbook  //定制自动化任务，编排剧本工具/usr/bin/ansible-pull
+
+
+查看版本
+ansible --version
+
+免密码登录设置
+[root@dongli ~]# ssh-keygen
+[root@dongli ~]# ssh-copy-id -i root@192.168.99.2
+
+
+-m 调用ansible模块
+ansible 103.45.15.135 -m ping   给103.45.15.135 发送ping
+[WARNING]: Could not match supplied host pattern, ignoring: 103.45.15.135
+
+添加主机清单后进行操作：
+vim /etc/ansible/hosts
+
+
+
+ansible本身是一个应用，若要实现功能需要结合模块来实现操作！所以需要学习很多的模块来更加的契合后续的需求。
+
+
+
+
+
+
+
+
+
+
+
+使用：
+
+ansible 命令用法： ansible 主机清单  -m 模块名 -a 参数 -v 显示详细过程 -vv -vvv 更详细
+
+[root@dongli ~]#ansible all --list  查看主机清单列表
+[root@dongli ~]#ansible all --list -u alinx 指定用户去操作
+[root@dongli ~]# ansible websrvs -m command -a 'ls /root'   调用命令模块去执行命令
+
+匹配主机列表通配符
+
+all 表示所有主机
+
+*通配符
+ansible "*" -m ping
+ansible 192.168.1.* -m ping
+ansible "*srvs" -m ping
+
+或关系
+ansible "websrvs:dbsrvs" -m ping
+ansible "192.168.1.10:192.168.1.20" -m ping
+
+逻辑与
+ansible "websrvs:&dbsrvs" -m ping  双引号
+
+逻辑非
+ansible 'websrvs:!dbsrvs' -m ping  单引号
+
+综合逻辑支持 | 正则表达式
+
+Ansible命令执行过程
+
+1.加载自己的配置文件 默认/etc/ansible/absible.cfg
+2.加载自己对应的模块文件，如command
+3.通过ansible将模块或命令生成对应的临时py文件，并将该文件传输至远程服务器的对应执行用户  $home/.ansible/tmp/ansible-tmp-数字/xxx.py文件
+4.给文件+x执行
+5.执行并返回结果
+6.删除临时py文件，sleep 0 退出
+
+执行状态
+绿色：执行成功并且不需要做改变的操作
+黄色：执行成功并且对目标主机做变更
+红色：执行失败
+颜色可以在主配置文件中修改 /etc/ansible/ansible.cfg
+
+使用-vvv 来查看执行过程
+
+
+
+
+
+
+
+常用模块：
+
+command 命令模块
+
+对所有主机执行创建touch /ansible.txt 的命令
+#ansible all -m command -a 'touch /ansible.txt'  简写 ansible all -a 'touch /ansible.txt'
+
+shell调用shell模块
+
+调用shell模块修改用户密码
+#ansible dbsrvs -m shell -a 'echo 666666|passwd --stdin alinx'  修改用户alinx密码
+#ansible dbsrvs -m shell -a '>/opt/a.txt'   创建一个空文件
+
+script执行脚本模块
+
+对主机清单中的websrvs组执行本地脚本host.sh
+#ansible all -m srcipt -a '/root/ansible/host.sh'
+#ansible websrvs -m script -a '/root/ansible/host.sh'
+
+
+copy拷贝模块
+
+对主机清单中的websrvs组主机执行将本机的/root/ansible/selinux替换到 /etc/selinux/config文件 并备份
+#ansible websrvs -m copy -a 'src=/root/ansible/selinux dest=/etc/selinux/config backup=yes'
+
+以文件内容的形式生成一个文件
+#ansible websrvs -m copy -a 'content="hello\nthanks\n" dest=/f2'
+
+
+Fetch模块
+从客户端取文件至服务器端，copy相反，目录可先tar
+# ansible websrvs -m fetch -a 'src=/var/log/messages dest=/opt'
+
+
+
+file文件管理模块
+
+针对主机清单中的组websrvs主机 使用file模块在/opt目录下创建f2文件
+# ansible websrvs -m file -a 'name=/opt/f2 state=touch'
+
+针对主机清单中的组websrvs主机 使用file模块在/opt目录下删除f2文件
+# ansible websrvs -m file -a 'name=/opt/f2 state=absent'
+
+针对主机清单中的组websrvs主机 使用file模块建立文件夹/data/dir1
+# ansible websrvs -m file -a 'name=/data/dir1 state=directory'
+
+针对主机清单中的组websrvs主机 使用file模块删除文件夹/data/dir1
+# ansible websrvs -m file -a 'name=/data/dir1 state=absent'
+
+针对主机清单中的组websrvs主机 使用command模块 验证是否创建/删除成功
+# ansible websrvs -m command -a 'ls /data' 简写 ansible websrvs -a 'ls /data/'
+
+针对主机清单中的组websrvs主机 使用file模块删除整个目录下的文件
+# ansible websrvs -m file -a 'dest=/data/* state=absent'
+
+设置文件属性
+# ansible websrvs -m file -a "src=/root/a.sh owner=alinx mode=755"
+
+
+hostname 管理主机名模块
+
+针对主机清单中的组websrvs主机 使用hostname模块 修改主机名
+# ansible websrvs -m hostname -a 'name=alinx999'
+改了主机名也需要把/etc/hosts文件也修改了  保持hosts文件与主机名相同
+
+
+cron 计划任务模块
+启动计划任务
+针对主机清单中的组websrvs主机 使用cron模块创建计划任务
+# ansible websrvs -m cron -a 'minute=* weekday=1,3,5 job="/usr/bin/wall FBI warning "name=warningcron'
+
+
+针对主机清单中的组websrvs主机 使用cron模块禁用计划任务
+# ansible websrvs -m cron -a 'disabled=true job="/usr/bin/wall FBI warning" name=warningcron'
+针对主机清单中的组websrvs主机 使用cron模块启用计划任务
+# ansible websrvs -m cron -a 'disabled=false job="/usr/bin/wall FBI warning" name=warningcron'
+ansible websrvs -m cron -a ' job="/usr/bin/wall FBI warning" name=warningcron state=absent'
+
+
+Yum 管理包模块
+
+可用于安装  升级  降级
+安装：present installed latest
+卸载：absent removed
+默认就是安装present 可以省略state=present
+
+针对主机清单中的dbsrvs组主机 使用yum模块安装vsftpd服务
+# ansible dbsrvs -m yum -a 'name=vsftpd state=present' 简写  # ansible dbsrvs -m yum -a 'name=vsftpd'
+
+针对主机清单中的dbsrvs组主机 使用yum模块卸载vsftpd服务
+# ansible dbsrvs -m yum -a 'name=vsftpd state=removed'
+
+针对主机清单中的dbsrvs组主机 使用yum模块查看已经安装的服务
+ansible dbsrvs -m yum -a 'list=installed'| grep zlib
+
+针对主机清单中的dbsrvs组主机 使用yum模块查看vsftpd服务
+ansible dbsrvs -m yum -a 'name=vsftpd list'
+
+针对主机清单中的websrvs组主机 使用yum模块安装多个服务
+# ansible websrvs -m yum -a 'name=vsftpd,memcached,httpd'
+
+针对主机清单中的websrvs组主机 使用yum模块卸载多个服务
+# ansible websrvs -m yum -a 'name=vasftpd,memcached,httpd state=absent'
+
+针对主机清单中的websrvs组主机 使用yum模块安装dstat 并更新yum缓存
+# ansible websrvs -m yum -a 'name=dstat update_cache=yes'
+
+
+service 服务管理模块
+
+state=stopped | started | reloaded | restarted
+
+针对主机清单中的websrvs组主机 使用service模块启动vsftpd服务，并设置为开启启动
+# ansible websrvs -m service -a 'name=vsftpd state=started enabled=yes'
+验证是否开机启动
+# ansible websrvs -m command -a 'systemctl is-enabled vsftpd'
+
+
+user 用户管理模块
+
+创建用户nginx， 指定shell为nologin， 家目录为/var/nginx， 组为root和bin uid为80，设置为系统用户，描述为 web 不需要的可以不写 保持默认
+# ansible websrvs -m user -a 'name=nginxx shell=/sbin/nologin system=yes home=/var/nginxx group=root uid=800 comment="web"'
+删除用户
+# ansible websrvs -m user -a 'name=nginxx state=absent remove=yes'
+
+
+
+group组管理模块
+
+选项： absent present 默认：present（创建）
+# ansible websrvs -m group -a 'name=ngg system=yes gid=8011'
+# ansible websrvs -a 'getent group ngg'     验证是否创建成功
+
+删除用户
+ansible websrvs -m group -a 'name=ngg stat=absent'
+
+
+
+
+
+
+
+
+PlayBook
+
+
+
+playbook是由一个或多个“play”组成的列表
+
+就是把我们事先需要操作的主机放到playbook的 hosts列表中，针对这些主机来编写任务（tasks）,可以同时调用多个模块
+
+playbook采用YAML语言编写
+
+
+
+YAML
+
+yaml是一个可读性高的用来表达资料序列的格式，YAML参考了其他语种，包括xml c python perl以及电子邮件格式RFC2822等
+
+Clark Evans在2001年首次发表了这种语言
+
+yaml Ain't Markup Language 即YAML不是xml。在开发这种语言时YAML意思其实是（"Yet Anoter Markup Language" 任是一种标记语言）
+
+特性
+
+
+YAML 可读性好
+YAML 和脚本语言交互性好
+YAML 使用实现语言的数据类型
+YAML 有一个一致的信息模型
+YAML 易于实现
+YAML 可以给予流来处理
+YAML 表达能力强。扩展性好
+官方地址： http://www.yaml.org
+
+
+  YAML 语法
+文件开头使用--- 开始  后面可以继续写档案用--- 分隔   # 注释
+编写playbook文档开头注明功能 使用#开头
+缩进必须统一，空格和tab不可混用
+同样的缩进代表同样的级别，程序判别配置的级别是通过缩进结合换来行来实现的
+YAML内容区别大小写，敏感区分大小写
+k/v的值是可同行也可换行写，同行使用：分隔   （k/v 键值对）
+v可是个字符串，也可使一个列表
+一个完整的代码块功能需最少元素包括 name: task
+一个name只能包括一个task
+YAML 文件扩展名通常为YML 或者yaml
+所有元素都使用- 开头  多个- 代表有多个元素列表
+
+
+#vim hello.yml            //编写yml文件
+
+---
+- hosts: websrvs    #针对要操作的主机   hosts 为键  websrvs为值
+  remote_user: root #以root身份执行此任务
+  tasks:
+   - name: hello          #说明字符
+     command: hostname    #模块与参数
+
+
+playbook基础组建
+
+Hosts： 指定要执行任务的主机
+
+
+# ansible-playbook  -C hello.yml   //检测语法是否有误
+
+执行:   ansible-playbook hello.yml
