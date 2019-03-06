@@ -1,0 +1,102 @@
+1、下载二进制包
+
+[root@app ~]# wget https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.23-linux-glibc2.12-x86_64.tar.gz
+
+
+2、解压到指定目录
+[root@app ~]# tar -zxf mysql-5.7.23-linux-glibc2.12-x86_64.tar.gz -C /usr/local/
+[root@app local]# cd mysql-5.7.23-linux-glibc2.12-x86_64/
+
+3、进入命令目录，查看库文件是否支持，如果没有就提前安装
+[root@app mysql-5.7.23-linux-glibc2.12-x86_64]# cd bin/
+[root@app bin]# ldd mysqld
+        linux-vdso.so.1 =>  (0x00007ffee8b53000)
+        libpthread.so.0 => /lib64/libpthread.so.0 (0x00007f8b2e178000)
+        libaio.so.1 => not found
+        libnuma.so.1 => /lib64/libnuma.so.1 (0x00007f8b2df6b000)
+        libcrypt.so.1 => /lib64/libcrypt.so.1 (0x00007f8b2dd34000)
+        libdl.so.2 => /lib64/libdl.so.2 (0x00007f8b2db30000)
+        librt.so.1 => /lib64/librt.so.1 (0x00007f8b2d927000)
+        libstdc++.so.6 => /lib64/libstdc++.so.6 (0x00007f8b2d61e000)
+        libm.so.6 => /lib64/libm.so.6 (0x00007f8b2d31c000)
+        libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x00007f8b2d105000)
+        libc.so.6 => /lib64/libc.so.6 (0x00007f8b2cd44000)
+        /lib64/ld-linux-x86-64.so.2 (0x00007f8b2e39b000)
+        libfreebl3.so => /lib64/libfreebl3.so (0x00007f8b2cb41000)
+
+缺少库： 下载并安装
+
+第一：
+    64位：
+    [root@app bin]# wget http://mirror.centos.org/centos/6/os/x86_64/Packages/libaio-0.3.107-10.el6.x86_64.rpm
+    [root@app bin]# rpm -ivh libaio-0.3.107-10.el6.x86_64.rpm
+    32位：
+    [root@app bin]# yum install libaio.so.1
+
+第二：
+    libnuma.so.1 => not found
+Centos7
+     yum -y install numactl就可以解决这个问题了.
+ubuntu的就
+     sudo apt-get install numactl就可以解决这个问题了
+
+
+4、解压后创建一个软连接配合主配置文件初始化
+[root@app local]# ln -sv mysql-5.7.23-linux-glibc2.12-x86_64 mysql
+‘mysql’ -> ‘mysql-5.7.23-linux-glibc2.12-x86_64’
+
+5、创建数据目录
+[root@app bin]# mkdir -p /data/mysql/mysql3306/{data,logs,tmp}
+
+6、进入数据目录上传主配置文件
+[root@app bin]# cd !$
+
+
+
+7、赋予数据目录权限
+[root@app mysql3306]#  useradd mysql -s /bin/nologin
+[root@app mysql3306]# chown -R mysql.mysql /data/mysql/mysql3306/
+
+配置文件
+
+8、初始化数据库：
+[root@app mysql3306]# /usr/local/mysql/bin/mysqld   --defaults-file=/data/mysql/mysql3306/my3306.cnf     --initialize
+
+特别注意： 这样的报错吧数据库的数据目录清空重新创建一下就好了   or  权限问题！
+
+默认密码： cat    /data/mysql/mysql3306/data/error.log |grep   -i    "password"
+
+
+9、启动数据库：
+[root@app mysql3306]#
+/usr/local/mysql/bin/mysqld   --defaults-file=/data/mysql/mysql3306/my3306.cnf    &
+
+添加命令到全局变量配置文件
+[root@app mysql3306]# echo "export PATH=$PATH:/usr/local/mysql/bin" >> /etc/profile
+[root@app mysql3306]# source /etc/profile
+
+10、进入数据库：
+[root@app mysql3306]# mysql     -S     /tmp/mysql3306.sock   -p
+默认是有密码的，因为5.7默认设置了一个密码，如果找不到可以跳过密码然后修改即可
+
+报错了就用绝对路径：
+        [root@localhost mysql3306]#/usr/local/mysql/bin/mysql  -S     /tmp/mysql3306.sock       -p
+
+11、修改密码
+[root@app mysql3306]# vim /data/mysql/mysql3306/my3306.cnf
+把这个注释的启用就好：skip-grant-tables
+
+    首次更改密码：
+        mysql> alter    user  user()   identified  by   'gslixiong';
+    以后更改密码：
+        mysql> update user set authentication_string=password('gslixiong') where user='root' and host='%';
+
+
+12、 启动与停止
+        启动：    /usr/local/mysql/bin/mysqld    --defaults-file=/data/mysql/mysql3306/my3306.cnf    &
+        进入：    /usr/local/mysql/bin/mysql    -S    /tmp/mysql3306.sock   -p
+        关闭：    /usr/local/mysql/bin/mysqladmin    -S   /tmp/mysql3306.sock    shutdown
+
+mysql5.7 开启远程访问：
+        update mysql.user set Host='%' where HOST='localhost' and User='root';
+        flush privileges;
