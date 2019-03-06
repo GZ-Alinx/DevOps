@@ -1,0 +1,145 @@
+安装三种方式
+
+版本问题需要特别注意！！
+
+
+1、在线安装
+2、离线安装
+3、OVA安装
+
+
+需求环境：
+
+1、python环境
+ python --version
+
+2、docker-compose环境
+ yum -y install docker-compose
+
+3、docker
+ docker --version
+
+
+hosts文件：
+vim /etc/hosts
+    ip地址 harbor.teayk.com
+    192.168.99.208 harbor.alinx.top
+
+
+
+2、离线方式安装
+
+三个步骤完成安装：
+
+1、下载包：
+离线安装包：https://storage.googleapis.com/harbor-releases/release-1.5.0/harbor-offline-installer-v1.5.1.tgz
+
+由于版本问题，不需要安装最新版本， 安装1.5.1版本即可
+tar zxf harbor-offline-installer-v1.5.1.tgz
+
+
+2、编辑配置文件:
+vim harbor.cfg   #主配置文件
+    hostname = *  # 不可以填localhost  | 127.0.0.1
+vim docker-compose.yml  #编排文件 可修改端口配置（保持默认即可）
+
+
+3、执行./install.sh
+ ./install.sh
+
+
+
+登录验证：
+docker login harbor.alinx.top --username=admin --password=Harbor12345
+
+
+登录界面创建授权：
+http://harbor.alinx.top
+创建项目dev，创建用户
+对镜像打标
+打标签： docker tag hcc-commodity:v1 harbor.teayk.com/dev/hcc-commodity:v1
+推镜像:  docker push harbor.teayk.com/dev/hcc-commodity:v1
+
+到ui界面查看是否存在
+http://harbor.alinx.top
+
+
+
+
+安装完成即可!
+
+停止docker自带私有仓库
+systemctl stop docker-distribution
+
+错误集合：
+Error response from daemon: Get https://192.168.99.209:888/v2/: http: server gave HTTP response to HTTPS client
+
+
+Error response from daemon: Get http://192.168.99.209:888/v2/: unable to decode token response: invalid character '<' looking for beginning of value
+
+
+验证方式与docker不匹配 | 没有添加信任仓库
+
+查看信任仓库  Insecure Registries关键字
+# docker info
+Containers: 240
+ Running: 10
+ Paused: 0
+ Stopped: 230
+Images: 25
+Server Version: 18.09.0
+Storage Driver: overlay2
+ Backing Filesystem: xfs
+ Supports d_type: true
+ Native Overlay Diff: false
+Logging Driver: json-file
+Cgroup Driver: cgroupfs
+Plugins:
+ Volume: local
+ Network: bridge host macvlan null overlay
+ Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+Swarm: inactive
+Runtimes: runc
+Default Runtime: runc
+Init Binary: docker-init
+containerd version: c4446665cb9c30056f4998ed953e6d4ff22c7c39
+runc version: 4fc53a81fb7c994640722ac585fa9ca548971871
+init version: fec3683
+Security Options:
+ seccomp
+  Profile: default
+Kernel Version: 3.10.0-514.el7.x86_64
+Operating System: CentOS Linux 7 (Core)
+OSType: linux
+Architecture: x86_64
+CPUs: 4
+Total Memory: 15.41GiB
+Name: localhost.localdomain
+ID: RB5C:GH5U:BILS:SPWU:UUFC:7H2I:YPVA:23FV:3JRW:OPZD:LC4O:WFC5
+Docker Root Dir: /var/lib/docker
+Debug Mode (client): false
+Debug Mode (server): false
+Registry: https://index.docker.io/v1/
+Labels:
+Experimental: false
+Insecure Registries:
+ harbor.teayk.com
+ 127.0.0.0/8
+Registry Mirrors:
+ https://5uuoznyf.mirror.aliyuncs.com/
+Live Restore Enabled: false
+Product License: Community Engine
+
+WARNING: bridge-nf-call-iptables is disabled
+WARNING: bridge-nf-call-ip6tables is disabled
+
+
+
+如果没有添加信任：
+登录到仓库报不支持https 在vim /etc/docker/daemon.json
+添加地址即可
+
+{
+"registry-mirrors": ["https://5uuoznyf.mirror.aliyuncs.com"],
+"insecure-registries": ["docker.alinx.top"]
+}
