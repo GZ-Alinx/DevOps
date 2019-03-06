@@ -1,6 +1,5 @@
-import pexpect
 
-def ssh_comand(hsot, user, password, command):
+def ssh_comand(host, user, password, command):
     """
     SSH登录执行命令
     :param hsot:
