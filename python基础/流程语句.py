@@ -22,3 +22,10 @@ else:
     print("a = %s"%a)
 
 
+
+# 遍历技巧
+
+alinx = {'1':'lixiong','2':'lijie'}
+for k,v in alinx.items():
+    print(k, v)
+
