@@ -31,6 +31,7 @@ sed -i 's#BASEDIR=/usr/local#BASEDIR=/usr/local/zabbix/zabbix_agent#' /etc/init.
 
 grep -vP '^#|^$' /usr/local/zabbix/zabbix_agent/etc/zabbix_agentd.conf
 
+vim /usr/local/zabbix/zabbix_agent/etc/zabbix_agentd.conf
 
 LogFile=/tmp/zabbix_agentd.log
 Server=                    # Zabbix Server IP ( 被动模式，客户端被动 )
