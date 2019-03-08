@@ -1,0 +1,3 @@
+yum -y install  rsync xinetd
+vim /etc/xinetd.d/rsync
+rsync -avz 同步服务器   目标服务器
