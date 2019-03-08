@@ -1,0 +1,44 @@
+
+# 用户创建
+
+ useradd -r -s /sbin/nologin zabbix
+
+
+下载地址: https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/4.0.5/zabbix-4.0.5.tar.gz/download
+
+
+#解压包
+ tar -zxf zabbix-4.0.5.tar.gz -C /usr/local/
+
+#编译安装
+
+ ./configure --prefix=/usr/local/zabbix_agent --enable-agent ; make install
+
+
+启动脚本复制
+cp /usr/local/zabbix-4.0.5/misc/init.d/fedora/core/zabbix_agentd /etc/init.d/
+
+#修改安装路径
+sed -i 's#BASEDIR=/usr/local#BASEDIR=/usr/local/zabbix/zabbix_agent#' /etc/init.d/zabbix_agentd
+
+
+查看配置
+
+grep -vP '^#|^$' /usr/local/zabbix/zabbix_agent/etc/zabbix_agentd.conf
+
+
+LogFile=/tmp/zabbix_agentd.log
+Server=                    # Zabbix Server IP ( 被动模式，客户端被动 )
+ServerActive=              # 主动模式，如果使用也填 Zabbix Server IP ，不使用可以注释掉
+Hostname=                  # 本身 IP ，Zabbix Server 添加主机时需要使用，不一定是 IP
+Include=/usr/local/zabbix_agent/etc/zabbix_agentd.conf.d/*.conf   # 加载自定义的监控配置文件
+
+UnsafeUserParameters=1 # 允许自定义 Key
+
+Server 端测试通讯
+# /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
+
+
+
+#启动agent
+    /etc/init.d/zabbix_agentd start
