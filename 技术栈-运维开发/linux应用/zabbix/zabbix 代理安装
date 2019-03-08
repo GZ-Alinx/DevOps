@@ -48,9 +48,11 @@ UnsafeUserParameters=1 # 允许自定义 Key
 
 
 
- /etc/init.d/zabbix_agentd restart
+    /etc/init.d/zabbix_agentd restart
  
  
+ 开机启动 ：  
+   echo "/etc/init.d/zabbix_agentd start" >> /etc/rc.local
  
 Server 端测试通讯
 # /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
