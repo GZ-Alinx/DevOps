@@ -12,7 +12,7 @@
 
 #编译安装
 
- ./configure --prefix=/usr/local/zabbix_agent --enable-agent ; make install
+ ./configure --prefix=/usr/local/zabbix/zabbix_agent --enable-agent ; make install
 
 
 启动脚本复制
