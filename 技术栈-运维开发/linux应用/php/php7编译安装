@@ -1,0 +1,61 @@
+
+编译安装php
+
+安装图片，xml，字体支持基本库，使用yum去安装，安装的时候，这些软件包自身也有依赖！安装依赖环境包：
+yum install -y libxml2-devel libcurl-devel libjpeg-devel libpng-devel freetype freetype-devel libzip libzip-devel
+
+yum install php-pear -y
+//pear按照一定的分类来管理pear应用代码库，你
+的pear代码可以组织到其中适当的目录中，其他人可以方便的检索并分享到你的成果；pear不仅仅是一个代码仓库，它同时也是一个标准，使用这个标准来书写你的php代码，将会增强你的程序的可读性，复用性，减少出错的几率；Pear通过两个类为你搭建了一个框架，实现了诸如析构函数，错误捕获功能，你通过继承就可以使用这些功能
+
+PHP添加libmcrypt拓展
+
+libmcrypt加密算法扩展库，支持DES, 3DES, RIJNDAEL, Twofish, IDEA, GOST, CAST-256, ARCFOUR, SERPENT, SAFER+等算法
+
+        官方网站：http://mcrypt.hellug.gr/index.html  或者 http://mcrypt.sourceforge.net/
+
+
+php下载地址： http://cn2.php.net/get/php-7.1.27.tar.gz/from/this/mirror
+Libmcrypt下载地址： https://zh.osdn.net/projects/sfnet_mcrypt/downloads/Libmcrypt/2.5.8/libmcrypt-2.5.8.tar.gz/
+
+tar xf libmcrypt-2.5.8.tar.bz2 -C /usr/local/src/ ; cd /usr/local/src/libmcrypt-2.5.8/
+./configure --prefix=/usr/local/libmcrypt ; make ; make install ; cd
+
+
+
+由于系统默认规定只在/lib、/lib64、/lib/lib64下面找库文件，所以我们需要手动添加进去。
+
+
+vim /etc/ld.so.conf
+include ld.so.conf.d/*.conf                          #此行原有
+/usr/local/libmcrypt/lib                       #此行添加
+/usr/local/mysql/lib                           #此行添加
+ldconfig
+echo 'ldconfig' >> /etc/rc.local
+
+
+
+编译安装php7
+tar -zxf php-7.1.27.tar.gz -C /usr/local/
+
+cd /usr/local/php-7.1.27/
+
+./configure --prefix=/usr/local/php --with-config-file-path=/usr/local/php --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex  --enable-fpm --enable-mbstring --with-gd --enable-mysqlnd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-soap --with-gettext --with-mcrypt=/usr/local/libmcrypt  --with-gettex --enable-opcache=no
+
+make -j 4 && make install
+
+php配置文件
+cp /usr/local/php-7.1.27/php.ini-production /usr/local/php/php.ini
+
+php-fpm配置文件
+cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/php-fpm.conf
+
+cd /usr/local/php/etc/php-fpm.d/ && cp www.conf.default www.conf
+
+vim www.conf
+修改用户与组 = nginx
+
+
+启动脚本
+cp /usr/local/php-7.1.27/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
+/etc/init.d/php-fpm start
