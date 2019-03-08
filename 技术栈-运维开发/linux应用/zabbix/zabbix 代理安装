@@ -1,4 +1,8 @@
 
+依赖环境：
+
+yum install -y gcc* c++* libevent-devel net-snmp-devel libxml2-devel libcurl-deve libevent libevent-devel
+
 # 用户创建
 
  useradd -r -s /sbin/nologin zabbix
@@ -12,6 +16,8 @@
 #编译安装
 
  ./configure --prefix=/usr/local/zabbix/zabbix_agent --enable-agent ; make install
+ 
+ 权限： chown root:zabbix -R  /usr/local/zabbix
 
 
 启动脚本复制
@@ -40,7 +46,7 @@ UnsafeUserParameters=1 # 允许自定义 Key
     /etc/init.d/zabbix_agentd start
 
 
-chown root:zabbix -R  /usr/local/zabbix
+
  /etc/init.d/zabbix_agentd restart
  
  
@@ -54,3 +60,4 @@ Server 端测试通讯
 配置-->> 主机-->> 添加模板 ip地址
 
 刷新即可
+
