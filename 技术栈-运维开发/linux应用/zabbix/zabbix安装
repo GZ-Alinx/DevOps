@@ -109,6 +109,7 @@ http://192.168.99.209/setup.php
 
 
 
+
 编辑 php.ini 文件，修改环境
 post_max_size = 16M    #修改
 max_execution_time = 300 #修改
