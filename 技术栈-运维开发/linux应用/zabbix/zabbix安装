@@ -97,7 +97,8 @@ zabbix_server可以正常启动，mysql也可以正常启动，但是netstat 100
                  vim /usr/local/zabbix/etc/zabbix_server.conf
 DBSocket=/tmp/mysql.sock 取消注释
 
-
+端口没有被监听：
+   数据库配置，配置文件错误导致可能性最大。
 
 #页面文件复制到nginx目录中
 cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx
@@ -133,6 +134,7 @@ always_populate_raw_post_data = -1    #此行取消注释即可
 登录 Web默认用户名密码
 用户名：Admin
 密码：zabbix
+
 
 
 
