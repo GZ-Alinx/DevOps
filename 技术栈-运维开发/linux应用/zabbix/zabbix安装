@@ -99,7 +99,8 @@ DBSocket=/tmp/mysql.sock 取消注释
 
 
 
-
+#页面文件复制到nginx目录中
+cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx
 
 进入页面配置
 http://192.168.99.209/setup.php
