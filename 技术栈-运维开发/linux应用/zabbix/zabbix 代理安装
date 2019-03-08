@@ -11,7 +11,7 @@ yum install -y gcc* c++* libevent-devel net-snmp-devel libxml2-devel libcurl-dev
 
 
 #解压包
- tar -zxf zabbix-4.0.5.tar.gz -C /usr/local/
+ tar -zxf zabbix-4.0.5.tar.gz -C /usr/local/  && cd cd !$/zabbix-4.0.5
 
 #编译安装
 
