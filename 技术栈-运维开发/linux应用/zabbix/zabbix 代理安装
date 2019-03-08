@@ -47,3 +47,10 @@ chown root:zabbix -R  /usr/local/zabbix
  
 Server 端测试通讯
 # /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
+
+
+添加主机：
+
+配置-->> 主机-->> 添加模板 ip地址
+
+刷新即可
