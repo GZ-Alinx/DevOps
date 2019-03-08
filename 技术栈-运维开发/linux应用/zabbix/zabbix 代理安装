@@ -2,8 +2,7 @@
 # 用户创建
 
  useradd -r -s /sbin/nologin zabbix
-
-
+ 
 下载地址: https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/4.0.5/zabbix-4.0.5.tar.gz/download
 
 
@@ -35,10 +34,16 @@ Include=/usr/local/zabbix_agent/etc/zabbix_agentd.conf.d/*.conf   # 加载自定
 
 UnsafeUserParameters=1 # 允许自定义 Key
 
-Server 端测试通讯
-# /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
-
 
 
 #启动agent
     /etc/init.d/zabbix_agentd start
+
+
+chown root:zabbix -R  /usr/local/zabbix
+ /etc/init.d/zabbix_agentd restart
+ 
+ 
+ 
+Server 端测试通讯
+# /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
