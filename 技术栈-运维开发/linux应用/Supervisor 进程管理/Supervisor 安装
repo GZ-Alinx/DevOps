@@ -1,0 +1,87 @@
+
+官网安装地址： http://supervisord.org/installing.html
+php地址：https://learnku.com/docs/laravel/5.7/queues/2286#38f783
+
+pip版本必须是pip2 否则失败
+
+pip install supervisor    #安装supervisor
+
+>>>  pip安装请查看python文件夹
+
+
+创建配置文件
+
+Supervisor安装完成后，运行 echo_supervisord_conf。这将在您的终端的标准输出中打印一个“样本”Supervisor配置文件。
+
+一旦看到文件回显到终端，请将命令重新调用为
+echo_supervisord_conf > /etc/supervisord.conf。
+如果您没有root访问权限，则无法使用此功能。
+
+
+
+
+supervisord命令行选项
+
+-c FILE, --configuration=FILE
+ 	supervisord配置文件的路径。
+-n, --nodaemon	在前台运行supervisord。
+-h, --help	显示supervisord命令帮助。
+-u USER, --user=USER
+ 	UNIX用户名或数字用户标识。如果以root用户身份启动supervisord，请在启动期间尽快setuid给该用户。
+-m OCTAL, --umask=OCTAL
+ 	八进制数（例如022）表示supervisord启动后应该使用的umask。
+-d PATH, --directory=PATH
+ 	当supervisord作为守护进程运行时，在守护进程之前cd到此目录。
+-l FILE, --logfile=FILE
+ 	用作supervisord活动日志的文件名路径。
+-y BYTES, --logfile_maxbytes=BYTES
+ 	旋转发生前，supervisord活动日志文件的最大大小。该值是后缀倍增的，例如“1”是一个字节，“1MB”是1兆字节，“1GB”是1千兆字节。
+-y NUM, --logfile_backups=NUM
+ 	要保持的supervisord活动日志的备份副本数。每个日志文件的大小为logfile_maxbytes。
+-e LEVEL, --loglevel=LEVEL
+ 	主管应该写入活动日志的日志记录级别。有效级别包括跟踪，调试，信息，警告， 错误和严重。
+-j FILE, --pidfile=FILE
+ 	supervisord应该将其pid文件写入的文件名。
+-i STRING, --identifier=STRING
+ 	由该主管实例的各种客户端UI公开的任意字符串标识符。
+-q PATH, --childlogdir=PATH
+ 	目录的路径（它必须已经存在），其中supervisor将写入其AUTO -mode子进程日志。
+-k, --nocleanup
+ 	防止supervisord在启动时执行清理（删除旧的AUTO进程日志文件）。
+-a NUM, --minfds=NUM
+ 	在成功启动之前，supervisord进程必须可用的最小文件描述符数。
+-t, --strip_ansi
+ 	从所有子日志进程中剥离ANSI转义序列。
+-v, --version	将supervisord版本号打印到stdout并退出。
+--profile_options=LIST
+ 	用于分析的逗号分隔选项列表。导致 supervisord在探查器下运行，并根据选项输出结果，这些选项是以逗号分隔的以下列表：累积，呼叫，呼叫者。例如累计，来电者。
+--minprocs=NUM	在成功启动之前，supervisord进程必须可用的最小OS进程槽数。
+
+
+
+运行命令：  supervisorctl
+
+
+
+本文件夹有下载链接
+
+开机启动脚本:
+
+#upervisord service for systemd (CentOS 7.0+)
+
+[Unit]
+Description=Supervisor daemon
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/supervisord
+ExecStop=/usr/bin/supervisorctl $OPTIONS shutdown
+ExecReload=/usr/bin/supervisorctl $OPTIONS reload
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+[Install]
+WantedBy=multi-user.target
+
+
