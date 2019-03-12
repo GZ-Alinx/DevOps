@@ -15,7 +15,7 @@ Python 2.7.10
 $ python3 --version
 Python 3.7.2
 
-wget https://github.com/GZ-Alinx/Devops/blob/master/%E6%8A%80%E6%9C%AF%E6%A0%88-%E8%BF%90%E7%BB%B4%E5%BC%80%E5%8F%91/python/python%E7%8E%AF%E5%A2%83%E5%8C%85%E5%AE%89%E8%A3%85/get-pip.py
+本章节已经提供了 get-pip.py 文件下载
 
 
 安装pip2
