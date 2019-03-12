@@ -1,0 +1,25 @@
+
+安装和配置pip2和pip3
+
+
+由于您的项目，您可能必须同时保留Python版本（旧版本2和版本3）
+并且它们将需要相应的pip安装，因此你可以单独安装和维护这两个版本的软件包。
+
+
+有多种方法可以安装pip到系统，但版本配置和设置pip可执行文件的默认版本可能很棘手。
+
+以下是我发现的最简单的解决方案。
+此解决方案如果你已经安装了Python版本，他们可以为执行python2和python3对Python 2和Python的分别3。
+$ python2 --version
+Python 2.7.10
+$ python3 --version
+Python 3.7.2
+
+wget https://bootstrap.pypa.io/get-pip.py
+
+
+安装pip2
+python2 get-pip.py
+
+安装pip3
+python3 get-pip.py

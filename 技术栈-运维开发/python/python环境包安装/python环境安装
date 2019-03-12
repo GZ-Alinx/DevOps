@@ -1,0 +1,36 @@
+Python环境安装
+
+1.依赖环境包安装
+    # yum install -y gcc libffi-devel openssl-devel bzip2-devel expat-devel gdbm-devel readline-devel sqlite-devel
+
+
+2.包下载
+# wget https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz
+
+
+3.解压
+# tar -zxvf Python-3.7.2.tgz
+
+
+4.编译安装
+# cd Python-3.7.2/
+# ./configure --prefix=/usr/local/
+# make && make altinstall
+
+
+5.替换旧python
+# cd /usr/bin/ &&  mv python python.bak
+# ln -sv /usr/local/bin/python3.7 /usr/bin/python
+"/usr/bin/python" -> "/usr/local/bin/python3.7"
+# ln -sv /usr/local/bin/python3.7 /usr/bin/python3
+"/usr/bin/python3" -> "/usr/local/bin/python3.7"
+
+
+高版本yum依赖问题
+　　安装高版本python后会有一个非常蛋疼的问题，yum是依赖于python的，安装python3后yum就没办法直接用了，需要直接指定修改yum中python脚本的解释器才能使用。
+修改
+sed -i 's/python/python2/g' /usr/bin/yum
+vim /usr/bin/urlgrabber-ext-down
+个文件的头文件，即将第一行
+改#!/usr/bin/python
+为 #!/usr/bin/python2
