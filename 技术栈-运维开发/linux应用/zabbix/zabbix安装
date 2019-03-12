@@ -155,3 +155,10 @@ DejaVuSans.ttf 替换此文件即可完成完成
 
 /usr/local/nginx/html/fonts/
 widnows7系统本地字体：
+
+
+
+登录忘记密码：
+进入数据库：
+    use zabbix；
+    update  users set passwd=md5("zabbix") where userid='1';
