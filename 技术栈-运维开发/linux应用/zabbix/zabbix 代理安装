@@ -1,18 +1,23 @@
 
+依赖环境：
+
+yum install -y gcc* c++* libevent-devel net-snmp-devel libxml2-devel libcurl-deve libevent libevent-devel
+
 # 用户创建
 
  useradd -r -s /sbin/nologin zabbix
-
-
+ 
 下载地址: https://sourceforge.net/projects/zabbix/files/ZABBIX%20Latest%20Stable/4.0.5/zabbix-4.0.5.tar.gz/download
 
 
 #解压包
- tar -zxf zabbix-4.0.5.tar.gz -C /usr/local/
+ tar -zxf zabbix-4.0.5.tar.gz -C /usr/local/  && cd !$/zabbix-4.0.5
 
 #编译安装
 
- ./configure --prefix=/usr/local/zabbix_agent --enable-agent ; make install
+ ./configure --prefix=/usr/local/zabbix/zabbix_agent --enable-agent ; make install
+ 
+ 权限： chown root:zabbix -R  /usr/local/zabbix
 
 
 启动脚本复制
@@ -26,6 +31,7 @@ sed -i 's#BASEDIR=/usr/local#BASEDIR=/usr/local/zabbix/zabbix_agent#' /etc/init.
 
 grep -vP '^#|^$' /usr/local/zabbix/zabbix_agent/etc/zabbix_agentd.conf
 
+vim /usr/local/zabbix/zabbix_agent/etc/zabbix_agentd.conf
 
 LogFile=/tmp/zabbix_agentd.log
 Server=                    # Zabbix Server IP ( 被动模式，客户端被动 )
@@ -35,10 +41,26 @@ Include=/usr/local/zabbix_agent/etc/zabbix_agentd.conf.d/*.conf   # 加载自定
 
 UnsafeUserParameters=1 # 允许自定义 Key
 
-Server 端测试通讯
-# /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
-
 
 
 #启动agent
     /etc/init.d/zabbix_agentd start
+
+
+
+    /etc/init.d/zabbix_agentd restart
+ 
+ 
+ 开机启动 ：  
+   echo "/etc/init.d/zabbix_agentd start" >> /etc/rc.local
+ 
+Server 端测试通讯
+# /usr/local/zabbix/bin/zabbix_get -s agent服务器 -p10050 -k system.uname
+
+
+添加主机：
+
+配置-->> 主机-->> 添加模板 ip地址
+
+刷新即可
+
