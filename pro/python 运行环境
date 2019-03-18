@@ -1,0 +1,17 @@
+
+Python运行环境安装：
+
+
+
+官方地址:  https://selenium-python.readthedocs.io/installation.html#drivers
+
+firefox 下载地址： https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+
+
+
+wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+tar -zxf geckodriver-v0.24.0-linux64.tar.gz && mv geckodriver /usr/bin
+pip3  install selenium
+pip3  install requests
+
+简单的爬虫环境!
