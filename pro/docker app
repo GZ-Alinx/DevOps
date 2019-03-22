@@ -1,0 +1,12 @@
+
+docker gitlab
+
+docker search gitlab
+docker pull gitlab
+docker run -itd --publish 8443:443 --publish 88:80 --restart always gitlab/gitlab-ce
+
+
+docker jenkins
+
+
+

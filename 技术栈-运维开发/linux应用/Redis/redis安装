@@ -12,6 +12,21 @@ $ make
 yum install -y gcc*
 
 
+
+
+[root@localhost redis-4.0.1]# make
+cd src && make all
+make[1]: 进入目录“/usr/local/redis-4.0.1/src”
+    CC adlist.o
+In file included from adlist.c:34:0:
+zmalloc.h:50:31: 致命错误：jemalloc/jemalloc.h：没有那个文件或目录
+ #include <jemalloc/jemalloc.h>
+
+
+使用命令make MALLOC=libc重新编译
+
+
+
 二进制文件是编译完成后在src目录下，通过下面的命令启动Redis服务：
 $ src/redis-server
 

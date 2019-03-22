@@ -1,0 +1,26 @@
+用户管理
+mysql>use mysql;
+查看
+mysql> select host,user,password from user ;
+
+创建用户
+mysql> create user  用户   IDENTIFIED by '密码';   //identified by 会将纯文本密码加密作为散列值存储
+
+修改
+mysql>rename   user  用户  to   新用户名；//mysql 5之后可以使用，之前需要使用update 更新user表
+
+删除
+mysql>drop user 用户名;   //mysql5之前删除用户时必须先使用revoke 删除用户权限，然后删除用户，mysql5之后drop 命令可以删除用户的同时删除用户的相关权限
+
+更改密码
+mysql> set password for 用户 =password('xxxxxx');
+mysql> update  mysql.user  set  password=password('xxxx')  where user='otheruser'
+
+查看用户权限
+mysql> show grants for 用户;
+
+给所有访问权限：
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '123456'
+GRANT ALL PRIVILEGES ON *.* TO root@"%" IDENTIFIED BY "root";
+flush privileges;

@@ -31,10 +31,12 @@ http://ip或域名
 
 
 
-
+配置文件  vim  /etc/gitlab/gitlab.rb
 
 3. 使用主机的nginx
 一般情况下, 我们希望通过自己nginx统一管理站点, 而不需要使用gitlab附带的, 这个时候我们要停用gitlab的nginx, 并配置我们自己的反向代理, 配置文件大致是这样
+
+
 server {
 listen 80;
 server_name gitlab.yinnote.com;
