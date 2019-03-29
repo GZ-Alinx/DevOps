@@ -88,3 +88,7 @@ root /opt/gitlab/embedded/service/gitlab-rails/public;
 index index.html;
 }
 这个时候, 我们的静态资源文件通过nginx去访问, rails仍然可以保留自己的安全策略
+
+
+
+https://www.jianshu.com/p/a1ab1d26e337

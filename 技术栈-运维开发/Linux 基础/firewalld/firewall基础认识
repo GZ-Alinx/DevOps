@@ -1,0 +1,149 @@
+
+
+# firewall概述
+
+动态防火墙后台程序 firewalld 提供了一个 动态管理的防火墙,用以支持网络 “ zones” ,以分配对一个网络及其相关链接和界面一定程度的信任。它具备对 IP v4 和 IP v6 防火墙
+
+设置的支持。它支持以太网桥,并有分离运行时间和永久性配置选择。它还具备一个通向服务或者应用程序以直接增加防火墙规则的接口。
+
+系统提供了图像化的配置工具firewall-config(rhel7)、system-config-firewall(rhel6), 提供命令行客户
+端firewall-cmd, 用于配置 firewalld永久性或非永久性运行时间的改变:它依次用 iptables
+工具与执行数据包筛选的内核中的 Netfilter通信。
+
+firewalld和iptables service 之间最本质的不同是:
+• iptables service 在 /etc/sysconfig/iptables 中储存配置,而 firewalld将配置储存在
+/usr/lib/firewalld/ 和 /etc/firewalld/ 中的各种XML文件里.
+
+• 使用 iptables service每一个单独更改意味着清除所有旧有的规则和从
+/etc/sysconfig/iptables里读取所有新的规则,然而使用 firewalld却不会再创建任何新的规
+则;仅仅运行规则中的不同之处。因此,firewalld可以在运行时间内,改变设置而不丢失现
+行连接。
+
+
+
+基于用户对网络中设备和交通所给与的信任程度,防火墙可以用来将网络分割成不同的区域。
+
+
+
+
+Direct Rules
+通过 firewall-cmd 工具,可以使用 --direct 选项在运行时间里增加或者移除链。
+如果不熟悉 iptables ,使用直接接口非常危险,因为您可能无意间导致防火墙被入侵。
+直接端口模式适用于服务或者程序,以便在运行时间内增加特定的防火墙规则。
+直接端口模式添加的规则优先应用。
+
+添加规则:
+# firewall-cmd --direct --remove-rule ipv4 filter IN_public_allow 0 -p tcp --dport 80 -j ACCEPT
+删除规则:
+# firewall-cmd --direct --remove-rule ipv4 filter IN_public_allow 10 -p tcp --dport 80 -j ACCEPT
+列出规则:
+# firewall-cmd --direct --get-all-rules
+
+
+
+
+Rich Rules
+通过“ rich language”语法,可以用比直接接口方式更易理解的方法建立复杂防火墙规
+则。此外,还能永久保留设置。这种语言使用关键词值,是 iptables 工具的抽象表示。
+这种语言可以用来配置分区,也仍然支持现行的配置方式。
+语法结构:
+
+
+
+source
+指定源地址,可以是一个ipv4/ipv6的地址或网段,不支持使用主机名。
+
+destination
+指定目的地址,用法和source相同。
+
+service
+服务名称是 f irewalld 提供的其中一种服务。要获得被支持的服务的列表,输入以下命令:
+firewall-cmd --get-services 。命令为以下形式:
+service name=service_name
+
+port
+端口既可以是一个独立端口数字,又或者端口范围,例如,5060-5062。协议可以指定为 tcp 或
+udp 。命令为以下形式:
+port port=number_or_range protocol=protocol
+
+protocol
+协议值可以是一个协议 ID 数字,或者一个协议名。预知可用协议,请查阅 /etc/protocols。
+命令为以下形式:
+protocol value=protocol_name_or_ID
+
+icmp-block
+用这个命令阻绝一个或多个ICMP类型。IC MP 类型是 firewalld支持的ICMP类型之一。
+要获得被支持的ICMP类型列表,输入以下命令: firewall-cmd --get-icmptypes
+icmp-block在内部使用 reject 动作,因此不允许指定动作。命令为以下形式:
+icmp-block name=icmptype_name
+
+masquerade
+打开规则里的 IP 伪装。用源地址而不是目的地址来把伪装限制在这个区域内。不允许
+指定动作。
+
+forward-port
+从一个带有指定为 tcp 或 udp 协议的本地端口转发数据包到另一个本地端口,或另一台
+机器,或另一台机器上的另一个端口。port 和 to-port 可以是一个单独的端口数字,或一个
+端口范围。而目的地址是一个简单的 IP 地址。不允许指定动作,命令使用内部动作
+accept 。命令为以下形式:
+forward-port port=number_or_range protocol=protocol /
+to-port=number_or_range to-addr=address
+
+log
+注册含有内核记录的新连接请求到规则中,比如系统记录。你可以定义一个前缀文本,
+记录等级可以是 emerg、alert、crit、error、warning、notice、info 或者 debug 中的
+一个。命令形式:
+log [prefix=prefix text] [level=log level] limit value=rate/duration
+(等级用正的自然数 [1, ..] 表达,持续时间的单位为 s 、 m 、 h 、 d 。 s 表示秒, m 表示
+分钟, h表示小时, d 表示天。最大限定值是 1/d ,意为每天最多有一条日志进入。)
+
+audit
+审核为发送到 aud i td 服务的审核记录来注册提供了另一种方法。审核类型可以是
+ACCEPT、REJECT或DROP中的一种,但不能在 audit命令后指定,因为审核类型将会从规
+则动作中自动收集。审核不包含自身参数,但可以选择性地增加限制。审核的使用是可选
+择的。选择 accept 所有新的连接请求都会被允许。选择 reject ,连接将被拒绝,连接来源
+将接到一个拒绝信息。拒绝的类型可以被设定为使用另一种值。选择 drop , 所有数据
+包会被丢弃,并且不会向来源地发送任何信息。
+
+
+多语言命令的格式:
+在这个部分,所有命令都必须以 root 用户身份运行。增加一项规则的命令格式如下:
+firewall-cmd [--zone=zone] --add -rich-rule='rule' [--timeout=seconds]
+这样将为 zone 分区增加一项多语言规则 rule 。这个选项可以多次指定。如果分区被省
+略,将使用默认分区。如果出现超时,规则将在指定的秒数内被激活,并在之后被自动移除
+移除一项规则:
+firewall-cmd [--zone=zone] --remove-rich-rule='rule'
+检查一项规则是否存在:
+firewall-cmd [--zone=zone] --query-rich-rule='rule'
+这将复查是否已经为区域增加一个多语言规则 。如果可用,屏幕会显示 yes,退出状态为0
+; 否则,屏幕显示 no ,退出状态为 1。如果省略 zone,默认区域将被使用。
+列出所有多语言规则:
+firewall-cmd --list-rich-rules
+
+
+添加规则:
+# firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.122.0" accept'
+允许192.168.122.0/24主机所有连接。
+# firewall-cmd --add-rich-rule='rule service name=ftp limit value=2/m accept'
+每分钟允许2个新连接访问ftp服务。
+# firewall-cmd --add-rich-rule='rule service name=ftp log limit value="1/m" audit accept'
+同意新的 IP v4 和 IP v6 连接 FT P ,并使用审核每分钟登录一次。
+# firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.122.0/24"
+service name=ssh log prefix="ssh" level="notice" limit value="3/m" accept'
+允许来自192.168.122.0/24地址的新 IPv4连接连接TFTP服务,并且每分钟记录一次。
+# firewall-cmd --permanent --add-rich-rule='rule protocol value=icmp drop'
+丢弃所有icmp包
+
+# firewall-cmd --add-rich-rule='rule family=ipv4 source address=192.168.122.0/24 reject' --
+timeout=10
+当使用source和destination指定地址时,必须有family参数指定ipv4或ipv6。如果指定超时,
+规则将在指定的秒数内被激活,并在之后被自动移除。
+# firewall-cmd --add-rich-rule='rule family=ipv6 source address="2001:db8::/64" service
+name="dns" audit limit value="1/h" reject' --timeout=300
+拒绝所有来自2001:db8::/64子网的主机访问dns服务,并且每小时只审核记录1次日志。
+# firewall-cmd --permanent --add-rich-rule='rule family=ipv4 source
+address=192.168.122.0/24 service name=ftp accept'
+允许192.168.122.0/24网段中的主机访问ftp服务
+# firewall-cmd --add-rich-rule='rule family="ipv6" source address="1:2:3:4:6::" forward-port
+to-addr="1::2:3:4:7" to-port="4012" protocol="tcp" port="4011"'
+转发来自ipv6地址1:2:3:4:6::TCP端口4011,到1:2:3:4:7的TCP端口4012

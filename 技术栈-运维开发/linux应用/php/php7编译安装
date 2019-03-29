@@ -52,6 +52,9 @@ cp /usr/local/php/etc/php-fpm.conf.default /usr/local/php/php-fpm.conf
 
 cd /usr/local/php/etc/php-fpm.d/ && cp www.conf.default www.conf
 
+# cd  /usr/local/php/etc/
+# cp php-fpm.conf.default php-fpm.conf
+
 vim www.conf
 修改用户与组 = nginx
 
@@ -59,3 +62,4 @@ vim www.conf
 启动脚本
 cp /usr/local/php-7.1.27/sapi/fpm/init.d.php-fpm /etc/init.d/php-fpm
 /etc/init.d/php-fpm start
+
