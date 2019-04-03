@@ -7,9 +7,9 @@ mysql> grant all privileges on zabbix.* to zabbix@localhost identified by 'passw
 
 
 2.编译安装zabbix
-wget https://sourceforge.net/projects/zabbix/files/latest/download/zabbix-3.4.13.tar.gz //下载zabbix源码包
-                tar zxf zabbix-3.4.12.tar.gz -C /usr/local/src/   //解压包到指定目录
-cd /usr/local/src/zabbix-3.4.12/        //进入zabbix解压目录
+wget https://sourceforge.net/projects/zabbix/files/latest/download/zabbix-4.0.5.tar.gz //下载zabbix源码包
+                tar zxf zabbix-4.0.5.tar.gz -C /usr/local/src/   //解压包到指定目录
+cd /usr/local/zabbix-4.0.5.tar.gz/        //进入zabbix解压目录
 导入数据
 mysql -uzabbix -phcchcchcc zabbix < database/mysql/schema.sql
 mysql -uzabbix -phcchcchcc zabbix < database/mysql/images.sql
@@ -45,14 +45,14 @@ useradd -s /sbin/nologin  zabbix
 make install    //没有make 直接make install
 
 编译结束：
-make[2]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
-make[1]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
-make[1]: 进入目录“/usr/local/src/zabbix-3.4.12”
-make[2]: 进入目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 离开目录“/usr/local/zabbix-4.0.5/upgrades”
+make[1]: 离开目录“/usr/local/zabbix-4.0.5/upgrades”
+make[1]: 进入目录“/usr/local/zabbix-4.0.5”
+make[2]: 进入目录“/usr/local/zabbix-4.0.5”
 make[2]: 对“install-exec-am”无需做任何事。
 make[2]: 对“install-data-am”无需做任何事。
-make[2]: 离开目录“/usr/local/src/zabbix-3.4.12”
-make[1]: 离开目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 离开目录“/usr/local/zabbix-4.0.5”
+make[1]: 离开目录“/usr/local/zabbix-4.0.5”
 ls /usr/local/zabbix/
 bin  etc  lib  sbin  share
 
