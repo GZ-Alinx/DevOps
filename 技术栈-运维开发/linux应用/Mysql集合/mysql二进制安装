@@ -97,6 +97,10 @@ ubuntu的就
         进入：    /usr/local/mysql/bin/mysql    -S    /tmp/mysql3306.sock   -p
         关闭：    /usr/local/mysql/bin/mysqladmin    -S   /tmp/mysql3306.sock    shutdown
 
+开机启动：
+[root@localhost php]# echo  "/usr/local/mysql/bin/mysqld    --defaults-file=/home/mysql/mysql3306/my3306.cnf    &" >> /etc/rc.d/rc.local 
+
+
 mysql5.7 开启远程访问：
         update mysql.user set Host='%' where HOST='localhost' and User='root';
         flush privileges;
