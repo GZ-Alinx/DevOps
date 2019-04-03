@@ -32,3 +32,20 @@ vim /etc/docker/daemon.json
 
 systemctl daemon-reload
 systemctl restart docker
+
+
+docker 运行 gitlab-ce
+
+docker pull gitlab/gitlab-ce
+
+mkdir -p /opt/gitlab/{config,logs,data}
+
+docker run --detach \
+    --hostname gitlab.com \
+    --publish 8443:443 --publish 8081:80 --publish 2222:22 \
+    --name gitlab \
+    --restart always \
+    --volume /opt/gitlab/config:/etc/gitlab \
+    --volume /opt/gitlab/logs:/var/log/gitlab \
+    --volume /opt/gitlab/data:/var/opt/gitlab \
+    gitlab/gitlab-ce:latest
