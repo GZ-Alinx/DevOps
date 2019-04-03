@@ -112,7 +112,7 @@ ln -s /usr/local/mysql/lib/libmysqlclient.so.20 /usr/lib64/
    数据库配置，配置文件错误导致可能性最大。
 
 #页面文件复制到nginx目录中
-cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx
+cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx/zabbix/
 
 进入页面配置
 http://192.168.99.209/setup.php
