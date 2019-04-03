@@ -61,6 +61,7 @@ bin  etc  lib  sbin  share
 配置zabbix server
 配置文件路径：
 vim /usr/local/zabbix/etc/zabbix_server.conf
+grep -v "^#" /usr/local/zabbix/etc/zabbix_server.conf | grep -v "^$"
 Server=127.0.0.1   #默认监控服务器自己，这三行不用改
 ServerActive=127.0.0.1
 Hostname=Zabbix server
