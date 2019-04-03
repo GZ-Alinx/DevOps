@@ -61,10 +61,13 @@ bin  etc  lib  sbin  share
 配置zabbix server
 配置文件路径：
 vim /usr/local/zabbix/etc/zabbix_server.conf
-grep -v "^#" /usr/local/zabbix/etc/zabbix_server.conf | grep -v "^$"
-Server=127.0.0.1   #默认监控服务器自己，这三行不用改
-ServerActive=127.0.0.1
-Hostname=Zabbix server
+[root@localhost zabbix-4.0.5]# grep -v "^#" /usr/local/zabbix/etc/zabbix_server.conf | grep -v "^$"
+LogFile=/tmp/zabbix_server.log
+DBName=zabbix
+DBUser=zabbix
+Timeout=4
+LogSlowQueries=3000
+
 
 UnsafeUserParameters=1   #允许所有的字符是在用户定义的参数，参数传递，也就是支持自定义脚本
 
