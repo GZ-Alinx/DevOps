@@ -53,8 +53,20 @@ redis主从复制搭建：
     dbfilename dump-6380.rdb     db持久化文件
     dir ./                                工作目录
     replicaof 主服务器IP 主服务器port        从连接主配置参数
+    slaveof 127.0.0.1 6379     主服务器地址
+    masterauth  服务器密码
     其他版本写法： slaveof 127.0.0.1
 
+
+    ./src/redis-server redis-6379.conf
+    ./src/redis-server redis-6380.conf
+
+    ./src/redis-cli -p 6380 -a 服务器密码    登陆从
+    ./src/redis-cli -p 6380 -a 服务器密码    登陆主
+
+    info  查看连接状态
+
+    
 
 
 
