@@ -64,7 +64,7 @@ PONG
 
 3.哨兵配置
 
-官方指导
+官方指导: https://redis.io/topics/sentinel
 
 $ vim sentinel.conf
     port 26379                      # 端口
