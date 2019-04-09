@@ -1,0 +1,10 @@
+
+virtualenv环境安装：
+
+pip3 install  virtualenv       #安装env环境
+virtualenv CMDB               #创建项目
+source /root/CMDB/bin/active  #激活进入环境
+deactivate                    #退出环境
+
+
+

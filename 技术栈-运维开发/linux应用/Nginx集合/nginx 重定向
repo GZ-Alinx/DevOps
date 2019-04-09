@@ -1,0 +1,7 @@
+ server {
+
+        server_name ms.zx315.com;
+
+        rewrite ^/(.*)$ https://www.baidu.com/$1 permanent;
+
+        }
