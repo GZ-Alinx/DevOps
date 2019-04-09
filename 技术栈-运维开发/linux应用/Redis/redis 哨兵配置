@@ -111,4 +111,4 @@ sentinel auth-pass 别名 密码               # 配置密码， 如果Sentinel�
 sentinel notification-script              # 在故障转移期间，当一些警告级别的Sentinel事件发生（指重要事件，如主观下线，客观下线等）时，会触发对应路径的脚本，想脚本发送相应的事件参数。
                                             # 例如：sentinel notification-script mymaster /var/redis/notify.sh
 sentinel client-reconfig-script           # 在故障转移结束后，触发应对路径的脚本，并向脚本发送故障转移结果的参数。
-                                            #例如：sentinel client-reconfig-script mymaster /var/redis/reconfig.sh。
+                                            #例如：sentinel client-reconfig-script mymaster /var/redis/reconfig.sh
