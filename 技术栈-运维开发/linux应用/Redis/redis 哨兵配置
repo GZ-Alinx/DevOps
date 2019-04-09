@@ -1,0 +1,114 @@
+
+
+一. Redis sentinel 哨兵配置
+
+哨兵配置基于redis的主从复制或者多从
+
+1、安装Redis
+
+# wget http://download.redis.io/releases/redis-5.0.3.tar.gz
+# tar -zxf redis-5.0.3.tar.gz -C /usr/local/
+# cd /usr/local/ && ln -sv  redis-5.0.3 redis
+# cd redis/ && make
+
+
+
+2.配置 redis 主从 （单机模式）
+# mkdir conf
+# cp -p ./src/redis-server ./src/redis-server redis.conf conf/  && cd conf
+# cp redis.conf redis-6379.conf
+# cp redis.conf redis-6380.conf
+
+
+
+$ vim redis-6379.conf
+
+    主redis配置：
+
+    port 6379                       # 端口
+    bind 0.0.0.0                    # 访问范围、改为从服务器ip
+    daemonize yes                   # 守护进程运行
+    logfile "6379.log"              # 日志文件
+    pidfile /var/run/redis_6379.pid # PID文件
+    logfile "6379.log"              # 日志文件
+    dbfilename dump-6379.rdb        # db持久化文件  都是用了一个工作目录的原因
+    dir ./                          # 工作目录
+    masterauth <master-password>    # 密码配置
+
+启动验证
+$ redis-server redis-6379.conf
+$ redis-cli -h 127.0.0.1 -p 6379 -a 密码 ping
+PONG
+
+$ vim redis-6380.conf
+
+    从redis配置：
+
+    bind 0.0.0.0             # 访问范围、改为从服务器ip
+    port 6380                       # 端口范围
+    daemonize yes                   # 守护进程运行
+    logfile "6380.log"              # 日志文件
+    pidfile /var/run/redis_6380.pid # PID文件
+    dbfilename dump-6380.rdb        # db持久化文件
+    dir ./                          # 工作目录
+    replicaof 主服务器IP 主服务器port # 从连接主配置参数 5.0 配置
+    slaveof <masterip> <masterprot> # 同步主节点       其他版本配置
+    masterauth <master-password>    # 主节点密码
+    slave-read-only yes             # 是否只读
+
+启动验证
+$ redis-server redis-6380.conf
+$ redis-cli -h 127.0.0.1 -p 6380 -a 密码 ping
+PONG
+
+
+3.哨兵配置
+
+官方指导
+
+$ vim sentinel.conf
+    port 26379                      # 端口
+    logfile "26379.log"             # 日志
+    daemonize yes                   # 后台运行
+    bind 0.0.0.0                    # 访问范围
+    dir "/tmp"                      # 工作路径
+    sentinel deny-scripts-reconfig yes
+    sentinel monitor mymaster 218.172.11.24 6379 1
+    # 当前Sentinel节点监控 218.172.11.24:6379 这个主节点
+    # 1代表判断主节点失败至少需要2个Sentinel节点节点同意
+    # mymaster是主节点的别名
+    sentinel auth-pass mymaster 6Iih0gshfeia3qusakohz   # 填入密码 和主一样即可
+    sentinel config-epoch mymaster 0
+    sentinel leader-epoch mymaster 0
+    sentinel known-slave mymaster 218.17.119.242 6380
+    sentinel current-epoch 0
+    sentinel down-after-milliseconds mymaster 30000
+    # 每个Sentinel节点都要定期PING命令来判断Redis数据节点和其余Sentinel节点是否可达，如果超过30000毫秒且没有回复，则判定不可达
+    sentinel parallel-syncs mymaster 1
+    # 当Sentinel节点集合对主节点故障判定达成一致时，Sentinel领导者节点会做故障转移操作，选出新的主节点，原来的从节点会向新的主节点发起复制操作，限制每次向新的主节点发起复制操作的从节点个数为1
+    sentinel failover-timeout mymaster 180000
+    # 故障转移超时时间为180000毫秒
+
+启动验证
+$ ./src/redis-sentinel sentinel.conf
+$ redis-cli -h 127.0.0.1 -p 26379 -a 密码 ping
+PONG
+$ ./src/redis-cli -p 26379
+127.0.0.1:26379>sentinel masters   # 查看master信息
+127.0.0.1:26379>sentinel slaves mymaster  #查看监控的节点
+
+
+
+
+
+4. Sentinel配置说明
+sentinel monitor mymaster 127.0.0.1 6379 1   # 当前Sentinel节点监控 127.0.0.1:6379 这个主节点  最好不要使用127.0.0.1，1 代表判断主节点失败至少需要2个Sentinel节点节点同意，mymaster是主节点的别名；
+sentinel down-after-milliseconds mymaster 30000 # 每个Sentinel节点都要定期PING命令来判断Redis数据节点和其余Sentinel节点是否可达，如果超过30000毫秒且没有回复，则判定不可达；
+sentinel parallel-syncs mymaster 1        # 当Sentinel节点集合对主节点故障判定达成一致时，Sentinel领导者节点会做故障转移操作，选出新的主节点，原来的从节点会向新的主节点发起复制操作，限制每次向新的主节点发起复制操作的从节点个数为1。
+sentinel failover-timeout mymaster 180000 # 故障转移超时时间为180000
+sentinel auth-pass 别名 密码               # 配置密码， 如果Sentinel监控的主节点配置了密码，可以通过sentinel auth-pass配置通过添加主节点的密码，防止Sentinel节点无法对主节点进行监控。
+                                            # 例如：sentinel auth-pass mymaster MySUPER--secret-0123passw0rd
+sentinel notification-script              # 在故障转移期间，当一些警告级别的Sentinel事件发生（指重要事件，如主观下线，客观下线等）时，会触发对应路径的脚本，想脚本发送相应的事件参数。
+                                            # 例如：sentinel notification-script mymaster /var/redis/notify.sh
+sentinel client-reconfig-script           # 在故障转移结束后，触发应对路径的脚本，并向脚本发送故障转移结果的参数。
+                                            #例如：sentinel client-reconfig-script mymaster /var/redis/reconfig.sh。
