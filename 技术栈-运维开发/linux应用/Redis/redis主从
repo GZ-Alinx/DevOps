@@ -24,50 +24,37 @@ redis主从复制搭建：
 
 # vim redis-6379.conf
 
-    主redis配置：
+主redis配置：
 
-    port 6379                       # 端口
-    bind 0.0.0.0                    # 访问范围、改为从服务器ip
-    daemonize yes                   # 守护进程运行
-    logfile "6379.log"              # 日志文件
-    pidfile /var/run/redis_6379.pid # PID文件
-    logfile "6379.log"              # 日志文件
-    #save 900 1                     # 注释
+    bind 47.106.113.221                    访问范围、改为从服务器ip
+    daemonize yes                             守护进程运行
+    logfile "6379.log"                         日志文件
+    pidfile /var/run/redis_6379.pid    PID文件
+    #save 900 1                    注释
     #save 300 10
     #save 60 10000
-    dbfilename dump-6379.rdb        # db持久化文件  都是用了一个工作目录的原因
-    dir ./                          # 工作目录
-    masterauth <master-password>    # 密码配置
+    dbfilename dump-6379.rdb     db持久化文件
+    dir ./                                工作目录
+    masterauth <master-password>  密码
 
 
 
 # vim redis-6380.conf
-
     从redis配置：
 
-    bind 47.106.113.221             # 访问范围、改为从服务器ip
-    port 6380                       # 端口范围
-    daemonize yes                   # 守护进程运行
-    logfile "6380.log"              # 日志文件
-    pidfile /var/run/redis_6380.pid # PID文件
-    #save 900 1                     # 注释
+    bind 47.106.113.221                    访问范围、改为从服务器ip
+    port 6380                                     端口范围
+    daemonize yes                             守护进程运行
+    logfile "6380.log"                         日志文件
+    pidfile /var/run/redis_6380.pid    PID文件
+    #save 900 1                    注释
     #save 300 10
     #save 60 10000
-    dbfilename dump-6380.rdb        # db持久化文件
-    dir ./                          # 工作目录
-    replicaof 主服务器IP 主服务器port # 从连接主配置参数 5.0 配置
-    slaveof <masterip> <masterprot> # 同步主节点
-    masterauth <master-password>    # 主节点密码
-    slave-read-only yes             # 是否只读
+    dbfilename dump-6380.rdb     db持久化文件
+    dir ./                                工作目录
+    replicaof 主服务器IP 主服务器port        从连接主配置参数
+    其他版本写法： slaveof 127.0.0.1
 
-
-
-master 启动
-$redis-cli -p 6379 -a password info replication  分片查看信息
-默认就是master
-
-slave 启动
-$redis-cli -p 6380 -a password info replication
 
 
 

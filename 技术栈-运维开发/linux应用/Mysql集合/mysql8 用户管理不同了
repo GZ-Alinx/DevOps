@@ -61,3 +61,13 @@ select host, user, authentication_string, plugin from user;
     FLUSH PRIVILEGES;
     OK，设置完成，再次使用 Navicat 连接数据库
 
+
+mysql> ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';  
+Query OK, 0 rows affected (0.10 sec)  
+  
+--重新修改密码后可连接成功  
+mysql> alter  user 'root'@'%' identified by '123456';  
+Query OK, 0 rows affected (0.23 sec)  
+  
+mysql> flush privileges;  
+Query OK, 0 rows affected (0.04 sec)  

@@ -7,9 +7,9 @@ mysql> grant all privileges on zabbix.* to zabbix@localhost identified by 'passw
 
 
 2.编译安装zabbix
-wget https://sourceforge.net/projects/zabbix/files/latest/download/zabbix-3.4.13.tar.gz //下载zabbix源码包
-                tar zxf zabbix-3.4.12.tar.gz -C /usr/local/src/   //解压包到指定目录
-cd /usr/local/src/zabbix-3.4.12/        //进入zabbix解压目录
+wget https://sourceforge.net/projects/zabbix/files/latest/download/zabbix-4.0.5.tar.gz //下载zabbix源码包
+                tar zxf zabbix-4.0.5.tar.gz -C /usr/local/src/   //解压包到指定目录
+cd /usr/local/zabbix-4.0.5.tar.gz/        //进入zabbix解压目录
 导入数据
 mysql -uzabbix -phcchcchcc zabbix < database/mysql/schema.sql
 mysql -uzabbix -phcchcchcc zabbix < database/mysql/images.sql
@@ -45,14 +45,14 @@ useradd -s /sbin/nologin  zabbix
 make install    //没有make 直接make install
 
 编译结束：
-make[2]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
-make[1]: 离开目录“/usr/local/src/zabbix-3.4.12/upgrades”
-make[1]: 进入目录“/usr/local/src/zabbix-3.4.12”
-make[2]: 进入目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 离开目录“/usr/local/zabbix-4.0.5/upgrades”
+make[1]: 离开目录“/usr/local/zabbix-4.0.5/upgrades”
+make[1]: 进入目录“/usr/local/zabbix-4.0.5”
+make[2]: 进入目录“/usr/local/zabbix-4.0.5”
 make[2]: 对“install-exec-am”无需做任何事。
 make[2]: 对“install-data-am”无需做任何事。
-make[2]: 离开目录“/usr/local/src/zabbix-3.4.12”
-make[1]: 离开目录“/usr/local/src/zabbix-3.4.12”
+make[2]: 离开目录“/usr/local/zabbix-4.0.5”
+make[1]: 离开目录“/usr/local/zabbix-4.0.5”
 ls /usr/local/zabbix/
 bin  etc  lib  sbin  share
 
@@ -61,9 +61,13 @@ bin  etc  lib  sbin  share
 配置zabbix server
 配置文件路径：
 vim /usr/local/zabbix/etc/zabbix_server.conf
-Server=127.0.0.1   #默认监控服务器自己，这三行不用改
-ServerActive=127.0.0.1
-Hostname=Zabbix server
+[root@localhost zabbix-4.0.5]# grep -v "^#" /usr/local/zabbix/etc/zabbix_server.conf | grep -v "^$"
+LogFile=/tmp/zabbix_server.log
+DBName=zabbix
+DBUser=zabbix
+Timeout=4
+LogSlowQueries=3000
+
 
 UnsafeUserParameters=1   #允许所有的字符是在用户定义的参数，参数传递，也就是支持自定义脚本
 
@@ -78,7 +82,7 @@ zabbix agent 类似 配置服务器为zabbix主控端ip地址
 或者通过启动脚本启动 zabbix
 Zabbix  默认有部分启动脚本，如果你自己也可以通过脚本的方式来实现，可以使用他的模板来实现 脚本在源码目录的 misc/init.d/下面(使用 fedora 下面的 core 即可，也可以使用 fedroa core5 的脚本均可)
 
-cd /usr/local/src/zabbix-3.4.12/misc/init.d/
+cd /usr/local/zabbix-4.0.5/misc/init.d/
 cp fedora/core/zabbix_server /etc/init.d/
 cp fedora/core/zabbix_agentd /etc/init.d/
 
@@ -88,7 +92,12 @@ BASEDIR=/usr/local/zabbix  #找到此行，并修改
 BASEDIR=/usr/local/zabbix  #找到此行，并修改
 
 启动：/etc/init.d/zabbix_server start   /etc/init.d/zabbix_agentd start
-问题：启动后没有zabbix-server端的监听
+  注意：  数据库需要制定sock文件的，指定即可；
+  zabbix_server可以正常启动，mysql也可以正常启动，但是netstat 10051就是不出来服务，然后网上一堆各种方法，有权限不对的，最后锁定了问题，zabbix_server.conf没有指定mysql.sock的路径，所以修改这个参数即可：
+                 vim /usr/local/zabbix/etc/zabbix_server.conf
+DBSocket=/tmp/mysql.sock 取消注释
+
+其他问题：启动后没有zabbix-server端的监听
 库文件移动过去
 ls /usr/local/mysql/lib/
 ln -s /usr/local/mysql/lib/libmysqlclient.so.20 /usr/lib64/
@@ -97,16 +106,13 @@ ln -s /usr/local/mysql/lib/libmysqlclient.so.20 /usr/lib64/
 
 检查配置文件的： 配置监听端口、数据库信息
 
-启动无端口问题！！！
-zabbix_server可以正常启动，mysql也可以正常启动，但是netstat 10051就是不出来服务，然后网上一堆各种方法，有权限不对的，最后锁定了问题，zabbix_server.conf没有指定mysql.sock的路径，所以修改这个参数即可：
-                 vim /usr/local/zabbix/etc/zabbix_server.conf
-DBSocket=/tmp/mysql.sock 取消注释
+
 
 端口没有被监听：
    数据库配置，配置文件错误导致可能性最大。
 
 #页面文件复制到nginx目录中
-cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx
+cp -r zabbix-4.0.5/frontends/php/* /usr/local/nginx/zabbix/
 
 进入页面配置
 http://192.168.99.209/setup.php
@@ -135,7 +141,7 @@ always_populate_raw_post_data = -1    #此行取消注释即可
 出去刷新页面按照说明 下载文件并上传即可
 
 
-
+http://localhost
 登录 Web默认用户名密码
 用户名：Admin
 密码：zabbix
@@ -144,16 +150,11 @@ always_populate_raw_post_data = -1    #此行取消注释即可
 
 
 
+# 界面字体乱码了!!!
 可以修改成为中文
 
 
-
-
-
 报表有乱码可以改一下
-
-
-
 
 
 DejaVuSans.ttf 替换此文件即可完成完成
@@ -167,3 +168,4 @@ widnows7系统本地字体：
 进入数据库：
     use zabbix；
     update  users set passwd=md5("zabbix") where userid='1';
+
