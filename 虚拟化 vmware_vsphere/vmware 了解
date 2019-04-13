@@ -1,0 +1,56 @@
+
+
+虚拟化vmware vsphere 产品
+
+
+服务器虚拟化： vmware vsphere
+网络虚拟化： vmware nsx
+存储虚拟化： vmware vsan
+
+
+
+虚拟化产品线分类：
+	1、企业级
+		a、数据中心（服务器虚拟化）
+			1) Vsphere 6.7
+			2）ESXI
+			3）Hpervor
+			4）vCenter
+		b、网络连接与安全（NSX）
+			1) NSX软件
+			2）辅助类openstack
+		c、存储于可用性（VSAN）
+			1) Vphsere
+			2) 维护类产品
+		d、云计算管理平台
+			1）vCloud
+			2）管理类工具
+		e、物联网
+			1）ioTCenter
+		f、桌面虚拟化（VDC）
+			1）Hirzon7
+	2、个人级
+		a、 workstation
+
+虚拟化产品授权：
+	1、按照CPU个数授权；
+	2、vCenter 授权；
+    3、官方试用60天；
+
+vSphere6.7 特性
+	简化管理
+	增强安全
+	打造最好的应用平台
+	无缝的混合云平台
+	堆内存消耗减少了3倍
+	DRS速度快了3倍
+
+
+
+
+核心组件：
+
+A、ESXI
+B、vCenter
+C、vsphere Client
+D、WEB client

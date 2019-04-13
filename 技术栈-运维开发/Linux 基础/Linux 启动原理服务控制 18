@@ -1,0 +1,486 @@
+RHEL7启动的原理和服务控制
+
+本节所讲内容：
+
+RHEL7的启动原理
+RHEL7的服务管理
+Linux的启动顺序
+
+1、BIOS；
+
+2、BIOS激活MBR；
+
+3、MBR中的引导程序(grub)加载到内存，生成一个微系统（如xfs）；
+
+4、grub 读取分区表，找到引导分区；
+
+5、grub读取自身的配置文件，找到内核文件
+
+6、加载内核文件；graphic
+
+GRUB2与grub的区别
+
+支持多种文件系统格式
+在grub中stage1  stage1-5 stage2已经被取消
+grub2使用模块机制，通过动态加载需要的模块来扩展功能，这样做的好处允许core镜像更小
+支持自动解压
+配置文件的不同最明显的。/boot/grub/grub.conf已经被/boot/grub2/grub.cfg
+/boot/grub2/grub.cfg.。即使你用ROOT用户编辑，。grub2-mkconfig
+
+
+第1章RHEL7的启动
+对于LINUX来说，大家要知道，系统通过sysinit来进行服务进程的管理；init进程（它的PID=1）是所有进程的父进程，所有的进程都由它控制
+它的启动过程和6基本是相似的
+
+BIOS自检-> MBRà启动GRUBà 加载内核à systemd的init进程àlogin
+
+RHEL7grub涉及到的三个文件：/boot/grub2/grub.cfg   /etc/default/grub   /etc/grub.d/*
+systemd是Linux系统中最新的初始化系统（init），它克服了sysvinit固有的一些缺点，提高系统的启动速度
+
+systemd是Linux内核启动的第一个进程,取代了sysvinit程序(即init)，负责协调引导过程的其余部分并配置为用户的环境
+
+systemd相比init的优点
+init启动方式：rc5.d---> s01http.server
+
+一是启动时间长。init进程是串行启动，只有前一个进程启动完，才会启动下一个进程。
+
+二是启动脚本复杂。init进程只是执行启动脚本，不管其他事情。脚本需要自己处理各种情况，这往往使得脚本变得很长
+
+首先要明白：systemd并不是一个命令，而是一组命令，它涉及到系统的方方面面
+
+systemd启动方式：
+
+启动速度快à各服务平行运行(SSD会加快)
+默认显示启动是内核和用户空间的消耗时间
+
+graphic
+
+查看详细的每个服务消耗的启动时间
+
+graphic
+
+查看严重消耗时间的服务树状表，按照启动消耗的时间进行排序，时间消耗越多，越排到前面
+
+graphic
+
+[root@xuegod72 ~]# systemd-analyze plot > plot.svg
+
+graphic
+
+提供系统服务的快照，可以恢复特定点的服务状态
+systemd支持按需启动服务，系统运行状态是动态变化。
+
+挂载及自动挂载的管理
+/etc/fstab    autofs
+
+服务自动实时更新,重新启动与暂停或停止.
+利用Linux控制组一起追踪相关进程的方式
+自动服务依赖关系管理，可以防止长时间超时，例如网络不可用时不启动网络服务
+syslog 在systemd中自带日志服务journald  rsyslog
+
+1.2 rhel7 使用systemd 进程初始化
+systemctl 命令用于管理各种类型的systemd对象，我们可以称它为单元(unit)；
+查看可用的单元类型列表：
+
+[root@xuegod72 ~]# systemctl -t help
+
+Available unit types:
+service
+socket
+busname
+target
+snapshot
+device
+mount
+automount
+swap
+timer
+path
+slice
+scope
+HEL7设置运行级别
+
+Systemd 可以管理所有系统资源。不同的资源统称为 Unit（单位）
+
+常见如下：系统服务（.service）、挂载点（.mount）、sockets（.sockets） 、系统设备（.device）、交换分区（.swap）、文件路径（.path）、启动目标（.target）、由 systemd 管理的计时器（.timer）
+
+在写的时候：
+
+如果不加扩展名，那么systemctl默认把扩展名当作.service
+
+挂载点会自动转化为相应的 .mount 单元。例如 /backup 等价于 backup.mount
+
+设备会自动转化为相应的 .device 单元，例如 /dev/sda2 等价于 dev-sda2.device
+
+Unit 一共分成12种。
+
+Service unit：系统服务
+Target unit：多个 Unit 构成的一个组
+Device Unit：硬件设备
+Mount Unit：文件系统的挂载点
+Automount Unit：自动挂载点
+Path Unit：文件或路径
+Scope Unit：不是由 Systemd 启动的外部进程
+Slice Unit：进程组
+Snapshot Unit：Systemd 快照，可以切回某个快照
+Socket Unit：进程间通信的 socket
+Swap Unit：swap 文件
+Timer Unit：定时器
+1.3 运行级别变化
+
+systemctl 使用目标取代了运行级别的概念
+6                  7
+
+init                                         systemd
+
+Traditional runlevel      New target name     Symbolically linked to...
+
+Runlevel 0           |    runlevel0.target  ->  poweroff.target
+
+Runlevel 1           |    runlevel1.target  ->  rescue.target
+
+Runlevel 2           |    runlevel2.target  ->  multi-user.target
+
+Runlevel 3           |    runlevel3.target  ->  multi-user.target
+
+Runlevel 4           |    runlevel4.target  ->  multi-user.target
+
+Runlevel 5           |    runlevel5.target  ->  graphical.target
+
+Runlevel 6           |    runlevel6.target  ->  reboot.target
+
+init0  à  systemctl  poweroff   关机
+
+init1  à  systemctl  isolate rescue.target  单用户
+
+init3  à  systemctl  isolate  multi-user.target   字符界面
+
+init5  à  systemctl  isolate graphical.target       图形化
+
+init6  à  systemctl  reboot  重启
+
+它和INIT进程的主要差别如下：
+
+（1）默认的 RunLevel（在/etc/inittab文件设置）现在被默认的 Target 取代，位置是/etc/systemd/system/default.target，通常符号链接到graphical.target（图形界面）或者multi-user.target（多用户命令行）
+
+（2）启动脚本的位置，以前是/etc/init.d目录，符号链接到不同的 RunLevel 目录 （比如/etc/rc3.d、/etc/rc5.d等），现在则存放在/lib/systemd/system和/etc/systemd/system目录。
+
+graphic
+
+（3）配置文件的位置，以前init进程的配置文件是/etc/inittab，各种服务的配置文件存放在/etc/sysconfig目录。现在的配置文件主要存放在/lib/systemd目录，在/etc/systemd目录里面的修改可以覆盖原始设置
+
+graphic
+
+systemd使用“target”而不是运行级。默认情况下,有两个主要target:
+
+multi-user.target:类似于运行级别3
+graphical.target:类似于运行级5
+
+
+查看当前默认目标运行级别
+
+[root@xuegod72 system]# systemctl get-default
+
+graphical.target
+
+设置一个默认目标运行级别
+
+[root@xuegod72 system]# systemctl set-default multi-user.target
+
+Removed symlink /etc/systemd/system/default.target.
+
+Created symlink from /etc/systemd/system/default.target to /usr/lib/systemd/system/multi-user.target.
+
+切换 Target 时，默认不关闭前一个 Target 启动的进程，
+
+systemctl isolate 命令改变这种行为
+
+切换运行级别
+
+[root@xuegod72 ~]# systemctl isolate multi-user.target   //init 3    init5
+
+1.4 RHEL7中grub引导配置
+主要配置文件
+[root@xuegod72 ~]# ls /boot/grub2/grub.cfg
+
+/boot/grub2/grub.cfg
+
+[root@xuegod72 ~]# ll /etc/default/grub
+
+-rw-r--r--. 1 root root 218 Jul 28 06:39 /etc/default/grub
+
+[root@server0 ~]# grub2-editenv list  --->查看当前运行的内核
+
+saved_entry=Red Hat Enterprise Linux Server, with Linux 3.10.0-123.el7.x86_64
+[root@server0 ~]# grep "menuentry " /boot/grub2/grub.cfg   ---->查看存在的内核
+
+menuentry 'Red Hat Enterprise Linux Server (3.10.0-123.1.2.el7.x86_64) 7.0 (Maipo)' --class red --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-123.el7.x86_64-advanced-9bf6b9f7-92ad-441b-848e-0257cbb883d1' {
+menuentry 'Red Hat Enterprise Linux Server, with Linux 3.10.0-123.el7.x86_64' --class red --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-3.10.0-123.el7.x86_64-advanced-9bf6b9f7-92ad-441b-848e-0257cbb883d1' {
+menuentry 'Red Hat Enterprise Linux Server, with Linux 0-rescue-946cb0e817ea4adb916183df8c4fc817' --class red --class gnu-linux --class gnu --class os --unrestricted $menuentry_id_option 'gnulinux-0-rescue-946cb0e817ea4adb916183df8c4fc817-advanced-9bf6b9f7-92ad-441b-848e-0257cbb883d1' {
+[root@server0 ~]# grub2-set-default "Red Hat Enterprise Linux Server, with Linux 3.10.0-123.el7.x86_64"
+
+--->这个设置后，虽然看到当前的启动内核是你要的了，但是还不行，还要做一下下面的操作
+
+[root@server0 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+
+GRUB2的配置文件
+
+1、名字不一样
+
+/boot/grub/grub.conf
+
+/boot/grub2/grub.cfg
+
+2、titile改名为menuentry
+
+cat /etc/default/grub  ---->改变我们引导菜单外观的主要配置文件
+
+GRUB_TIMEOUT=5  //决定GRUB2菜单会有多长时间的显示
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+GRUB_DEFAULT='Red Hat Enterprise Linux Server (0-rescue-660954cb49f0429393da2d12543c849f) 7.2 (Maipo)'
+GRUB_DEFAULT=0  // 0 1 2
+GRUB_DEFAULT=saved  // 以你上一次启动为准
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"   //停用图形化终端
+GRUB_CMDLINE_LINUX="rd.lvm.lv=rootvg/rootlv rd.lvm.lv=rootvg/swaplv rhgb quiet" //启动参数设置行，rhgb表示：redhat graphical boot 红帽图形引导；quiet：不在启动时显示内核信息
+GRUB_DISABLE_RECOVERY="true"
+/etc/grub.d/*
+
+1.5 RHEL7-- grub加密
+[root@xuegod72 ~]# vim /etc/grub.d/00_header
+……此处省略无数字
+
+cat <<EOF
+
+set superusers='awk'     ##这个用户是不在/etc/passwd里面存在的
+
+password awk 123456
+
+EOF
+
+[root@xuegod72 ~]# id awk
+
+id: awk: no such user
+
+修改完之后要更新一下GRUB的配置文件
+
+[root@xuegod72 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+
+Generating grub configuration file ...
+
+Found linux image: /boot/vmlinuz-4.8.5
+
+Found initrd image: /boot/initramfs-4.8.5.img
+
+Found linux image: /boot/vmlinuz-3.10.0-327.el7.x86_64
+
+Found initrd image: /boot/initramfs-3.10.0-327.el7.x86_64.img
+
+Found linux image: /boot/vmlinuz-0-rescue-3ce3d47923d9497c88b93eebd3e8b9ea
+
+Found initrd image: /boot/initramfs-0-rescue-3ce3d47923d9497c88b93eebd3e8b9ea.img
+
+done
+
+重启测试一下
+
+graphic
+
+输入用户名和密码
+
+graphic
+
+看到可以进入GRUB菜单
+
+graphic
+
+总结：用来加密的用户和系统中的用户没有任何关系
+
+1.5.1 基于pbkdfv2算法加密
+grub1.98版之后，可以设定加密的密码
+1）生成加密密码
+
+[root@xuegod72 ~]# grub2-mkpasswd-pbkdf2
+
+输入口令：
+
+Reenter password:
+
+PBKDF2 hash of your password is grub.pbkdf2.sha512.10000.44F3A79FEA0DD510705DA719A82321D33E999C3898A3E0A51F1AB063A729190B69DCC8B64D45FDDC5DA422ADA3A2D2740FE15E3D8B5C703E6E923AC02F15F220.BADED16195ED5067942C77C294393E7D9EDF6997365180E5C52492D9EE56F4F028CCF1A4E52EAADE9202894123ABD2153C5EBA8EC42406799E105A898E30BDDC
+
+2）将加密密码写入/etc/grub.d/00_header文件
+
+[root@xuegod72 ~]# vim /etc/grub.d/00_header
+
+cat <<EOF
+
+set superusers='zbj'
+
+password_pbkdf2 zbj grub.pbkdf2.sha512.10000.74B3A7E31154B7234D498D2215DBE2D518D376862272939C48FD3648EFC70D65619B17E4FA01B58D2BAA146AFEDC573FF76C81B8DAFBAB4A4F4D1E73522BE25D.8B626A2AC796DC3450AA7D56CE14A049F7502F8F3C16D8E304EFEE58AB55C597D5531BEDD0C8A55197674094462993D7D9EA32E8DED0A0B5BC67506DC74068CB
+
+EOF
+
+更新grub
+
+[root@xuegod72 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+
+重启验证：
+
+graphic
+
+输入用户名和密码
+
+graphic
+
+看到可以进入GRUB菜单，就证明你加密成功了
+
+graphic
+
+1.6 RHEL7服务启动配置
+systemd 的主要的命令行工具是systemctl
+大多数Linux系统的管理员应该已经熟练service 、chkconfig 的使用, systemd 可以同样的完成
+
+systemctl是systemd的主命令，用来管理系统
+
+init的功能我都能实现
+
+systemctl 的语法格式为：
+
+systemctl
+start
+[服务名称]
+启动
+systemctl
+restart
+[服务名称]
+重新启动
+systemctl
+stop
+[服务名称]
+停止
+systemctl
+status
+[服务名称]
+状态查询
+systemctl
+enable
+[服务名称]
+开机自启
+systemctl
+disable
+[服务名称]
+开机自动关闭
+systemctl
+is-enabled
+[服务名称]
+判断服务是否开机启动
+
+
+RHEL6中：
+
+service  语法格式
+
+service 服务名称 {start|stop|status|restart|reload}
+
+chkconfig 语法格式
+
+开机自启: chkconfig 服务名称 {on|off}  add mysql  --list
+
+RHEL7列出所有服务并且检查是否开机启动
+
+graphic
+
+状态说明：
+
+       enabled：已建立启动链接
+
+       disabled：没建立启动链接
+
+       static：该配置文件没有[Install]部分（无法执行），只能作为其他配置文件的依赖
+
+       masked：该配置文件被禁止建立启动链接
+
+检查一个资源的使用情况：
+
+[root@xuegod72 ~]# systemd-cgtop
+
+graphic
+
+Systemd和systemV服务启动方式对比
+
+1）init 在服务启动方面采用的是顺序启动，即每一个服务都有对应的启动顺序，优先级越高那么在服务启动时就会被优先启动
+
+2）systemd  在服务启动方面则是采用了并行启动的方式，而且按需启动，减少系统资源消耗，大大节省了系统启动的等待时间
+
+      强大的并发启动能力，大大提高我们系统启动速度
+
+         用CGROUP统计跟踪服务子进程，干净
+
+相比较systemd而言，systemv的优势
+
+1）原理简单，易于理解
+
+2）依靠shell脚本控制，编写服务脚本门槛比较低
+
+缺点：
+
+1）服务顺序启动，启动过程比较慢
+
+2）不能做到根据需要来启动服务，比如：通常希望在插入U盘的时候，再启动USB控制的服务，
+
+这样可以更好的节省系统资源
+
+       原本，systemv的服务启动慢，并不是一个问题，尤其是Linux系统以前主要是运行在服务器上，常年也难得重启一次，每次重启硬件检测都需要5分钟以上，相对来说系统启动已经很快了
+
+       但是随着移动互联网的到来，Systemv 服务启动慢的问题显得越来越突出，许多移动设备都是基于Linux内核，系统启动比较频繁，如果每次启动时都要等待服务顺序启动，显然难以接受，systemd就是为了解决这个问题诞生的
+
+
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+企业实战讲解：
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+8台服务器：17块每块1.2T   2块 500G   1块1.6T的SSD   内存128G  闪存卡
+
+需求：系统安装在两块500G硬盘上
+
+              剩下的17块盘要单独挂载，比如 /dev/sdb1 /mnt/disk1
+
+                                                                /dev/sdb2 /mnt/disk2
+
+                                                               .............................
+
+                                                               /dev/ncmxxx /mnt/ssd
+
+       实际情况是挂载：/dev/sdb1 /disk1
+
+操作如下：
+
+umount /disk1  做17次
+
+创建挂载点   mkdir /mnt/disk1   做17次
+
+挂载 mount /dev/sdb1 /mnt/disk1  做17次
+
+vim /etc/fstab  /dev/sdb1 /disk1 ext4 defaults 0 0  uuid
+
+
+
+for i in {1..17};do umount /disk$i;done
+
+mkdir /mnt/disk{1-17}
+
+for i in {1..17};do mkdir /dev/sd$i /mnt/disk$i;done   -----可以不做的
+
+vim /etc/fsatb  uuid   mount -a
+
+[root@panda ~]# blkid|awk -F"[ :]+" '{printf "%-30s %-10s\n" ,$1,$2}'
+
+/dev/sda1                      UUID="b680e7be-d07b-46ef-9245-59a9a61c8b42"
+/dev/sda2                      UUID="7Hd6N2-VO9n-fGSL-sIvE-HQLM-rCyH-ePEl6m"
+/dev/sr0                       UUID="2015-10-30-11-11-49-00"
+/dev/mapper/rootvg-rootlv      UUID="1261d4e9-ef28-44ba-8474-4c52953802f9"
+/dev/mapper/rootvg-swaplv      UUID="d6387a0a-fa13-4c3c-bd00-dcd5e9a1c08b"
+/dev/dm-0                      UUID="1261d4e9-ef28-44ba-8474-4c52953802f9"

@@ -1,0 +1,24 @@
+
+虚拟化部署：
+
+1. 下载VMware ESXi安装程序
+
+公版： 大多数的服务器可以使用从Vmware官网下载 Vmware ESXi安装文件， 扩展名ISO 大小300多Mb
+厂商定制版：HP/DELL/LEVOVE等
+个人定制版：公版为基础，添加网卡驱动程序形成定制版
+
+    注册登陆vmware官网中文站点：https://www.vmware.com/cn.html
+    使用U盘,导入镜像文件，然后调成USB启动即可；
+
+
+
+
+
+
+2. 定制ESXi安装程序
+
+
+3. PC机安装ESXi
+
+
+4. 服务器安装ESXi

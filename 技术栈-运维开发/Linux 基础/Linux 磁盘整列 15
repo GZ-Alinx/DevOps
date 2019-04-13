@@ -1,0 +1,761 @@
+
+1-17-RAID磁盘阵列的原理与搭建
+第1章 RAID概念
+       磁盘阵列（Redundant Arrays of Independent Disks，RAID），有“独立磁盘构成的具有冗余能力的阵列”之意。 磁盘阵列是由很多价格较便宜的磁盘，以硬件（RAID卡）或软件（MDADM）形式组合成一个容量巨大的磁盘组，利用个别磁盘提供数据所产生加成效果提升整个磁盘系统效能。利用这项技术，将数据切割成许多区段，分别存放在各个硬盘上。 磁盘阵列还能利用同位检查（Parity Check）的观念，在数组中任意一个硬盘故障时，仍可读出数据，在数据重构时，将数据经计算后重新置入新硬盘中
+       RAID里面有三大关键技术：镜像、校验、条带
+
+       我们说：RAID可以预防数据丢失，但是它并不能完全保证你的数据不会丢失，所以大家使用RADI的同时还是注意备份重要的数据
+
+       RAID的创建有两种方式：软RAID（通过操作系统软件来实现）和硬RAID（使用硬件阵列卡）；在企业中用的最多的是：raid1、raid10和raid5。不过随着云的高速发展，供应商一般可以把硬件问题解决掉。
+
+1.1 RAID几种常见的类型
+
+RAID类型
+最低磁盘个数
+空间利用率
+各自的优缺点
+级 别
+说 明
+RAID0
+数据条带化
+2+
+100%
+读写速度快，不容错
+RAID1
+数据镜像化
+2
+50%
+读写速度一般，容错
+RAID5
+带奇偶校验的条带集
+3+
+(n-1)/n
+读写速度快，容错，允许坏一块盘
+RAID6
+带奇偶校验的条带集，双校验
+4+
+(n-2)/n
+读写快，容错，允许坏两块盘
+RAID10
+RAID1的安全+RAID0的高速
+4
+50%
+读写速度快，容错
+RAID50
+RAID5的安全+RAID0的高速
+6
+(n-2)/n
+读写速度快，容错
+RAID60
+RAID5的安全+RAID0的高速
+8
+(n-4)/n
+读写速度快，容错
+
+
+1.2 RAID出现的原因
+RAID基本思想：把好几块便宜的硬盘通过一定组合方式把它组合起来，成为一个新的硬盘阵列组，从而使它能够达到高性能硬盘的要求
+RAID有三个关键技术：
+
+镜像：提供了数据的安全性；
+条带（块大小也可以说是条带的粒度），它的存在的就是为了提高I/O，提供了数据并发性
+数据的校验：提供了数据的安全
+graphic
+
+第2章 企业级RAID 0, 1,5,10的工作原理
+2.1 RAID-0
+条带 （strping），也是我们最早出现的RAID模式
+需磁盘数量:2块以上(大小最好相同)
+
+是组建磁盘阵列中最简单的一种形式，只需要2块以上的硬盘即可.
+
+特点:
+
+成本低，可以提高整个磁盘的性能和吞吐量。
+RAID 0没有提供冗余或错误修复能力，速度快.
+
+任何一个磁盘的损坏将损坏全部数据；磁盘利用率为100%。
+
+graphic
+
+graphic
+
+2.2 RAID-1
+mirroring（镜像卷）
+需要磁盘两块以上
+
+原理:是把一个磁盘的数据镜像到另一个磁盘上，也就是说数据在写入一块磁盘的同时，会在另一块闲置的磁盘上生成镜像文件，(同步)
+
+RAID 1 mirroring（镜像卷），至少需要两块硬盘，raid大小等于两个raid分区中最小的容量（最好将分区大小分为一样），数据有冗余，在存储时同时写入两块硬盘，实现了数据备份；
+
+磁盘利用率为50%，即2块100G的磁盘构成RAID1只能提供100G的可用空间。如下图
+
+graphic
+
+graphic
+
+graphic
+
+2.3 RAID-5
+需要三块或以上硬盘，可以提供热备盘实现故障的恢复；只损坏一块，没有问题。但如果同时损坏两块磁盘，则数据将都会损坏。 空间利用率： (n-1)/n   2/3  如下图所示
+graphic
+
+奇偶校验信息的作用:
+
+当RAID5的一个磁盘数据发生损坏后，利用剩下的数据和相应的奇偶校验信息去恢复被损坏的数据。
+
+扩展异或运算:
+
+是用相对简单的异或逻辑运算（相同为0，相异为1）
+
+A值
+B值
+Xor结果
+0
+0
+0
+1
+0
+1
+0
+1
+1
+1
+1
+0
+2.4 RAID10
+
+镜像+条带
+       RAID 10是将镜像和条带进行两级组合的RAID级别，第一级是RAID1镜像对，第二级为RAID 0。RAID10也是一种应用比较广泛的RAID级别。
+
+       RAID 1+0的特点使其特别适用于既有大量数据需要存取，同时又对数据安全性要求严格的领域，如银行、金融、商业超市、仓储库房、各种档案管理等。
+
+graphic
+
+2.5 RAID的选择
+graphic
+
+2.6 RAID硬盘失效处理
+一般两种处理方法：热备和热插拔
+热备：HotSpare
+
+定义：当冗余的RAID组中某个硬盘失效时，在不干扰当前RAID系统的正常使用的情况下，用RAID系统中另外一个正常的备用硬盘自动顶替失效硬盘，及时保证RAID系统的冗余性
+全局式：备用硬盘为系统中所有的冗余RAID组共享
+专用式：备用硬盘为系统中某一组冗余RAID组专用
+如下图所示：是一个全局热备的示例，该热备盘由系统中两个RAID组共享，可自动顶替任何一个RAID中的一个失效硬盘
+
+graphic
+
+热插拔：HotSwap
+
+定义：在不影响系统正常运转的情况下，用正常的物理硬盘替换RAID系统中失效硬盘
+关键在于热插拔时电子器件的保护机制
+第3章 RAID的使用
+3.1 RAID的实现方式
+我们使用RAID，是在装系统前还是之后？
+硬RAID：需要RAID卡，我们的磁盘是接在RAID卡的，由它统一管理和控制。数据也由它来进行分配和维护；它有自己的cpu，处理速度快
+       操作视频链接：http://pan.baidu.com/s/1jIJqJp8 密码：mfcb
+
+软RAID：通过操作系统实现
+       管理软raid工具：mdadm，mdadm是linux下用于创建和管理软件RAID的命令，是一个模式化命令。
+
+常见参数解释：
+
+-C或--creat
+建立一个新阵列
+-r
+移除设备
+-A
+激活磁盘阵列
+-l 或--level=
+设定磁盘阵列的级别
+-D或--detail
+打印阵列设备的详细信息
+-n或--raid-devices=
+指定阵列成员（分区/磁盘）的数量
+-s或--scan
+扫描配置文件或/proc/mdstat得到阵列缺失信息
+-x或--spare-devicds=
+指定阵列中备用盘的数量
+-f
+将设备状态定为故障
+-c或--chunk=
+设定阵列的块chunk大小 ，单位为KB
+-a或--add
+添加设备到阵列
+-G或--grow
+改变阵列大小或形态
+-v
+  --verbose 显示详细信息
+-S
+停止阵列
+
+
+3.2 模拟：RAID0
+环境：添加两个硬盘
+graphic
+
+环境：添加两个硬盘, 我以分区做,添加两个分区
+
+graphic
+
+3.2.1创建raid0
+[root@panda ~]# rpm -qf `which mdadm`
+mdadm-3.3.2-7.el7.x86_64
+[root@panda ~]# mdadm -C -v /dev/md0 -l 0 -n 2 /dev/sdc1 /dev/sdc2
+
+mdadm: chunk size defaults to 512K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+3.2.2 查看阵列信息
+[root@panda ~]# mdadm -D
+mdadm: No devices given.
+[root@panda ~]# mdadm -Ds
+
+ARRAY /dev/md0 metadata=1.2 name=panda:0 UUID=2882afcd:4cbb1881:17c5faf9:866dd41b
+[root@panda ~]#
+
+/dev/md0:
+        Version : 1.2
+  Creation Time : Wed Dec 14 22:01:30 2016
+     Raid Level : raid0
+     Array Size : 2095104 (2046.34 MiB 2145.39 MB)
+   Raid Devices : 2 mdadm -D /dev/md0
+  Total Devices : 2
+    Persistence : Superblock is persistent
+    Update Time : Wed Dec 14 22:01:30 2016
+          State : clean
+ Active Devices : 2
+Working Devices : 2
+ Failed Devices : 0
+  Spare Devices : 0
+     Chunk Size : 512K
+           Name : panda:0  (local to host panda)
+           UUID : 2882afcd:4cbb1881:17c5faf9:866dd41b
+         Events : 0
+    Number   Major   Minor   RaidDevice State
+       0       8       33        0      active sync   /dev/sdc1
+       1       8       34        1      active sync   /dev/sdc2
+chunk值:  条带大小  它分有很多“块”（Chunk），如果块尺寸(Chunksize)设置过小就一定会增加占用的块数
+
+我们也可以把这个配置信息保存起来
+
+[root@panda ~]# mdadm -Ds
+
+ARRAY /dev/md0 metadata=1.2 name=panda:0 UUID=551f2150:ccb1c188:7fcf3cc0:1c9144d3
+[root@panda ~]# mdadm -Ds > /etc/mdadm.conf
+
+[root@panda ~]# cat !$
+
+cat /etc/mdadm.conf
+ARRAY /dev/md0 metadata=1.2 name=panda:0 UUID=551f2150:ccb1c188:7fcf3cc0:1c9144d3
+3.2.3 对创建的RAID0创建分区
+分区时，我们给它所有空间
+[root@panda ~]# fdisk /dev/md0
+
+Welcome to fdisk (util-linux 2.23.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+Device does not contain a recognized partition table
+Building a new DOS disklabel with disk identifier 0x6c8bd2c5.
+Command (m for help): n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p):
+Using default response p
+Partition number (1-4, default 1):
+First sector (2048-4190207, default 2048):
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-4190207, default 4190207):
+Using default value 4190207
+Partition 1 of type Linux and of size 2 GiB is set
+Command (m for help): w
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+Syncing disks.
+[root@panda ~]# ls /dev/md*
+
+/dev/md0  /dev/md0p1
+3.2.4 格式化分区并挂载
+[root@panda ~]# mkfs.xfs /dev/md0p1
+meta-data=/dev/md0p1             isize=256    agcount=8, agsize=65408 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=523264, imaxpct=25
+         =                       sunit=128    swidth=256 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=8 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@panda ~]# mkdir /raid0
+
+[root@panda ~]# mount /dev/md0p1 /raid0/
+
+[root@panda ~]# df -h|tail -1
+
+/dev/md0p1      2.0G   33M  2.0G   2% /raid0
+3.2.5 开机自动挂载
+[root@panda ~]# umount /raid0/
+[root@panda ~]# mount -a
+
+mount: mount point /radi0 does not exist
+
+[root@panda ~]# vi /etc/fstab
+
+[root@panda ~]# mount -a
+
+[root@panda ~]# df
+
+Filesystem     1K-blocks    Used Available Use% Mounted on
+/dev/sda3      206234228 3024100 203210128   2% /
+devtmpfs          477820       0    477820   0% /dev
+tmpfs             492364      84    492280   1% /dev/shm
+tmpfs             492364    7152    485212   2% /run
+tmpfs             492364       0    492364   0% /sys/fs/cgroup
+/dev/sr0         3947824 3947824         0 100% /media
+/dev/sda1         303788  130864    172924  44% /boot
+tmpfs              98476      16     98460   1% /run/user/42
+tmpfs              98476       0     98476   0% /run/user/0
+/dev/md0p1       2082816   33056   2049760   2% /raid0
+[root@panda ~]# tail -1 /etc/fstab
+
+UUID="2c398f3c-462f-4106-a51e-7cadd8ef925b" /raid0 xfs defaults 0 0
+[root@panda ~]# cat /proc/mdstat  --查看阵列运行状态信息
+
+Personalities : [raid0]
+md0 : active raid0 sdc2[1] sdc1[0]
+      2095104 blocks super 1.2 512k chunks
+
+unused devices: <none>
+3.3 模拟：RAID1
+实验内容如下：
+       1）创建RAID1
+
+       2）添加1G热备盘
+
+       3）模拟磁盘故障，自动顶替故障盘
+
+       4）卸载阵列
+
+实验环境：
+
+       创建分区 sdb3，sdb5，sdb6，大小为1G
+
+[root@panda /]# fdisk /dev/sdb
+
+命令(输入 m 获取帮助)：p
+磁盘 /dev/sdb：21.5 GB, 21474836480 字节，41943040 个扇区
+Units = 扇区 of 1 * 512 = 512 bytes
+扇区大小(逻辑/物理)：512 字节 / 512 字节
+I/O 大小(最小/最佳)：512 字节 / 512 字节
+磁盘标签类型：dos
+磁盘标识符：0x4971fe2c
+   设备 Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     2099199     1048576   83  Linux
+/dev/sdb2         2099200     4196351     1048576   83  Linux
+/dev/sdb3         4196352     6293503     1048576   83  Linux
+命令(输入 m 获取帮助)：t
+分区号 (1-3，默认 3)：1
+Hex 代码(输入 L 列出所有代码)：fd
+已将分区“Linux”的类型更改为“Linux raid autodetect”
+命令(输入 m 获取帮助)：t    转换分区类型
+分区号 (1-3，默认 3)：2
+Hex 代码(输入 L 列出所有代码)：fd
+已将分区“Linux”的类型更改为“Linux raid autodetect”
+命令(输入 m 获取帮助)：t
+分区号 (1-3，默认 3)：3
+Hex 代码(输入 L 列出所有代码)：fd
+已将分区“Linux”的类型更改为“Linux raid autodetect”
+命令(输入 m 获取帮助)：p
+磁盘 /dev/sdb：21.5 GB, 21474836480 字节，41943040 个扇区
+Units = 扇区 of 1 * 512 = 512 bytes
+扇区大小(逻辑/物理)：512 字节 / 512 字节
+I/O 大小(最小/最佳)：512 字节 / 512 字节
+磁盘标签类型：dos
+磁盘标识符：0x4971fe2c
+   设备 Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     2099199     1048576   fd  Linux raid autodetect
+/dev/sdb2         2099200     4196351     1048576   fd  Linux raid autodetect
+/dev/sdb3         4196352     6293503     1048576   fd  Linux raid autodetect
+命令(输入 m 获取帮助)：w
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+正在同步磁盘。
+graphic
+
+[root@panda ~]# mdadm -E /dev/sdb6
+
+mdadm: No md superblock detected on /dev/sdb6
+没有检测到任何超级块，这意味着还没有创建RAID。
+
+[root@panda ~]# mdadm -C -v /dev/md1 -l 1 -n 2 -x 1 /dev/sdb3 /dev/sdb[5,6]
+
+mdadm: Note: this array has metadata at the start and
+    may not be suitable as a boot device.  If you plan to
+    store '/boot' on this device please ensure that
+    your boot-loader understands md/v1.x metadata, or use
+    --metadata=0.90
+mdadm: size set to 1047552K
+Continue creating array? y
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md1 started.
+[root@panda ~]# cat /proc/mdstat
+
+Personalities : [raid0] [raid1]
+md1 : active raid1 sdb6[2](S) sdb5[1] sdb3[0]
+      1047552 blocks super 1.2 [2/2] [UU]
+
+md0 : active raid0 sdb1[0] sdb2[1]
+      2095104 blocks super 1.2 512k chunks
+
+unused devices: <none>
+md1:表示此阵列的设备名
+active：表示此阵列正常读写
+sdb6[2](S)表示是这个阵列第3个设备且是备用盘，sdb2[1]是此阵列第2个设备，sdb1[0]是此阵列第1个设备
+1047552 blocks：表示此阵列的大小，以块为单位（1G）
+[2/2]：表示阵列中有2个磁盘，并且2个都在正常运行
+【UU】正常，如果异常有盘，是显示的—
+3.3.1  将RADI信息保存到配置文件
+[root@panda ~]# mdadm -Dsv
+ARRAY /dev/md0 level=raid0 num-devices=2 metadata=1.2 name=panda:0 UUID=2882afcd:4cbb1881:17c5faf9:866dd41b
+   devices=/dev/sdb1,/dev/sdb2
+ARRAY /dev/md1 level=raid1 num-devices=2 metadata=1.2 spares=1 name=panda:1 UUID=a8f10411:12116d26:a84838d5:15fae413
+   devices=/dev/sdb3,/dev/sdb5,/dev/sdb6
+[root@panda ~]# mdadm -Dsv > /etc/mdadm.conf
+
+[root@panda ~]# cat !$
+
+cat /etc/mdadm.conf
+ARRAY /dev/md0 level=raid0 num-devices=2 metadata=1.2 name=panda:0 UUID=2882afcd:4cbb1881:17c5faf9:866dd41b
+   devices=/dev/sdb1,/dev/sdb2
+ARRAY /dev/md1 level=raid1 num-devices=2 metadata=1.2 spares=1 name=panda:1 UUID=a8f10411:12116d26:a84838d5:15fae413
+   devices=/dev/sdb3,/dev/sdb5,/dev/sdb6
+spares=1表示：有热备盘1个
+3.3.2  检查 RAID 阵列
+[root@panda ~]# mdadm -D /dev/md1
+/dev/md1: --raid设备名
+        Version : 1.2
+  Creation Time : Thu Dec 15 20:45:01 2016   --创建时间
+     Raid Level : raid1
+     Array Size : 1047552 (1023.17 MiB 1072.69 MB)
+  Used Dev Size : 1047552 (1023.17 MiB 1072.69 MB)
+   Raid Devices : 2
+  Total Devices : 3
+    Persistence : Superblock is persistent
+    Update Time : Thu Dec 15 20:45:07 2016
+          State : clean
+ Active Devices : 2   --当前活动设备
+Working Devices : 3  --工作设备
+ Failed Devices : 0   --失效设备
+  Spare Devices : 1  ---热备盘数量
+           Name : panda:1  (local to host panda)
+           UUID : a8f10411:12116d26:a84838d5:15fae413
+         Events : 17
+    Number   Major   Minor   RaidDevice State
+       0       8       19        0      active sync   /dev/sdb3
+       1       8       21        1      active sync   /dev/sdb5
+       2       8       22        -      spare   /dev/sdb6
+3.3.3  在RAID设备上创建文件系统
+[root@panda ~]# mkfs.xfs /dev/md1
+meta-data=/dev/md1               isize=256    agcount=4, agsize=65472 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=261888, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=853, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@panda ~]# mkdir /raid1
+
+[root@panda ~]# mount /dev/md1 /raid1/
+
+[root@panda ~]# df -h
+
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda3       197G  2.9G  194G   2% /
+devtmpfs        467M     0  467M   0% /dev
+tmpfs           481M  172K  481M   1% /dev/shm
+tmpfs           481M  7.0M  474M   2% /run
+tmpfs           481M     0  481M   0% /sys/fs/cgroup
+/dev/sr0        3.8G  3.8G     0 100% /media
+/dev/sda1       297M  128M  169M  44% /boot
+tmpfs            97M  8.0K   97M   1% /run/user/0
+tmpfs            97M   16K   97M   1% /run/user/42
+/dev/md1       1020M   33M  988M   4% /raid1
+3.3.4  创建测试文件
+graphic
+3.3.5  自动挂载
+[root@panda ~]# umount /raid1
+[root@panda ~]# df
+
+文件系统           1K-块    已用      可用 已用% 挂载点
+/dev/sda3      206234228 3033932 203200296    2% /
+devtmpfs          477820       0    477820    0% /dev
+tmpfs             492364      84    492280    1% /dev/shm
+tmpfs             492364    7148    485216    2% /run
+tmpfs             492364       0    492364    0% /sys/fs/cgroup
+/dev/sr0         3947824 3947824         0  100% /media
+/dev/sda1         303788  130864    172924   44% /boot
+tmpfs              98476      16     98460    1% /run/user/42
+tmpfs              98476       0     98476    0% /run/user/0
+[root@panda ~]# echo "/dev/md1 /raid1 xfs defaults 0 0" >> /etc/fstab
+
+[root@panda ~]# mount -av
+
+/                        ：已忽略
+/boot                    ：已经挂载
+swap                     ：已忽略
+/media                   ：已经挂载
+mount：/raid1 不包含 SELinux 标志
+       您刚将一个支持标签但未包含标签的文件系统挂载到了 SELinux 机器上。
+       受限制的应用程序可能会生成 AVC 消息，并被阻止访问该文件系统。
+       更多详细信息请参阅 restorecon(8) 和 mount(8)。
+/raid1                   : successfully mounted
+[root@panda ~]# df
+
+文件系统           1K-块    已用      可用 已用% 挂载点
+/dev/sda3      206234228 3033932 203200296    2% /
+devtmpfs          477820       0    477820    0% /dev
+tmpfs             492364      84    492280    1% /dev/shm
+tmpfs             492364    7148    485216    2% /run
+tmpfs             492364       0    492364    0% /sys/fs/cgroup
+/dev/sr0         3947824 3947824         0  100% /media
+/dev/sda1         303788  130864    172924   44% /boot
+tmpfs              98476      16     98460    1% /run/user/42
+tmpfs              98476       0     98476    0% /run/user/0
+/dev/md1         1044140   32932   1011208    4% /raid1
+3.3.6  模拟损坏
+下面模拟RAID1中/dev/sdb3出现故障，观察/dev/sdb6备用盘能否自动顶替故障盘
+将/dev/sdb1指定为故障状态，cat /proc/mdstat查看阵列状态
+[root@panda ~]# mdadm /dev/md1 -f /dev/sdb1
+
+mdadm: set /dev/sdb3 faulty in /dev/md1
+[root@panda ~]# mdadm -D /dev/md1
+
+/dev/md1:
+        Version : 1.2
+  Creation Time : Thu Dec 15 20:45:01 2016
+     Raid Level : raid1
+     Array Size : 1047552 (1023.17 MiB 1072.69 MB)
+  Used Dev Size : 1047552 (1023.17 MiB 1072.69 MB)
+   Raid Devices : 2
+  Total Devices : 3
+    Persistence : Superblock is persistent
+    Update Time : Thu Dec 15 21:01:30 2016
+          State : clean
+ Active Devices : 2
+Working Devices : 2
+ Failed Devices : 1
+  Spare Devices : 0
+           Name : panda:1  (local to host panda)
+           UUID : a8f10411:12116d26:a84838d5:15fae413
+         Events : 36
+    Number   Major   Minor   RaidDevice State
+       2       8       22        0      active sync   /dev/sdb6
+       1       8       21        1      active sync   /dev/sdb5
+       0       8       19        -      faulty   /dev/sdb3
+[root@panda ~]# cat /raid1/a.txt
+
+hello world
+
+稍待片刻阵列重新重建成功，发现/dev/sdb3后的[S]消失了，成功顶替故障盘
+[root@panda ~]# watch -n 1 cat /proc/mdstat   #每隔一秒看一下/proc/mdstat文件
+
+Personalities : [raid1]
+md1 : active raid1 sdb3[2] sdb2[1] sdb1[0](F)
+      1047552 blocks super 1.2 [2/2] [UU]
+
+unused devices: <none>
+graphic
+
+查看数据是否丢失?
+graphic
+
+3.3.7  移除损坏的设备
+[root@panda ~]# mdadm -r /dev/md1 /dev/sdb1
+mdadm: hot removed /dev/sdb3 from /dev/md1
+graphic
+
+3.3.8  添加一块热备盘
+[root@panda ~]# mdadm -a /dev/md1 /dev/sdb7
+mdadm: added /dev/sdb7
+graphic
+
+3.4 模拟：RAID5
+回顾RAID5原理：
+需要三块或以上硬盘，可以提供热备盘实现故障的恢复；只损坏一块，没有问题。但如果同时损坏两块磁盘，则数据将都会损坏
+
+       RAID 5可以理解为是RAID 0和RAID 1的折中方案。RAID 5可以为系统提供数据安全保障，但保障程度要比Mirror低而磁盘空间利用率要比Mirror高。RAID 5具有和RAID 0相近似的数据读取速度，只是多了一个奇偶校验信息，写入数据的速度比对单个磁盘进行写入操作稍慢。同时由于多个数据对应一个奇偶校验信息，RAID 5的磁盘空间利用率要比RAID 1高，存储成本相对较低，是目前运用较多的一种解决方案
+
+实验内容如下：
+
+       1）创建RAID5
+
+       2）停止阵列，重新激活阵列
+
+       3）再添加新的1G热备盘，扩展阵列容量，从3个磁盘扩展到4个
+
+       4) 硬盘损坏，修复添加
+
+实验环境：
+
+       创建分区 sdb8，sdb9，sdb10，sdc1 ，sdc2 每个1G
+
+我们可以使用下面的命令来检查磁盘是否已经配置好
+
+graphic
+
+3.4.1 创建RAID-5
+[root@panda ~]# mdadm -C -v /dev/md5 -l 5 -n 3 -x 1 -c32 /dev/sdb8 /dev/sdb9 /dev/sdb10 /dev/sdc1
+[root@panda ~]# mdadm -D /dev/md5
+
+/dev/md5:
+        Version : 1.2
+  Creation Time : Thu Dec 15 21:21:40 2016
+     Raid Level : raid5
+     Array Size : 2095104 (2046.34 MiB 2145.39 MB)
+  Used Dev Size : 1047552 (1023.17 MiB 1072.69 MB)
+   Raid Devices : 3
+  Total Devices : 4
+    Persistence : Superblock is persistent
+    Update Time : Thu Dec 15 21:21:46 2016
+          State : clean
+ Active Devices : 3
+Working Devices : 4
+ Failed Devices : 0
+  Spare Devices : 1
+         Layout : left-symmetric
+     Chunk Size : 32K
+           Name : panda:5  (local to host panda)
+           UUID : ef02925e:4f3fe6a7:ff99ab82:da53c5da
+         Events : 18
+    Number   Major   Minor   RaidDevice State
+       0       8       24        0      active sync   /dev/sdb8
+       1       8       25        1      active sync   /dev/sdb9
+       4       8       26        2      active sync   /dev/sdb10
+       3       8       33        -      spare   /dev/sdc1
+3.4.2 停止MD5阵列
+graphic
+3.4.3 激活MD5阵列
+graphic
+3.4.4 扩展RAID5磁盘阵列
+我们再新添加一块硬盘分区/dev/sdb9，希望扩展RAID5阵列热备盘
+ [root@panda /]# mdadm -a /dev/md5 /dev/sdb9
+
+mdadm: added /dev/sdb9
+[root@panda /]# cat /proc/mdstat
+
+Personalities : [raid1] [raid6] [raid5] [raid4]
+md5 : active raid5 sdb9[5](S) sdb5[0] sdb8[3](S) sdb7[4] sdb6[1]
+      2095104 blocks super 1.2 level 5, 32k chunk, algorithm 2 [3/3] [UUU]
+
+md1 : active raid1 sdb3[2] sdb2[1]
+      1047552 blocks super 1.2 [2/2] [UU]
+
+unused devices: <none>
+[root@panda /]# mdadm -G /dev/md5 -n 4 –c 32
+
+备注：阵列只有在正常状态下，才能扩容，降级及重构时不允许扩容。对于raid5来说，只能增加成员盘，不能减少。而对于raid1来说，可以增加成员盘，也可以减少。但要减少成员盘时，首先要将盘faulty和removed掉
+
+3.4.5 更新配置文件
+[root@panda /]# mdadm -Dsv > /etc/mdadm.conf
+[root@panda /]# cat !$
+
+cat /etc/mdadm.conf
+ARRAY /dev/md1 level=raid1 num-devices=2 metadata=1.2 name=panda:1 UUID=f5e3930c:9611d987:1dafaeeb:44de8ce1
+   devices=/dev/sdb2,/dev/sdb3
+ARRAY /dev/md5 level=raid5 num-devices=3 metadata=1.2 spares=2 name=panda:5 UUID=eb06de39:4e9f98cc:e2ae1451:81a47ca5
+   devices=/dev/sdb5,/dev/sdb6,/dev/sdb7,/dev/sdb8,/dev/sdb9
+3.4.6 模拟硬盘损坏
+[root@panda /]# mdadm /dev/md5 -f /dev/sdb5
+mdadm: set /dev/sdb5 faulty in /dev/md5
+同时查看阵列状态变化如下图：
+
+graphic
+
+graphic
+
+3.4.7 进行修复添加
+[root@panda /]# mdadm --zero-superblock --force /dev/sdb5
+说明：清除组件设备sdb5中超级块的信息
+
+[root@panda /]# mdadm -E /dev/sdb5
+
+mdadm: No md superblock detected on /dev/sdb5
+[root@panda /]# mdadm -S /dev/md5
+
+mdadm: stopped /dev/md5
+[root@panda /]# mdadm -A /dev/md5
+
+mdadm: /dev/md5 has been started with 3 drives and 1 spare.
+[root@panda /]# mdadm -a /dev/md5 /dev/sdb6
+
+mdadm: added /dev/sdb6
+3.5 模拟：RAID10
+在 RAID10中，我们至少需要4个磁盘
+下图为RAID10(镜像加速)
+
+graphic
+
+graphic
+
+下图是RAID01的图：
+
+graphic
+
+graphic
+
+实验环境：
+
+       创建分区 sdc5，sdc6，sdc7，sdc8 每个100M
+
+graphic
+
+3.5.1 创建RAID10
+[root@panda ~]# mdadm -C -v /dev/md10 -l 10 -n 4 /dev/sdc[5-8]
+mdadm: layout defaults to n2
+mdadm: layout defaults to n2
+mdadm: chunk size defaults to 512K
+mdadm: size set to 1047552K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md10 started.
+[root@panda ~]# cat /proc/mdstat
+
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+md10 : active raid10 sdc8[3] sdc7[2] sdc6[1] sdc5[0]
+      2095104 blocks super 1.2 512K chunks 2 near-copies [4/4] [UUUU]
+
+md5 : active raid5 sdb8[6](S) sdc2[5] sdc1[3](S) sdb10[4] sdb9[1]
+      2095104 blocks super 1.2 level 5, 32k chunk, algorithm 2 [3/3] [UUU]
+
+md1 : active raid1 sdc3[4] sdb7[3] sdb6[2] sdb5[1]
+      1047552 blocks super 1.2 [4/4] [UUUU]
+
+md0 : active raid0 sdb1[0] sdb2[1]
+      2095104 blocks super 1.2 512k chunks
+graphic
+
+第4章 删除RAID及注意事项
+4.1 开始删除
+[root@panda ~]# umount /dev/md1 /raid1    #如果你已经挂载raid，就先卸载。
+[root@panda ~]# mdadm –Ss                 #停止raid设备
+
+[root@panda ~]# rm -rf /etc/mdadm.conf     #删除raid配置文件
+
+[root@panda ~]# mdadm --misc --zero-superblock /dev/sda5    #清除物理磁盘中的raid标识
+
+参数说明：
+
+--misc:  report on or modify various md related devices.      #报告或修改各种MD相关的设备
+
+--zero-superblock :  erase the MD superblock from a device.   #擦除设备中的MD超级块。
+
+4.2 注意事项
+       软件raid是建立在系统上面，这样会损失系统的整体性能；
+       硬件raid卡不是很贵，一般的情况下供应商那边有自带raid卡，和他们的服务器兼容性很强。所以软件raid实验不要求熟练掌握，只需要了解即可。但是raid的原理、在企业中使用哪种raid以及使用这种raid的原因要熟练掌握
+
+       当系统中不存在配置文件/etc/mdadm.conf、/etc/mdadm/mdadm.conf时，系统启动时，md驱动会自动查找分区为FD格式的磁盘。所以一般会使用fdisk工具将hd磁盘和sd磁盘分区，再设置为FD的磁盘分区。因此假如直接使用/dev/sda、/dev/sdb创建RAID，系统重启后，不会重组该RAID
+
+

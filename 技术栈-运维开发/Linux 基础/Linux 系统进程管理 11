@@ -1,0 +1,553 @@
+top ps kill  进程管理命令
+
+
+1-10-1 RHEL7-系统进程管理
+
+
+本节所讲内容：
+    ● Linux进程管理
+    ● ps| top| pgrep| pstree| netstat工具的使用方式
+    ● 虚拟文件系统 /proc 、/sys
+    ● LINUX后台进程与前台进程
+    ● 进程的优先级管理
+    ● 文件控制台的窗口管理
+
+第1章 Linux进程管理
+
+1.1 什么是进程？
+
+进程是已启动的可执行程序的运行实例，进程有以下组成部分：
+    • 已分配内存的地址空间；
+    • 安全属性，包括所有权凭据和特权；
+    • 程序代码的一个或多个执行线程；
+    • 进程状态
+程序： 二进制文件，静态 /bin/date,/usr/sbin/sshd
+进程： 是程序运行的过程， 动态，有生命周期及运行状态。
+下图所示的是进程的生命周期：
+
+描述如下：
+    1、 父进程复制自己的地址空间（fork）创建一个新的（子）进程结构。每个新进程分配一个唯一的进程 ID （PID），满足跟踪安全性之需。PID 和 父进程 ID （PPID）是子进程环境的元素，任何进程都可以创建子进程，所有进程都是第一个系统进程的后代。
+在RHDHAT5/6：init
+在RHEHAT7：systemd
+    2、 子进程继承父进程的安全性身份、过去和当前的文件描述符、端口和资源特权、环境变量，以及程序代码。随后，子进程可能exec自己的程序代码。通常，父进程在子进程运行期间处于睡眠（sleeping）状态。当子进程完成时发出（exit）信号请求，在退出时，子进程已经关闭或丢弃了其资源环境，剩余的部分称之为僵停（僵尸Zombie）。父进程在子进程退出时收到信号而被唤醒，清理剩余的结构，然后继续执行其自己的程序代码
+
+
+1. 2 进程的属性
+
+进程ID（PID)：是唯一的数值，用来区分进程
+父进程的ID（PPID)
+启动进程的用户ID（UID）和所归属的组（GID）
+进程状态：状态分为运行R、休眠S、僵尸Z
+进程执行的优先级
+进程所连接的终端名
+进程资源占用：比如占用资源大小（内存、CPU占用量）
+
+第2章 进程管理工具
+对于Linux进程的管理，是通过进程管理工具实现的，比如ps、kill、top.....
+静态进程查看命令：ps
+常用参数（选项）
+● -a        显示所有用户的进程
+● -u        显示用户名和启动时间
+● -x        显示没有控制终端的进程
+● -e        显示所有进程，包括没有控制终端的进程
+● -l        长格式显示，详细信息显示
+● -w  宽行显示，可以使用多个w进行加宽显示
+我们常用的选项是组合是aux
+[root@xuegod72 ~]# ps aux|head -10
+USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root         1  0.0  0.6 192116  6144 ?        Ss   17:14   0:10 /usr/lib/systemd/systemd --switched-root --system --deserialize 21
+root         2  0.0  0.0      0     0 ?        S    17:14   0:00 [kthreadd]
+root         3  0.0  0.0      0     0 ?        S    17:14   0:00 [ksoftirqd/0]
+root         5  0.0  0.0      0     0 ?        S<   17:14   0:00 [kworker/0:0H]
+root         7  0.0  0.0      0     0 ?        S    17:14   0:01 [migration/0]
+root         8  0.0  0.0      0     0 ?        S    17:14   0:00 [rcu_bh]
+root         9  0.0  0.0      0     0 ?        S    17:14   0:00 [rcuob/0]
+root        10  0.0  0.0      0     0 ?        S    17:14   0:00 [rcuob/1]
+root        11  0.0  0.0      0     0 ?        S    17:14   0:00 [rcuob/2]
+复制代码
+参数的解释
+[root@xuegod72 ~]# ps aux|head -10
+USER    PID   %CPU   %MEM    VSZ   RSS  TTY  STAT START   TIME COMMAND
+复制代码
+UID
+用户的id
+USER
+用户名
+PID
+进程号
+PPID
+父进程的进程号
+VSZ
+占用的虚拟内存
+RSS
+占用的实际内存（驻留内存）
+TTY
+进程启动的终端
+STAT
+进程当前状态
+R 运行
+S 可中断睡眠 Sleep
+D 不可中断睡眠
+T 停止的进程
+Z 僵尸进程
+X 死掉的进程
+=======================
+Ss s进程的领导者，父进程
+S< <优先级较高的进程
+SN N优先级较低的进程
+R+ +表示是前台的进程组
+Sl 以线程的方式运行
+
+
+NI
+进程优先级
+TIME
+进程自从启动以后启用CPU的总时间
+%CPU
+占用CPU时间和总时间的百分比
+%MEM
+占用内存与系统内存总量的百分比
+COMMAND/CMD
+进程的命令名
+[root@panda ~]# ps aux --sort %cpu |head -5   从大到小
+[root@panda ~]# ps aux --sort -%cpu |head -5        从小到大
+[root@panda ~]# ps aux --sort %mem |head -5
+[root@panda ~]# ps aux --sort -%mem |head -5
+[root@panda ~]# ps aux --sort %cpu| head -5|awk '{printf "%-30s %-10s\n", $11,$1,$3}'
+[root@xuegod72 ~]# ps -ef|head -10
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 17:14 ?        00:00:10 /usr/lib/systemd/systemd --switched-root --system --deserialize 21
+root         2     0  0 17:14 ?        00:00:00 [kthreadd]
+root         3     2  0 17:14 ?        00:00:00 [ksoftirqd/0]
+root         5     2  0 17:14 ?        00:00:00 [kworker/0:0H]
+root         7     2  0 17:14 ?        00:00:01 [migration/0]
+root         8     2  0 17:14 ?        00:00:00 [rcu_bh]
+root         9     2  0 17:14 ?        00:00:00 [rcuob/0]
+root        10     2  0 17:14 ?        00:00:00 [rcuob/1]
+root        11     2  0 17:14 ?        00:00:00 [rcuob/2]
+复制代码
+如何根据需要自定义显示字段？
+[root@panda ~]# ps axo user,pid,ppid,%mem,command
+[root@panda ~]# ps axo user,pid,ppid,%mem,command |grep httpd
+复制代码
+查看指定进程的ID
+     ps –ef|grep httpd
+     ps aux|grep httpd
+     pgrep –l httpd
+     pidof httpd
+
+
+2.2 top动态查看进程
+
+[root@xuegod72 ~]# top
+复制代码
+
+前五行是系统整体的统计信息。
+
+
+2.2.1 系统的信息解释
+
+任务队列信息(第一行)
+
+
+
+
+load average值  / 逻辑CPU个数  ==  值 （1）
+其内容如下：
+22:04:01
+当前时间
+up 52 min
+系统运行时间，格式为时:分
+2 users,
+当前登录用户数
+load average: 0.00, 0.05, 0.09
+系统负载，即任务队列的平均长度。 三个数值分别为  1分钟、5分钟、15分钟前到现在的平均值。
+
+进程和CPU的信息( 第二、三行)
+
+
+当有多个CPU时，这些内容可能会超过两行。内容如下：
+Tasks: 481 total
+进程总数
+1 running
+正在运行的进程数
+480 sleeping
+睡眠的进程数
+0 stopped
+停止的进程数
+0 zombie
+僵尸进程数
+Cpu(s):
+0.0% us
+系统用户进程使用CPU百分比。
+0.0% sy
+内核中的进程占用CPU百分比
+0.0% ni
+用户进程空间内改变过优先级的进程占用CPU百分比
+100% id
+空闲CPU百分比
+
+内存信息(第四五行)
+
+
+内容如下：
+Mem: 2033552k total
+物理内存总量
+
+340392k used
+使用的物理内存总量
+1376636k free
+空闲内存总量
+316524k buff/cache
+用作内核缓存的内存量。
+和free –k 一个意思
+
+Swap: 2017948k total
+交换区总量
+0k used
+使用的交换区总量
+192772k free
+空闲交换区总量
+1518148 avail Mem
+总的可利用内存是多少
+
+进程信息
+
+
+列名
+含义
+PID
+进程id
+USER
+进程所有者的用户名
+PR
+优先级（由内核动态调整），用户不能
+NI
+进程优先级。 nice值。负值表示高优先级，正值表示低优先级，用户可以自己调整
+VIRT（virtual memory usage）
+虚拟内存，是进程正在使用的所有内存（ps中标为VSZ）
+RES（resident memory usage）
+是进程所使用的物理内存。实际实用内存（ps中标为RSS）
+SHR
+共享内存大小，单位kb
+S
+进程状态。
+            D=不可中断的睡眠状态
+            R=运行中或可运行
+            S=睡眠中
+            T=已跟踪/已停止
+            Z=僵停
+%CPU
+上次更新到现在的CPU时间占用百分比
+%MEM
+进程使用的物理内存百分比
+TIME+
+进程使用的CPU时间总计，单位1/100秒
+COMMAND
+命令名/命令行
+
+top快捷键：
+● 默认3s刷新一次，按d / s修改刷新时间
+● w：保存配置
+● 空格 ：立即刷新。
+● q退出
+● M：按内存排序
+● u/U：指定显示的用户
+● P：按CPU排序
+● h:帮助
+[root@panda ~]# top -d 1 -u miao  ---》查看指定用户的进程
+[root@panda ~]# top -d 1 –p 54383 ---> 查看指定的进程
+复制代码
+
+2.3 pgrep管理工具
+作用:查找服务进程号
+语法格式 pgrep 【-l】 [服务名称]
+比如我们查看一下sshd服务的进程号
+[root@panda ~]# pgrep -l sshd   ---》加l（字母）会显示服务名称
+[root@panda ~]# pgrep sshd
+复制代码
+===============================================
+[root@xuegod72 ~]# systemctl start httpd
+复制代码
+（排错）-nginx
+1、 我们查看进程号不存在，先看一下软件包有没有安装，没有则安装
+2、 如果已经安装，则看一下服务是否启动
+如果启动httpd服务报错，如下：
+
+
+通过systemctl查看原因
+[root@xuegod72 ~]# systemctl status httpd
+复制代码
+
+
+
+查看端口占用情况，发现是nginx服务占用了80端口，导致httpd服务启动失败，有两种解决方法
+1、 修改httpd的端口
+[root@xuegod72 ~]# vi /etc/httpd/conf/httpd.conf
+复制代码
+1、 停止占用80端口的服务程序
+最后再重新启动一下httpd服务
+[root@xuegod72 ~]# netstat –anptu|grep 80
+复制代码
+
+
+
+2.4 pstree工具使用
+pstree命令以树状图显示进程间的关系（display a tree of processes）。
+格式：pstree
+以树状图显示进程，只显示进程的名字，且相同进程合并显示。
+格式：pstree -p
+以树状图显示进程，还显示进程PID。
+
+
+
+
+2.5 使用netstat工具
+netstat 命令用于显示各种网络相关信息，如网络连接，路由表，接口状态
+命令参数：
+● -a或–all 显示所有连接中的接口
+● -c或–continuous 持续列出网络状态
+● -C或–cache 显示路由器配置的快取信息
+● -e或–extend 显示网络其他相关信息
+● -F或–fib 显示FIB
+● -g或–groups 显示多重广播功能群组组员名单
+● -h或–help 在线帮助
+● -i或–interfaces 显示网络界面信息表单
+● -l或–listening 显示监控中的服务器的接口
+● -M或–masquerade 显示伪装的网络连线
+● -n或–numeric 直接使用IP地址，而不通过域名服务器
+● -N或–netlink或–symbolic 显示网络硬件外围设备的符号连接名称
+● -o或–timers 显示计时器
+● -p或–programs 显示正在使用接口的程序识别码和程序名称
+● -r或–route 显示Routing Table
+● -s或–statistice 显示网络工作信息统计表
+● -t或–tcp 显示TCP传输协议的连接状况
+● -u或–udp 显示UDP传输协议的连接状况
+● -v或–verbose 显示指令执行过程
+● -V或–version 显示版本信息
+● -w或–raw 显示RAW传输协议的连线状况
+● -x或–unix 此参数的效果和指定”-A unix”参数相同
+● –ip或–inet 此参数的效果和指定”-A inet”参数相同
+查看所有的TCP端口
+[root@xuegod72 ~]# netstat –anlpt
+[root@xuegod72 ~]# netstat -antpu|grep 80
+复制代码
+
+
+n 查看某个服务的端口
+
+
+n 查看所有的UDP端口
+[root@xuegod72 ~]# netstat -anlpu
+复制代码
+
+
+
+第3章 虚拟文件系统 /proc 、/sys
+Linux一切皆文件，设备（文件）可以通过读写来操作
+        /proc是内存中有关系统进程的信息
+        /sys是有关系统内核以及驱动的信息
+
+
+n 查看当前CPU信息
+[root@xuegod72 ~]# cat /proc/cpuinfo|more
+复制代码
+n 查看当前内存的信息
+[root@xuegod72 ~]# cat /proc/meminfo|more
+复制代码
+n 查看是否支持虚拟化
+[root@panda proc]# grep 'ls\|vmx\|svm' /proc/cpuinfo
+复制代码
+VMX 支持虚拟化 INTEL
+SVM -----------------  AMD
+LM (64位)
+
+第4章 Linux后台进程与前台进程
+4.1 Linux后台进程与前台进程的区别
+Linux后台进程:
+        也叫守护进程（Daemon），是运行在后台的一种特殊进程。
+        守护的意思就是不受终端控制；Linux的大多数服务器就是用守护进程实现的。
+比如，Web服务器httpd等。
+        后台进程没有控制终端，它不需要终端的交互
+Linux前台进程:
+        是在终端中运行的命令，那么该终端就为进程的控制终端，一旦这个终端关闭，这这个进程也随着消失
+
+4.2 进程的前台与后台运行
+跟系统任务相关的几个命令：fg、bg、jobs、（nohup）&、ctrl+z
+&
+用在一个命令的最后，可以把这个命令放到后台执行.
+ctrl + z
+将一个正在前台执行的命令放到后台，并且暂停.
+jobs
+查看当前有多少在后台运行的进程.它是一个作业控制命令
+fg（foreground process）
+将后台中的命令调至前台继续运行, 如果后台中有多个命令，可以用 fg %jobnumber将选中的命令调出，%jobnumber是通过jobs命令查到的后台正在执行的命令的序号(不是pid)
+bg(background process)
+将一个在后台暂停的命令，变成继续执行; 如果后台中有多个命令，可以用bg %jobnumber将选中的命令调出，%jobnumber是通过jobs命令查到的后台正在执行的命令的序号(不是pid)
+
+实战恢复被挂起的进程
+例： vim a.txt   按下： ctrl+z
+
+
+那么怎么恢复呢？用bg还是fg
+fg是将后台挂起的进程恢复到前台运行
+
+
+
+
+4.3 kill进程
+
+控制（关闭）进程
+kill killall pkill
+kill用法
+关闭进程：kill  [进程号]
+通过信号的方式来控制进程
+kill –l   --->列出所有支持的信号
+
+信号编号  信号名
+1）                SIGHUP   重新加载配置
+2）                 SIGINT      键盘中断  crtl+c
+3)            SIGQUIT     退出
+9）     SIGKILL   强制终止
+15）    SIGTERM  终止（正常结束），缺省信号
+18）        SIGCONT   继续
+19）           SIGSTOP  停止
+20）        SIGTSTP   暂停 crtl+z
+
+4.4 kill和killall终止进程
+查看进程的pid
+使用killall命令
+[root@panda ~]# pkill -t pts/1 给终端/pts/1上所有进程发送信号
+[root@panda ~]# pkill -9 -t pts/1
+[root@panda ~]# pkill -u miao
+[root@panda ~]# killall httpd
+复制代码
+
+第5章 进程的优先级管理
+进程的优先级的定义  1000 1500 ------------------------》
+一个进程正好有40种不同级别的NICE值，值越高，优先级越低
+优先级取值范围为（-20,19），越小优先级越高, 默认优先级是0
+系统允许ROOT用户设置负nice级别以及降低现有进程的nice级别；对普通非特权用户仅允许设置正的nice级别，此外，他们只能对现有进程提升nice级别。而不能降低nice级别
+注意：在linux中除了nice级别以外，有很多方法可以影响到进程优先级和资源使用情况，比如备用的调度程序策略和设置、控制组等，但是nice级别是里面最易于使用的一种方法，而且它不仅系统管理员可以使用，普通用户也可以使用
+命令1：nice
+作用:指定程序的运行优先级
+格式：nice -n command
+命令2：renice
+作用:改变程序的运行优先级
+格式：renice -n pid
+实战：
+n 指定一个文件的优先级
+
+[root@xuegod72 ~]# nice -n 5 vim a.txt
+复制代码
+输入内容，然后ctrl+z 挂起
+
+
+n 通过ps查看这个文件的PID号
+
+
+n 通过top命令查看优先级
+
+[root@xuegod72 ~]# top -p 26154
+复制代码
+
+
+n 改变正在运行的进程的优先级
+
+
+在top命令中输入r
+
+
+第6章 文件控制台的窗口管理(课后)
+
+screen 实战后台实时执行命令
+1、安装screen软件包
+
+[root@xuegod72 ~]# rpm -ivh /media/Packages/screen-4.1.0-0.21.20120314git3c2946.el7.x86_64.rpm
+复制代码
+或者
+
+[root@xuegod72 ~]# yum -y install screen
+复制代码
+2、什么是screen?
+Screen中有会话的概念,，用户可以在一个screen会话中创建多个screen窗口，在每一个screen窗口中就像操作一个真实的telnet/SSH连接窗口那样。
+直接在命令行键入screen命令回车，如下图
+
+
+Screen将创建一个执行shell的全屏窗口。你可以执行任意shell程序，就像在ssh窗口中那样
+
+
+如果我们要打开多个Screen，那么你们可输入crtl+a+c，多个窗口之间切换crtl+a+n(数字)
+在该窗口中键入exit退出该窗口
+
+
+举例：
+Screen命令后跟你要执行的程序。
+Screen创建一个执行top的单窗口会话，退出top将退出该窗口/会话
+
+
+
+screen还有更高级的功能。你可以不中断screen窗口中程序的运行而暂时断开（detach）screen会话，并在随后时间重新连接（attach）该会话，重新控制各窗口中运行的程序。
+例如，我们在做某个大型的操作但是突然之间断开：
+实战:
+screen  进入
+执行updatedb
+模拟中断
+模拟假设突然会话断开
+那么在screen窗口键入Ctrl+a+d ，Screen会给出detached提示：
+暂时中断会话
+
+
+怎样找到该screen会话,继续操作呢?
+screen -ls
+查看id
+重新连接会话：
+screen -r id
+常用screen参数
+screen -S test  ->      新建一个叫test的会话
+screen -ls     ->      列出当前所有的会话
+screen -r test  ->      回到test会话
+screen -d test  ->      远程detach某个会话
+screen -d -r test  ->    结束当前会话并回到test这个会话
+配置文件位置：
+
+[root@xuegod72 ~]# vim /etc/screenrc
+# hardstatus alwayslastline "%Lw"
+shell?-$SHELL
+hardstatus alwayslastline
+hardstatus string "%{b kw}%-w%{= kg}[%n:%t] %{-}%+w %=%{.y} %Y/%m/%d %{w}| %{g}%c:%s "
+#hardstatus alwayslastline "%{b kw}%H %{r}%1` %{w}| %{g}%c:%s %{w}| %{y}%Y.%d.%m %{w}|%{g}%l %{w}| %{-b kw}%u %-Lw%{= rW}%50> %n:%t %{-}%+Lw%<"
+复制代码
+新建一个会话
+
+
+命名标签为：find
+按一下crtl+a，然后再输入大写A
+
+
+删除原来的名称，重新命名
+
+
+再创建一个会话
+按一下crtl+a，然后再输入c,并命名为grep
+标签切换: crtl+a+n
+
+
+重新开一个窗口，然后输入下面命令，可进行屏幕共享
+
+[root@xuegod72 ~]# screen -x test
+复制代码
+如果两个窗口在同一个标签下，那么一个窗口的操作，会共享给另外一个
+
+
+屏幕分割
+现在显示器那么大，将一个屏幕分割成不同区域显示不同的Screen窗口显然是个很酷的事情。可以使用快捷键C-a S将显示器水平分割，Screen 4.00.03版本以后，也支持垂直分屏，快捷键是C-a |。分屏以后，可以使用C-a <tab>在各个区块间切换，每一区块上都可以创建窗口并在其中运行进程。
+可以用C-a X快捷键关闭当前焦点所在的屏幕区块，也可以用C-a Q关闭除当前区块之外其他的所有区块。关闭的区块中的窗口并不会关闭，还可以通过窗口切换找到它。
+
+
+
+16.png (16.23 KB, 下载次数: 0)
+
+
+
+16.png

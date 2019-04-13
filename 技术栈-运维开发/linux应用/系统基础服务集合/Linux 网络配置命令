@@ -1,0 +1,25 @@
+一：使用route命令添加
+使用route命令添加的路由，机器重启或窖网卡重启后路由勃:尖效7，方法：
+//添加到主机的路由
+# route add -host 192.168.1.11 dev ethO
+# route add -host 192.168.1.12 gw 192.168.1.1
+//添加到网络的路由
+# route add -net 192.168.1.11 netmask 2SS.2SS.2SS.0 ethO
+# route add -net 192.168.1.11 netmask 2SS.2SS.2SS.0 gw 192.168.1.1
+# route add -net 192.168.1.0/24 ethl
+//添加默认网关
+# route add default gw 192.168.2.1
+//删除路由
+# route del -host 192.168.1.11 dev ethO
+刪除戥认路由
+#route del default gw 192.168.2.1
+二：在linux下设置永久路由的方法：
+1. 在/etc/rc.local 里添加
+方法：
+route add -net 192.168.3.0/24 dev ethO
+route add -net 192.168.2.0/24 gw 192.168.2.254
+2. 在/etc/sysconfig/network 里添加到末尾
+方法：GATE WAY =gw-ip 或窖 GATE WAY =gw-dev
+3. /etc/sysconfig/static-routes :(没有static-routes的话紈手动建立一个这样的文件)
+any net 192.168.3.0/24 gw 192.168.3.254
+any net 10.250.228.128 netmask 2SS.2SS.2SS.192 gw 10.250.228.129

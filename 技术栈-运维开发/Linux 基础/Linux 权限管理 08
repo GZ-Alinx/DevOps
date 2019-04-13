@@ -1,0 +1,656 @@
+本节所讲内容：
+q  文件的基本权限：r w x （UGO+ACL）
+q  文件的高级权限：suid sgid sticky
+
+第1章 文件的基本权限
+
+1.1 权限的作用
+通过对文件设定权限可以达到以下三种访问限制权限：
+q 只允许用户自己访问；
+q 允许一个预先指定的用户组中的用户访问；
+q 允许系统中的任何用户访问。
+
+1.2 查看文件权限
+我们可以通过ls命令来查看一个文件的具体信息，加参数–l 可以查看这个文件的权限信息
+
+[root@panda mnt]# touch a.txt
+[root@panda mnt]# ll a.txt
+复制代码
+-rw-r--r-- 1 root root 0 Dec  5 20:37 a.txt
+[root@panda mnt]# ls -l a.txt
+复制代码
+-rw-r--r-- 1 root root 0 Dec  5 20:37 a.txt
+[root@panda ~]# ll
+复制代码
+total 8
+-rw-------. 1 root root 1572 Jul 28 06:40 anaconda-ks.cfg
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Desktop
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Documents
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Downloads
+-rw-------. 1 root root 1726 Jul 27 23:13 initial-setup-ks.cfg
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Music
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Pictures
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Public
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Templates
+drwxr-xr-x. 2 root root    6 Jan  1  2017 Videos
+[root@panda mnt]# stat -c %a a.txt
+复制代码
+644
+[root@panda mnt]# stat -c %A a.txt
+复制代码
+-rw-r--r—
+[root@panda ~]# getfacl /etc/hosts
+复制代码
+getfacl: Removing leading '/' from absolute path names
+# file: etc/hosts
+# owner: root
+# group: root
+user::rw-
+group::r--
+other::r--
+
+文件权限基本解释：
+
+-
+
+rwx
+r-x
+r-x
+user1
+user1
+time
+FILENAME
+文件类型
+拥有者的权限
+所属组的权限
+其他人的权限
+拥有者
+属组
+最后修改时间
+对象
+
+
+
+
+其中：文件类型,可以为p、d、l、s、c、b和 –
+q p表示命名管道文件
+q d表示目录文件
+q l表示符号连接文件
+q -表示普通文件
+q s表示socket套接口文件，比如我们启用mysql时，会产生一个mysql.sock文件
+q c表示字符设备文件
+q b表示块设备文件
+
+1.3 权限说明
+对于文件：
+q r：读　　
+q w：写　　
+q x：执行
+对于目录：
+q r：读（看到目录里面有什么）     ls
+q w：建文件、删除、移动                   touch  mkdir    rm   mv  cp
+q x：进入                                         cd  cat
+       对于文件的所有者或者是属主，root可以将这些权限改变为任何它想指定的权限；
+例如：一个文件只有读权限，那么它就禁止任何普通用户对它的修改；如果文件只有执行权限，那么系统允许它像一个程序一样执行。
+
+1.4 文件拥有者所有者-用户组-其他用户
+所有者： 就是创建文件的用户，这个用户拥有对它所创建的文件的一切权限，所有者可以允许其所在的用户组可以访问所有者的文件。
+用户组： 用户组是具有相同特征用户的逻辑集合，有时我们需要让多个用户具有相同的权限，比如查看、修改某一个文件的权限，一种方法是分别对多个用户进行文件访问授权，如果有10个用户的话，就需要授权10次，显然这种方法不太合理；另一种方法是建立一个组，让这个组具有查看、修改此文件的权限，然后将所有需要访问此文件的用户放入这个组中，那么所有用户就具有了和组一样的权限。这就是用户组。
+其它用户：系统内的其他所有者用户就是other用户类
+
+1.5 举例说明
+
+1.5.1 常见几种文件权限组成
+u -rwx------：文件所有者对文件具有读取、写入和执行的权限。
+u -rwxr--r--： 文件所有者具有读、写与执行的权限，用户组里用户及其他用户则具有读取的权限
+u -rw-rw-r-x：文件所有者与同组用户对文件具有读写的权限，而其他用户仅具有读取和执行的权限。
+u drwx--x—x： 目录所有者具有读写与进入目录的权限,其他用户近能进入该目录，却无法读取任何数据。
+u drwx------： 除了目录所有者具有完整的权限之外，其他用户对该目录完全没有任何权限。
+
+1.5.2 举例如下：
+每个用户都拥有自己的专属目录，通常放置在/home目录下
+
+
+
+
+这些专属目录的默认权限为【rwx------】表示目录所有者本身具有所有权限，其他用户无法进入该目录，如下图所示：
+
+
+
+在当前用户状态下创建的文件或目录，自动成为该用户的所属
+
+
+
+
+1.5.2 更改文件的属主和属组
+用到的命令：chown   chgrp  如果对目录操作  -R
+==》chown
+语法：
+l chown user:group 对象
+l chown user 对象
+l chown :group 对象
+l  -R ：递归(目录下的所有内容全部更改，否则只修改目录)
+
+
+[root@panda ~]# chown :tom /home/wang.txt    ---只改文件的属组
+[root@panda ~]# chown tom /home/li.txt   ----只改文件的属主
+[root@panda ~]# chown jerry:jerry /home/li.txt  ---改文件的属主、属组
+==》chgrp
+[root@panda ~]# chgrp tom /home/yang.txt     ----改文件的属组
+
+复制代码
+
+
+1.6 修改权限1.6.1使用符号
+修改权限的用到的命令：chmod
+作用：修改文件、目录权限
+用法：（中间的+、-、=表示添加还是删除该用户的对应权限）
+
+
+       u-w
+
+user
+拥有者
+g+x
+group
+组
+o=r
+other
+其他人
+a+x
+all
+所有人
+
+
+[root@panda mnt]# chmod u-w a.txt       -----属主删除写权限
+[root@panda san]# chmod g+x b.txt        ----属组添加执行权限
+[root@panda san]#chmod a=rwx file1      ----所有人等于读写执行
+[root@panda san]#chmod a=- file1         ----所有人没有权限
+[root@panda san]#chmod ug=rw,o=r file1   ----属主属组等于读写，其他人只读
+复制代码
+
+查看修改的权限可以用ls –l  或 stat
+
+
+1.6.2 使用数字
+
+
+
+rwx
+
+r--
+-w-
+--x
+
+100
+010
+001
+二进制
+4
+2
+1
+十进制
+组合
+值
+rw-
+4+2=6
+r-x
+4+1=5
+rw-r--r--
+rw-=6     r--=4     r--=4    rw-r—r--=644
+
+
+[root@panda]#chmod 644 file1
+复制代码
+
+扩展示例如下
+建一个目录TEST，要求如下：
+1、root用户和test用户可以读写执行    2、其他用户没有任何权限
+
+[root@panda ~]# groupadd hr
+[root@panda ~]# useradd hr01 -G hr
+[root@panda ~]# useradd hr02 -G hr
+[root@panda ~]# mkdir /home/hr
+[root@panda ~]# chgrp hr /home/hr
+[root@panda ~]# chmod 770 /home/hr
+[root@panda ~]# ll -d /home/hr/
+
+复制代码
+
+1.7 权限对文件和目录的影响
+有三种权限可以应用：读取，写入与执行，这些权限对访问文件和目录的影响如下：
+
+
+权限
+
+对文件的影响
+对目录的影响
+r(读取)
+可以读取文件的内容
+可以列出目录的内容（文件名）
+w(写入)
+可以更改文件的内容
+可以创建或删除目录中的任意文件
+x(执行)
+可以作为命令执行文件
+可以访问目录的内容（取决于目录中文件的权限）
+
+
+1、  权限对文件的影响
+
+[root@panda ~]# mkdir /dir10
+[root@panda ~]# touch /dir10/file1
+[root@panda ~]# chmod 777 /dir10/file1
+
+[root@panda ~]# ll -d /dir10/
+drwxr-xr-x. 2 root root 4096 3月 11 18:37 /dir10/
+
+[root@panda ~]# ll /dir10/file1
+-rwxrwxrwx. 1 777 root 0 3月 11 18:37 /dir10/file1
+
+[alice@panda ~]$ cat /dir10/file1
+[alice@panda ~]$ rm -rf /dir10/file1
+复制代码
+rm: 无法删除"/dir10/file1": 权限不够
+
+2、权限对目录的影响
+
+[root@panda home]# ll -d dir1/
+复制代码
+drwxr-xr-x. 2 root root 4096 Apr  7 21:20 dir1/
+[root@panda home]# chmod 777 dir1/
+[root@panda home]# ll -d dir1/
+复制代码
+drwxrwxrwx. 2 root root 4096 Apr  7 21:20 dir1/
+[root@panda home]# chmod 000 dir1/test-01
+[root@panda home]# ll dir1/test-01
+复制代码
+----------. 1 root root 0 Apr  7 21:20 dir1/test-01
+[root@panda home]# su - tom
+复制代码
+Last login: Fri Apr  7 21:51:19 CST 2017 on pts/0
+[tom@panda ~]$ cat /home/dir1/test-01
+复制代码
+cat: /home/dir1/test-01: Permission denied
+[tom@panda ~]$ rm -f /home/dir1/test-01
+[tom@panda ~]$ touch /home/dir1/test-001
+复制代码
+
+
+
+1.8 补码
+首先看一个例子：
+
+
+
+为什么我们创建的文件的权限是644呢？
+我们创建文件的默认权限是怎么来的？
+如何改变这个默认权限呢？
+
+       umask命令允许你设定文件创建时的缺省模式，对应每一类用户(文件属主、同组用户、其他用户)存在一个相应的umask值中的数字
+       对于文件来说，这一数字的最大值分别是6；系统不允许你在创建一个文本文件时就赋予它执行权限，必须在创建后用chmod命令增加这一权限（为了安全考虑）
+4 2
+       对于目录来说，则允许设置执行权限，这样针对目录来说，umask中各个数字最大可以到7
+umask设置了用户创建文件的默认权限，它与chmod的效果刚好相反.；umask设置的是权限“补码”，而chmod设置的是文件权限码。我们只要记住umask是从权限中拿走相应的位即可。如：umask值为022，则默认目录权限为755，默认文件权限为644
+
+该命令的一般形式为：umask nnn 其中nnn为umask值000 – 777
+
+umask设置了用户创建文件的默认权限，它与chmod的效果刚好相反.；umask设置的是权限“补码”，而chmod设置的是文件权限码。我们只要记住umask是从权限中拿走相应的位即可。如：umask值为022，则默认目录权限为755，默认文件权限为644
+       我们一般在/etc/profile、$[HOME]/.bash_profile或$[HOME]/.profile中设置umask值。
+
+
+
+计算方法：
+文件默认权限＝666-umask值   666-022=644
+目录默认权限＝777-umask 值  777-022=755
+Umask表示的是要减掉的权限
+永久生效，编辑用户的配置文件vim .bash_profile
+
+
+
+
+
+第2章 特殊权限
+       其实文件与目录设置不止这些，还有所谓的特殊权限。由于特殊权限会拥有一些“特权”.
+因而用户若无特殊需求，不应该启用这些权限，避免安全方面出现严重漏洞，造成入侵，甚至摧毁系统!!!
+特殊权限：
+q SUID（set uid设置用户ID）：限定：只能设置在二进制可执行程序上面。对目录设置无效
+          功能：程序运行时的权限从执行者变更成程序所有者
+q SGID：限定：既可以给二进制可执行程序设置，也可以对目录设置
+         功能：在设置了SGID权限的目录下建立文件时，新创建的文件的所属组会          继承上级目录的所属组
+q Stickybit：粘滞位权限是针对目录的，对文件无效，也叫防删除位
+q s对应的数值为
+
+
+
+
+SUID
+
+SGID
+Stickybit
+u=4、u+s
+g=2、g+s
+o=1、o+t
+
+
+
+SUID属性一般用在可执行文件上，当用户执行该文件时，会临时拥有该执行文件的所有者权限。使用”ls -l” 或者”ll” 命令浏览文件时，如果可执行文件所有者权限的第三位是一个小写的”s”，就表明该执行文件拥有SUID属性。比如/usr/bin/passwd文件
+
+
+
+
+注意：
+       1、如果一个文件被设置了SUID或SGID位，会分别表现在所有者或同组用户的权限的可执行位上；
+       2、linux系统规定，如果原本该位上有x,则这些属性显示为小写字母（s有效），否则显示大写字母（S无效）
+       3、由于SUID和SGID是在执行程序（程序的可执行位被设置）时起作用，而可执行位只对普通文件和目录文件有意义，所以设置其他种类文件的SUID和SGID位是没有多大意义的
+
+设置特殊权限
+A、字符
+chmod u+s file  设置SUID        对文件（要有执行权限）
+chmod g+s file  设置SGID     对目录 使用
+chmod o+t file  设置sticky    只能针对目录
+B、 数字
+       cmod4777 file  SUID
+       chmod2777 file     SGID
+       chmod 1777 file     STICKY
+======================================================
+
+
+2.1.1  SUID举例如下
+       1、我们可以看到/etc/shadow文件是没有权限的。除了root用户可以操作，其它用户都不可以。但是因为passwd命令具有s特殊权限，所以我们切换到普通用户后，修改普通用户密码，它是可以把信息写入到这个密码文件里面的
+1、我们可以看到/etc/shadow文件是没有权限的。除了root用户可以操作，其它用户都不可以。但是因为passwd命令具有s特殊权限，所以我们切换到普通用户后，修改普通用户密码，它是可以把信息写入到这个密码文件里面的
+
+
+
+
+
+2、看下面的例子，可以看到cat命令是没有s特殊权限的，我们在普通用户下看密码文件，提示没有权限，如果我们在root用户下，确是可以执行的,给cat命令添加s权限，我们可以看到它是可以看到这个密码文件内容的
+
+
+
+其实我们是借用root用户的身份执行的
+如果我们删除s权限后
+
+
+
+
+
+2.1.2  SGID举例如下
+       s（SGID，Set GID）：设置在文件上面，其效果与SUID相同，只不过将文件所有者换成用户组，该文件就可以任意存取整个用户组所能使用的系统资源。
+强调: SUID一般用在文件上(脚本) SGID用在目录上比较多
+
+[root@panda ~]# mkdir /tencent
+[root@panda ~]# groupadd xuegod
+[root@panda ~]# useradd -G xuegod xiaobai
+[root@panda ~]# useradd -G xuegod dabai
+[root@panda ~]#
+[root@panda ~]# chown :xuegod /tencent/
+[root@panda ~]# ll -d /tencent/
+复制代码
+drwxr-xr-x. 2 root xuegod 6 Oct 11 19:43 /tencent/
+[root@panda ~]# chmod 775 /tencent/
+[root@panda ~]# chmod g+s /tencent/
+[root@panda ~]# ll -d /tencent/
+复制代码
+drwxrwsr-x. 2 root xuegod 6 Oct 11 19:43 /tencent/
+
+切换到xiaobai用户下面：
+
+[root@panda ~]# su - xiaobai
+[xiaobai@panda ~]$ cd /tencent/
+[xiaobai@panda tencent]$ touch aa
+[xiaobai@panda tencent]$ touch bb
+[xiaobai@panda tencent]$ ll
+复制代码
+total 0
+-rw-rw-r--. 1 xiaobai xuegod 0 Oct 11 19:45 aa
+-rw-rw-r--. 1 xiaobai xuegod 0 Oct 11 19:45 bb
+[xiaobai@panda tencent]$ exit
+复制代码
+logout
+
+退出
+切换到dabai用户下面：
+
+[root@panda ~]# su - dabai
+[dabai@panda ~]$ cd /tencent/
+[dabai@panda tencent]$ touch cc
+[dabai@panda tencent]$ touch dd
+[dabai@panda tencent]$ ll
+复制代码
+[dabai@panda tencent]$ ll
+total 0
+-rw-rw-r--. 1 xiaobai xuegod 0 Oct 11 19:45 aa
+-rw-rw-r--. 1 xiaobai xuegod 0 Oct 11 19:45 bb
+-rw-rw-r--. 1 dabai   xuegod 0 Oct 11 19:46 cc
+-rw-rw-r--. 1 dabai   xuegod 0 Oct 11 19:46 dd
+
+通过上面大家可以看到尽管用户变了，但是它的所属组是没有变的，因此别人在此目录中创建的任何目录和文件,所属组都是此目录的所属组，但是属主还是自己，但是任何人在此目录创建的文件,都可以被删除
+
+
+2.1.3  粘滞位举例如下：
+
+SBIT（Sticky）：只针对目录有效,对文件无效,作用是防止别人删除掉对方的资料，防止用户自己的文件被别的用户误删除
+
+
+[root@panda ~]# mkdir /tencent
+[root@panda ~]# chmod 1777 /tencent/
+[root@panda ~]# su - test
+复制代码
+Last login: Tue Oct 11 20:12:57 CST 2016 on pts/2
+[test@panda ~]$ cd /tencent/
+[test@panda tencent]$ touch aa
+[test@panda tencent]$ touch bb
+[test@panda tencent]$ exit
+复制代码
+logout
+
+切换用户
+
+[root@panda ~]# su - xiaobai
+复制代码
+Last login: Tue Oct 11 20:11:14 CST 2016 on pts/2
+[xiaobai@panda ~]$ cd /tencent/
+[xiaobai@panda tencent]$ touch cc
+[xiaobai@panda tencent]$ touch dd
+[xiaobai@panda tencent]$ ll
+复制代码
+total 0
+-rw-rw-r--. 1 test    test    0 Oct 11 20:14 aa
+-rw-rw-r--. 1 test    test    0 Oct 11 20:14 bb
+-rw-rw-r--. 1 xiaobai xiaobai 0 Oct 11 20:14 cc
+-rw-rw-r--. 1 xiaobai xiaobai 0 Oct 11 20:14 dd
+[xiaobai@panda tencent]$ rm -f aa
+复制代码
+rm: cannot remove ‘aa’: Operation not permitted    --提示没有权限
+[xiaobai@panda tencent]$ exit
+复制代码
+logout
+这就是sticky位的功能
+
+
+2.1.4 扩展：ACL
+       ACL: Access Control List (ACL)访问控制列表
+       它是一种权限分配之外的普遍范式。例如，默认情况下你需要确认3个权限组：UGO。而使用ACL，你可以增加权限给其他用户或组别，而不单只是简单的"other"或者是拥有者不存在的组别。可以允许指定的用户A、B、C拥有写权限而不再是让他们整个组拥有写权限
+       ACL允许向文件分配细化权限
+
+
+
+
+ACL使用情况：
+[root@panda mnt]# ll a.txt
+复制代码
+-rw-r--r-- 1 miao miao 0 Dec  5 22:36 a.txt
+
+如果我有一个用户san，想让它对文件a.txt有读写的权限，而其它用户不可以对这个文件有权限操作。有以几种情况：
+1、 给other权限，存在的问题就是让所有用户都对这个文件有读写，达不到我们的目的
+2、 把SAN用户加入一个组，存在的问题就是：如果miao组里还有其它重要的文件，那么这个时候san用户也可以来这里随意访问，有安全隐患
+3、  通过sudo。在普通用户状态下：通过sudo命令。存在的问题就是：你需要配置sudo文件，这个配置是有严格的格式要求。比较麻烦，也不灵活
+
+通过上面我们可以看：在LINUX中。因为对其它其它用户的权限定义过于宽泛，所以对用户权限细粒度的划分使用就比较麻烦，那么ACL就是用来解决这个问题的
+
+Ø  查看是否安装：
+
+
+[root@panda ~]# rpm -qf `which getfacl`
+复制代码
+acl-2.2.51-12.el7.x86_64
+[root@panda ~]# rpm -qf `which setfacl`
+复制代码
+acl-2.2.51-12.el7.x86_64
+
+Ø  ACL参数解释
+   ACL_USER_OBJ: 相当于Linux里file_owner的权限
+   ACL_USER: 定义了额外的用户可以对此文件拥有的权限
+   ACL_GROUP_OBJ: 相当于Linux里group的权限
+   ACL_GROUP: 定义了额外的组可以对此文件拥有的权限
+   ACL_MASK: 定义了ACL_USER,ACL_GROUP_OBJ和ACL_GROUP的最大权限
+   ACL_OTHER: 相当于Linux里other的权限
+举例如下：
+查看ACL
+
+
+
+设置ACL
+
+[root@panda ~]# getfacl --omit-header /home/test.txt
+复制代码
+user::r--                  文件所有者权限
+user:market:rw-     指定用户权限
+user:kaiven:r--       指定用户权限
+group::rw-              组所有者权限
+group:bajie:--x      指定组的权限
+mask::rwx             掩码
+other::-w-             其它
+
+Ø  删除ACL权限
+
+[root@panda mnt]# setfacl -b a.txt   删除所有ACL权限
+[root@panda mnt]# setfacl –x u:harry a.txt   删除用户harry的ACL权限
+[root@panda mnt]# setfacl –x g:harry a.txt   删除组harry的ACL权限
+[root@panda mnt]# ll a.txt
+复制代码
+-rw-r--r-- 1 miao miao 0 Dec  5 22:36 a.txt
+[root@panda mnt]# getfacl a.txt
+复制代码
+# file: a.txt
+# owner: miao
+# group: miao
+user::rw-
+group::r--
+other::r—
+
+u  如果文件系统不支持ACL的话，你可能要重新挂载挂载一下你的文件系统
+用的命令：
+mount -o remount, acl [mount point]
+u  ACL中的MASK参数
+       如果文件有ACL_MASK值，那么文件的组权限中显示的权限就是mask的值，而不是组的权限，同时在MASK中，mask规定的是最大权限，也就是说假如你添加了一个普通用户的ACL权限是rw,但是mask的值确是r。那么这个用户对这个文件也只有r权限。
+
+       作用：用于临时降低用户或组的权限
+
+
+[root@panda mnt]# ll a.txt
+复制代码
+-rw-rwxr-- 1 miao miao 0 Dec  5 22:36 a.txt
+[root@panda mnt]# getfacl --omit-header a.txt
+复制代码
+user::rw-
+user:san:rwx-
+group::r--
+mask::rwx
+other::r—
+
+MASK的作用：它是用来临时的压制一些用户或者组的权限。尽量保证其它人权限设置为空
+setfact -m -x  -b  -d
+ACL权限继承：
+
+[root@panda home]# setfacl -m d:u:tom:r dir-33/
+复制代码
+ACL权限复制：
+
+[root@panda ~]# getfacl /dir3 | setfacl --set-file=- /dir4
+复制代码
+
+
+第3章： 实战：创建一个让root都无法删除的文件
+       大家有时候发现用root权限都不能修改某个文件，这种情况大部分原因是因为用chattr命令锁定该文件了。
+       文件系统属性权限：chattr(防止误操作包括root用户)
+       chattr命令的作用很大，通过chattr命令修改文件属性能够提高系统的安全性，但是它并不适合所有的目录。chattr命令不能保护/、/dev、/tmp、/var目录。
+       lsattr命令是显示chattr命令设置的文件属性
+Linux文件系统扩展属性：chattr  lsattr
+chattr [+ - =] 选项 对象
+q  +：增加权限   -:删除权限     =：等于某个权限
+l  +a
+       对文件来说：只能在文件中追加数据，但现有数据不能删除也不能进行修改，用追加方式，vi无法判断你做的操作是属于哪种，所以不能用vi来编辑文件，也无法删除文件
+       对目录来说：只允许在目录中建立和修改文件，但是不允许删除
+l  +i
+       对文件来说：不能修改，删除文件，也不能添加和修改其内的数据,但可以查看文件里面的内容
+       对目录来说：只能修改目录下的文件数据，但不能建立和删除文件
+lsattr 可选参数 -a
+举例：
+对文件来说：
+创建一个新文件，并写入数据
+
+
+[root@xuegod72 mnt]# echo 'xuegod-linux' > b.txt
+[root@xuegod72 mnt]# cat b.txt
+复制代码
+xuegod-linux
+
+使用chattr添加a属性，让这个文件只能增加内容，不能修改内容
+
+
+[root@xuegod72 mnt]# chattr +a b.txt
+[root@xuegod72 mnt]# ll b.txt
+复制代码
+-----w----+ 1 root root 13 Oct 12 11:15 b.txt
+[root@xuegod72 mnt]# echo 123456 >> b.txt
+复制代码
+
+上面可以看到是可以增加内容的
+
+
+[root@xuegod72 mnt]# echo 78910 > b.txt
+复制代码
+-bash: b.txt: Operation not permitted    无法修改内容
+
+使用chattr添加i属性，让文件禁止任何人修改
+
+
+[root@xuegod72 mnt]# chattr +i b.txt
+[root@xuegod72 mnt]# echo 12345 >> b.txt
+复制代码
+-bash: b.txt: Permission denied    无法添加内容
+
+查看文件隐藏属性
+
+
+[root@xuegod72 mnt]# lsattr -a b.txt
+复制代码
+----ia---------- b.txt
+
+删除添加的文件隐藏属性
+
+
+[root@xuegod72 mnt]# chattr -i b.txt
+[root@xuegod72 mnt]# chattr -a b.txt
+[root@xuegod72 mnt]# lsattr b.txt
+复制代码
+---------------- b.txt
+
+实际应用：
+
+
+[root@ xuegod72 ~]# chattr +a /etc/passwd
+[root@l xuegod72 ~]# chattr +a /etc/shadow
+复制代码
+
+
+其它还能针对日志文件进行设置
+
+
+chattr 设置文件属性，它针对的所有用户包括root在内
+=====常用的参数
+chattr +a
+chattr +i
+chattr +A

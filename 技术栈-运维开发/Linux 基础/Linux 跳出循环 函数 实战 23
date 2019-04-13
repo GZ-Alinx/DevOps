@@ -1,0 +1,397 @@
+1-22-跳出循环-shift左移-函数的使用和数据库自动备份脚本-v1
+
+
+
+
+  Shift参数左移指令
+  shell中函数使用方法
+  shell脚本实战：mysql自动备份和自动解压ZIP 文件脚本
+
+
+
+
+第1章 Shift参数左移指令
+shift命令用于对参数的移动(左移)，通常用于在不知道传入参数个数的情况下依次遍历每个参数然后进行相应处理（常见于Linux中各种程序的启动脚本）
+       在扫描处理脚本程序的参数时，经常要用到的shift命令，如果你的脚本需要10个或10个以上的参数，你就需要用shift命令来访问第10个及其后面的参数
+u 作用：
+       每执行一次，参数序列顺次左移一个位置，$#的值减1，用于分别处理每个参数，移出去的参数，不再可用
+u 补充位置参数：
+位置参数, 从命令行传递到脚本, 或者传递给函数, 或者set给变量
+
+
+
+
+
+
+$#
+
+命令行参数  或者位置参数的个数
+$*
+所有的位置参数都被看作为一个单词。 "$*"必须被引用起来
+$@
+与$*相同，但是每个参数都是一个独立的引用字符串, 这就意味着, 参数是被完整传递的, 并没有被解释或扩展。这也意味着：参数列表中每个参数都被看作为单独的单词。
+
+"$@"也应该被引用起来
+
+
+范例1：依次读取输入的参数并打印参数个数
+
+
+[root@server0 opt]# cat 1.sh
+#!/bin/bash
+
+while [ $# != 0 ];do
+        echo "第一个参数为：$1 ,参数的个数为：$#"
+        shift
+done
+[root@server0 opt]# sh 1.sh a b c d e f g
+第一个参数为：a ,参数的个数为：7
+第一个参数为：b ,参数的个数为：6
+第一个参数为：c ,参数的个数为：5
+第一个参数为：d ,参数的个数为：4
+第一个参数为：e ,参数的个数为：3
+第一个参数为：f ,参数的个数为：2
+第一个参数为：g ,参数的个数为：1
+复制代码
+从上面结果可以看到： shift （shift 1）命令每执行一次，变量的个数($#)减一（之前的$1变量被销毁之后的$2就变成了$1），而变量值提前一位。
+       同理，shift n后，前n位参数都会被销毁，比如我们输入了5个参数为：a、 b、 c 、d、 e，那么对应的位置变量为：$1=a，  $2=b，$3=c，$4=d，$5=e， 我们在执行shift 3之后， 前面的3个参数a、b 、c   会被销毁，就剩下了2个参数：d、e，这时对就的位置变量为： $1=d、$2=e, 其中d由$4—>$1，e由$5—>$2
+范例2：做一个加法计算器
+参数如右：11  17  23  84，对应的位置变量： $1  $2 $3  $4
+
+
+
+[root@xuegod67 ~]# cat 3.sh
+#!/bin/bash
+#首先确定有参数
+if [ $# -le 0 ];then
+   echo "没有足够的参数存在"
+   exit 124
+fi
+sum=0
+while [ $# -gt 0 ];do
+    sum=`expr $sum + $1`
+    shift
+done
+echo $sum
+[root@xuegod67 ~]# sh 3.sh 11 17 23 84
+135
+复制代码
+
+
+第2章 shell函数使用方法
+函数：把一个功能封装起来。使用时直接调用函数名。  这样的脚本好处：模块化，代码可读性强。扩展性方便
+
+语法如下：
+
+
+函数名 ()
+
+{
+
+命令序列
+
+}
+
+或：
+
+function 函数名()   # function 可以不写
+
+{
+
+命令序列
+
+}
+
+
+
+注：函数调用时：不带()
+调用语法
+       函数名 参数1 参数2 …
+函数中的变量
+       均为全局变量，没有局部变量
+函数的调用
+       可以传递参数。在函数中用$1、$2…来引用传递的参数
+
+范例4：定义一个函数,变量调用
+
+
+/mnt|⇒ cat fun-1.sh
+#!/bin/bash
+
+abc=123
+
+#define fun
+example()
+{
+        abc=456
+}
+
+echo $abc
+
+#fun
+example
+echo $abc
+/mnt|⇒ sh fun-1.sh
+123
+456
+复制代码
+
+
+范例5：函数的参数传递
+
+
+/mnt|⇒ cat fun-2.sh
+#!/bin/bash
+
+delete()
+{
+        rm -rf $1
+        mkdir $2
+}
+
+
+delete /mnt/mysql0.txt /mnt/xuegod-1705
+
+复制代码
+
+
+范例6：通过脚本调用其他模块中的函数
+我们调用函数是通过source这个命令来调用其他脚本中的函数
+那么我们现在对前面的作业再进行一下扩展，通过模块化来简化操作
+首先定义一个包含不同函数的功能模块
+
+
+/mnt|⇒ cat fun-moduels.sh
+#!/bin/bash
+
+delete()
+{
+        rm -rf $de
+}
+
+copy()
+{
+        cp -rf $sdir $tdir
+}
+
+backup()
+{
+        tar zcf $tar_name $tar_dir &> /dev/null
+}
+
+quit()
+{
+        exit
+}
+
+diskinfo()
+{
+        df -h
+}
+复制代码
+
+写一个备份脚本，调用需要的模块
+
+
+/mnt|⇒ cat fun-3.sh
+source /mnt/fun-moduels.sh
+
+while true
+do
+clear
+cat<<EOF
+********************************
+   The following is optional
+********************************
+        1) Copy
+        2) Delete
+        3) Backup
+        4) Quit
+********************************
+EOF
+read -p "Please enter your option: " opt
+        case $opt in
+                1)
+                   read -p "Please input you want to copy the source file: " sdir
+                   read -p "Please input target directory: " tdir
+                   copy
+                   ;;
+                2)
+                   read -p "Please input your target directory: " de
+                   delete
+                   ;;
+                3)
+                   read -p "backup file_name:" tar_name
+                   read -p "backup file: " tar_dir
+                   backup
+                   ;;
+                4)
+                   quit
+                   ;;
+                *)
+                   echo "$option is error"
+        esac
+done
+复制代码
+
+
+
+第3章 数据库自动备份的脚本
+
+#!/bin/bash
+#auto  backup mysql-db
+#xuegod  2016-11-9
+
+#Define PATH 定义变量
+DATE=`date +%Y-%m-%d`
+BAKDIR="/data/backup/mysql_db/$DATE"
+MYSQLDB=legacy
+MYSQLPW=123456    #mysql数据库密码
+MYSQLUSR=root
+
+#must use root user run scripts 必须使用root用户运行，$UID为系统变量
+if [ $UID -ne 0  ];then
+  echo  This script must use the root user ！！！
+  sleep 2
+  exit 0
+fi
+
+#Define DIR and mkdir DIR 判断目录是否存在，不存在则新建
+if [ ! -d $BAKDIR  ];then
+  mkdir -p $BAKDIR
+else
+  echo "This is $BAKDIR exists......."
+fi
+
+#Use mysqldump backup mysqldb 使用mysqldump备份数据库
+
+/usr/bin/mysqldump -u $MYSQLUSR -p$MYSQLPW -d $MYSQLDB >$BAKDIR/${MYSQLDB}.sql
+cd $BAKDIR ; tar -czf ${MYSQLDB}.tar.gz *.sql
+
+#查找备份目录下以.sql结尾的文件并删除
+#find  . -type f -name *.sql |xargs rm -rf
+#或
+find . -type f -name *.sql -exec rm -rf {} \;
+
+#如何数据库备份成功，则打印成功，并删除备份目录30天以前的目录
+[ $? -eq 0  ] && echo "This $DATE Mysql_db BACKUP is SUCCESS"
+cd /data/backup/mysql_db/ ; find .  -type d  -mtime +30 | xargs rm -rf
+echo "The mysql_db backup successfully "
+复制代码
+
+
+第4章 写脚本的一些注意的地方
+1、  建议大家把一些长命令分解成小的代码块，代码越短，越方便我们理解
+2、  将多个语句的开头和结尾排好顺序，原因是方便我们查看语法结构，比如循环语句有没有正确开启和关闭if....fi
+3、  可以对多行语句进行代码缩进，这样显示的有层次和结构清晰
+4、  建议大家在写脚本的最好使用一致的格式
+5、  注释的使用
+第五章 扩展课后
+1、监控Web服务是否正常，有几种方法？
+2、监控db服务是否正常，有几种方法？
+
+方法：web服务和数据库
+1、  端口监控
+
+
+本地：netstat/ss/lsof
+[root@xuegod67 ~]# lsof -i :22 |grep sshd|wc -l
+3
+[root@xuegod67 ~]# ss -anptu|grep 22|wc -l
+3
+[root@xuegod67 ~]# netstat -anptu|grep 22|wc -l
+复制代码
+2、远程：telnet/nmap
+
+[root@xuegod67 ~]# telnet www.baidu.com 80
+Trying 111.13.100.92...
+Connected to www.baidu.com.
+Escape character is '^]'.
+^]
+telnet> quit
+Connection closed.
+[root@xuegod67 ~]# echo -e "\n" |telnet www.baidu.com 80|grep Connected
+Connected to www.baidu.com.
+Connection closed by foreign host.
+
+[root@xuegod67 ~]# echo -e "\n" |telnet www.baidu.com 80|grep Connected|wc -l
+Connection closed by foreign host.
+1
+[root@xuegod67 ~]# nmap www.baidu.com -p 80
+
+Starting Nmap 5.51 ( http://nmap.org ) at 2016-11-05 18:27 CST
+Nmap scan report for www.baidu.com (111.13.100.91)
+Host is up (0.012s latency).
+Other addresses for www.baidu.com (not scanned): 111.13.100.92
+PORT   STATE SERVICE
+80/tcp open  http
+
+Nmap done: 1 IP address (1 host up) scanned in 0.28 seconds
+
+[root@xuegod67 ~]# nmap www.baidu.com -p 80 |grep open|wc -l
+1
+复制代码
+
+
+2、进程（本地）
+u 本地
+
+[root@xuegod67 ~]# ps -ef|grep mysqld
+root     49401     1  0 19:15 pts/0    00:00:00 /bin/sh /usr/bin/mysqld_safe --datadir=/var/lib/mysql --socket=/var/lib/mysql/mysql.sock --pid-file=/var/run/mysqld/mysqld.pid --basedir=/usr --user=mysql
+mysql    49503 49401  1 19:15 pts/0    00:00:00 /usr/libexec/mysqld --basedir=/usr --datadir=/var/lib/mysql --user=mysql --log-error=/var/log/mysqld.log --pid-file=/var/run/mysqld/mysqld.pid --socket=/var/lib/mysql/mysql.sock
+root     49522 48980  0 19:15 pts/0    00:00:00 grep mysqld
+[root@xuegod67 ~]# ps -ef|grep mysqld|wc -l
+复制代码
+
+
+u 远程(wget/curl：http方式，根据返回值进行判断)
+
+
+[root@xuegod67 ~]# wget --spider www.baidu.com
+开启 Spider 模式。检查是否存在远程文件。
+--2016-11-05 19:10:28--  http://www.baidu.com/
+正在解析主机 www.baidu.com... 111.13.100.92, 111.13.100.91
+正在连接 www.baidu.com|111.13.100.92|:80... 已连接。
+已发出 HTTP 请求，正在等待回应... 200 OK
+长度：277 [text/html]
+存在远程文件且该文件可能含有更深层的链接，
+但不能进行递归操作 -- 无法取回。        curl –I URL
+[root@xuegod67 ~]# curl -I www.baidu.com
+HTTP/1.1 200 OK
+Server: bfe/1.0.8.18
+Date: Tue, 08 Nov 2016 08:25:33 GMT
+Content-Type: text/html
+Content-Length: 277
+Last-Modified: Mon, 13 Jun 2016 02:50:07 GMT
+Connection: Keep-Alive
+ETag: "575e1f5f-115"
+Cache-Control: private, no-cache, no-store, proxy-revalidate, no-transform
+Pragma: no-cache
+Accept-Ranges: bytes
+复制代码
+
+
+u  也可以根据一些程序如数据库特有的标志返回值进行判断
+
+
+
+范例8：下面以监控MYSQL服务为例进行一下说明
+
+
+[root@xuegod67 mnt]# cat 8.sh
+#!/bin/bash
+#本地端口
+#if [ "`netstat -anptu|grep 3306|awk -F "[ : ]+" '{print $5}'`" = "3306"  ]
+#if [ `ps -ef|grep mysql|wc -l` -gt 0  ]
+if [ `netstat -anput|grep mysqld|wc -l` -gt 0  ]
+#if [ `lsof -i tcp:3306|wc -l` -gt 0  ]
+#远程
+#if [ `nc -w 2 192.168.1.67 3306 &> /dev/null && echo ok |wc -l` -gt 0  ]
+#if [ `nmap 192.168.1.67 -p 3306 2>/dev/null |grep open|wc -l` -gt 0  ]
+then
+   echo "MySql is Running."
+else
+   echo "MySql is Stopped."
+   /etc/init.d/mysqld start
+fi
+复制代码

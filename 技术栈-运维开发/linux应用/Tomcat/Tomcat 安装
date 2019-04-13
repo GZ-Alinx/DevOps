@@ -1,0 +1,402 @@
+什么是Tomcat
+官方网站：http://tomcat.apache.org/
+         Tomcat 是 Apache 软件基金会（Apache Software Foundation）的 Jakarta 项目中的一个核心项目，由 Apache、Sun 和其他一些公司及个人共同开发而成。由于有了 Sun 的参与和支持，最新的 Servlet 和JSP 规范总是能在 Tomcat 中得到体现，Tomcat 5 支持最新的 Servlet 2.4 和 JSP 2.0 规范。因为Tomcat 技术先进、性能稳定，而且免费，因而深受 Java 爱好者的喜爱并得到了部分软件开发商的认可，成为目前比较流行的 Web 应用服务器。
+         Tomcat 服务器是一个免费的开放源代码的 Web 应用服务器，属于轻量级应用服务器，在中小型系统和并发访问用户不是很多的场合下被普遍使用，是开发和调试 JSP 程序的首选。 Tomcat 和 IIS 等 Web 服务器一样，具有处理 HTML 页面的功能。不过，Tomcat 处理静态 HTML 的能力不如 Apache 服务器。
+了解jsp
+         JSP：全名为Java Server Pages，中文名叫java服务器页面， 是由Sun Microsystems公司倡导、许多公司参与一起建立的一种动态网页技术标准。JSP技术有点a类似ASP技术，它是在传统的网页HTML（标准通用标记语言的子集）文件(*.htm,*.html)中插入Java程序段(Scriptlet)和JSP标记(tag)，从而形成JSP文件，后缀名为(*.jsp)。 用JSP开发的Web应用是跨平台的，既能在Linux下运行，也能在其他操作系统上运行。
+支持 JSP 网站，收费版 web 服务器：oracle 的 weblogic  ；  IBM 的 websphere
+WebLogic 是美国 Oracle 公司出品的一个 application server 确切的说是一个基于 JAVAEE 架构的中间件，WebLogic 是用于开发、集成、部署和管理大型分布式 Web 应用、网络应用和数据库应用的 Java应用服务器。将 Java 的动态功能和 Java Enterprise 标准的安全性引入大型网络应用的开发、集成、部署和管理之中。
+WebSphere 是 IBM 的软件平台。它是 Web 应用程序和跨平台、跨产品解决方案所需要的整个中间件基础设施。WebSphere 提供了可靠、灵活和健壮的软件运行服务。
+中间件
+中间件是一种独立的系统软件或服务程序，分布式应用软件借助这种软件在不同的技术之间共享资源。中间件位于客户机/服务器的操作系统之上，管理计算机资源和网络通讯。是连接两个独立应用程序或独立系统的软件。相连接的系统，即使它们具有不同的接口，但通过中间件相互之间仍能交换信息。执行中间件的一个关键途径是信息传递。通过中间件，应用程序可以工作于多平台或OS环境。
+中间件是一类连接软件组件和应用的计算机软件，它包括一组服务。以便于运行在一台或多台机器上的多个软件通过网络进行交互。该技术所提供的互操作性，推动了一致分布式体系架构的演进，该架构通常用于支持并简化那些复杂的分布式应用程序，它包括web服务器、事务监控器和消息队列软件。
+了解java
+JDK : java  development kit  (套件) 。简单的说 JDK 是面向开发人员使用的 SDK，它提供了 Java的开发环境和运行环境。就是Java开发工具，是进行Java开发的基础。
+JDK(Java Development Kit)是Sun Microsystems针对Java开发员的产品。自从Java推出以来，JDK已经成为使用最广泛的Java SDK。JDK 是整个Java的核心，包括了Java运行环境，Java工具和Java基础的类库。JDK是学好Java的第一步。而专门运行在x86平台的Jrocket在服务端运行效率也要比Sun JDK好很多。从SUN的JDK5.0开始,提供了泛型等非常实用的功能，其版本也不断更新，运行效率得到了非常大的提高。
+         SDK：Software Development Kit，软件开发工具包，一般都是一些软件工程师为特定的软件包、软件框架、硬件平台、操作系统等建立应用软件时的开发工具的集合。可以包括凼数库、编译程序等。
+         JRE：java Runtime Enviroment 是指 Java 的运行环境，是面向 Java 程序的使用者，而不是开发者，运行JAVA程序所必须的环境的集合，包含JVM标准实现及Java核心类库。Java Runtime Environment（包括Java Plug-in）是Sun的产品，包括两部分：Java Runtime Environment和Java Plug-in。JRE是可以在其上运行、测试和传输应用程序的Java平台。它包括Java虚拟机（jvm）、Java核心类库和支持文件。它不包含开发工具(JDK)--编译器、调试器和其它工具。JRE需要辅助软件--Java Plug-in--以便在浏览器中运行applet。
+         JVM：java virtual machineJVM 就是我们常说的 java 虚拟机。JVM是一种用于计算设备的规范，它是一个虚构出来的计算机，是通过在实际的计算机上仿真模拟各种计算机功能来实现的。JVM是java的核心和基础，在java编译器和os平台之间的虚拟处理器。它是一种基于下层的操作系统和硬件平台并利用软件方法来实现的抽象的计算机，可以在上面执行java的字节码程序。java编译器只需面向JVM，生成JVM能理解的代码或字节码文件。Java源文件经编译器，编译成字节码程序，通过JVM将每一条指令翻译成不同平台机器码，通过特定平台运行
+在 JDK的安装目录里你可以找到 jre目录里面有两个文件夹bin 和 lib,在这里可以认为 bin 里的就是 jvm， lib 中则是 jvm 工作所需要的类库，而 jvm 和 lib 和起来就称为 jre。
+Tomcat工作模式和端口
+模式：B/S模式
+         端口：8080
+Java se：是由Sun Microsystems公司于1995年5月推出的Java程序设计语言和Java平台的总称。用Java实现的HotJava浏览器（支持Java applet）显示了Java的魅力：跨平台、动态的Web、Internet计算。从此，Java被广泛接受并推动了Web的迅速发展，常用的浏览器现在均支持Java applet。
+Applet：小应用程序是采用Java编程语言编写的程序，该程序可以包含在 HTML（标准通用标记语言的一个应用）页中，与在页中包含图像的方式大致相同。
+SE(J2SE),standard edition，标准版，是我们通常用的一个版本，从JDK 5.0开始，改名为Java SE。
+EE(J2EE),enterprise edition，企业版，使用这种JDK开发J2EE应用程序，从JDK 5.0开始，改名为Java EE。
+ME(J2ME),micro edition，主要用于移动设备、嵌入式设备上的java应用程序，从JDK5.0开始，改名为Java ME。
+没有JDK的话，无法编译Java程序，如果想只运行Java程序，要确保已安装相应的JRE。
+Tomcat所有软件
+Jdk工具：
+          javase/downloads/index.html                                  //JDK下载页面
+
+graphic
+         勾选第一个蓝色框，点击对应x64版本的jdk的rpm软件包下载
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\f6c3d1051cdf45eb8b021f88cccf8f05\ip_image004.jpeg
+Tomcat：
+         http://tomcat.apache.org/                                                 //tomcat下载页面
+         页面选择你需要的版本：
+graphic
+         点击版本号跳转到相应的软件包类型选择下载（我们这里选择tar包）：
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\306c39c78a9e4f9aa3f4cf4b6608163d\ip_image007.jpeg
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\3457ecfd9e2c472a814d3d6d301296bc\lip_image008.png
+MySQL-Connector-Java：
+         http://dev.mysql.com/downloads/connector/                         //官网下载网站
+选择Connector/j  跳转下载页面
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\ee77383d0c5d40a89f510d450395db9d\lip_image009.png
+         选择Paltform Independent，选择tar包后面的Download
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\6c740f436e144a59a269336838a15974\ip_image011.jpeg
+         不用注册，No thanks，just start my download
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\1c2c0544ee694769801675b6771edaaa\ip_image013.jpeg
+Tomcat-native：
+         Tomcat Native 这个项目可以让 Tomcat 使用 Apache 的 apr 包来处理包括文件和网络IO操作，以提升性能。直接说就是用tomcat-native这个软件来提高tomcat处理静态页面的性能。这个软件在tomcat的bin目录下已经提供，不用单独去下载了！可以tomcat处理静态的性能略逊于apache！
+MySQL:
+         http://dev.mysql.com/downloads/mysql/              //mysql官方下载网址，选择版本下载即
+最有所有软件的版本如下：
+MySQL-Connector-Java：                  mysql-connector-java-5.1.36
+Tomcat：                                              apache-tomcat-8.0.26
+JDK：                                                          jdk-8u60-linux-x64
+MySQL：                                                mysql-5.6.26
+部署Tomcat使用jsp链接Msql
+常见的网页类型：
+         HTML&HTM：HyperText Markup Language 超文本连接标示语言  .html .html
+         ASP：Active Server Page 动态服务器页面（微软开发）  .asp
+         ASP.net：ASP的下一个版本，也是建立在通用语言上的程序架构，网页后缀如aspx
+         PHP：Hypertext Preprocessor 超级本本预处理语言  .php  .php5  .phps
+         JSP：JAVA Server Pages  Sun Microsystems公司倡导，有点类似ASP技术  .jsp
+
+安装JDK
+注意：安装之前需要查看下系统是否安装了openjdk，如果安装了openjdk，请先卸载，否则安装不了oracle官方的jdk
+卸载方法：yum remove java-* -y
+
+ [root@XueGod63 ~]# rpm -ivh jdk-8u60-linux-x64.rpm
+Preparing...                ########################################### [100%]
+   1:jdk1.8.0_60            ######################-v##################### [100%]
+Unpacking JAR files...
+    tools.jar...
+    plugin.jar...
+    javaws.jar...
+    deploy.jar...
+    rt.jar...
+    jsse.jar...
+    charsets.jar...
+    localedata.jar...
+    jfxrt.jar...
+[root@XueGod63 ~]# java -version                               //查看当前系统的java版本
+java version "1.8.0_60"
+Java(TM) SE Runtime Environment (build 1.8.0_60-b27)
+Java HotSpot(TM)64-Bit Server VM (build 25.60-b23, mixed mode)
+[root@xuegod63 ~]# rpm -pql jdk-8u60-linux-x64.rpm                       //查看新装的java安装所在的位置/usr/java
+//注意，上面的方式用于最小安装的系统，
+如果你发现你的系统直接查看有java版本的话，那么安装方法如下
+         [root@XueGod63 ~]# java -version                                                 //查看当前系统的java版本
+java version "1.7.0_45"
+OpenJDK Runtime Environment (rhel-2.4.3.3.el6-x86_64 u45-b15)
+OPenJDK 64-Bit Server VM (build 24.45-b08, mixed mode)
+#注意，如果你的系统是最小安装，是没有java的，需要直接安装，如果是我们的标准环境，系统集成了jdk，只是版本比较低，如果你是最小安装的话这里的步骤都不需要操作
+[root@XueGod63 ~]# rpm -ivh jdk-8u60-linux-x64.rpm
+         [root@XueGod63 ~]# vim /etc/profile                                                                 //修改变量
+export JAVA_HOME=/usr/java/jdk1.8.0_60/                     # JAVA_HOME变两个路径
+export JAVA_BIN=/usr/java/jdk1.8.0_60/bin
+export PATH=${JAVA_HOME}bin:$PATH                                 # 环境变量
+export CLASSPATH=.:${JAVA_HOME}/lib/dt.jar:${JAVA_HOME}/lib/tools.jar   # 定义两个类
+[root@XueGod63 ~]# source /etc/profile                                                  //加载环境变量
+java -version
+java version "1.8.0_60"
+Java(TM) SE Runtime Environment (build 1.8.0_60-b27)
+Java HotSpot(TM) 64-Bit Server VM (build 25.60-b23, mixed mode)
+安装tomcat
+[root@XueGod63 ~]# tar xvf apache-tomcat-8.0.26.tar.gz -C /usr/local/src/
+[root@XueGod63 ~]# cd /usr/local/src/apache-tomcat-8.0.26/
+注意：Tomcat有两种安装方式，一种是直接解压就可以使用的二进制文件，第二种是编译安装，我们这里采用了第一种方法，下载的tomcat软件直接解压就可以执行的二进制文件，因为在官方默认下载的便是使用第一种方法安装，那么下载解压后的目录如下：
+tomcat
+    |---bin Tomcat：存放启动和关闭tomcat脚本；
+    |---conf  Tomcat：存放不同的配置文件（server.xml和web.xml）；
+    |---lib：包含Tomcat使用的jar文件.unix平台此目录下的任何文件都被加到Tomcat的classpath中；
+    |---logs：存放Tomcat执行时的LOG文件；
+|---webapps：Tomcat的主要Web发布目录（包括应用程序示例）；
+    |--- ROOT：tomcat的家目录
+        |--- index.jsp：Tomcat的默认首页文件
+|---work：存放jsp编译后产生的class文件或servlet文件存放
+|---temp：存放Tomcat运行时所产生的临时文件
+[root@XueGod63 apache-tomcat-8.0.26]# ls bin/                         //tomcat的执行脚本文件
+bootstrap.jar    configtest.bat    setclasspath.sh  tomcat-native.tar.gz
+catalina.bat                  configtest.sh     shutdown.bat     tool-wrapper.bat
+catalina.sh                   daemon.sh         shutdown.sh      tool-wrapper.sh
+catalina-tasks.xml            digest.bat        startup.bat      version.bat
+commons-daemon.jar            digest.sh         startup.sh       version.sh
+commons-daemon-native.tar.gz  setclasspath.bat  tomcat-juli.jar
+#bat为windows下的脚本（批处理）
+#sh为Linux下的脚本，Shell
+#catalina.sh是一个最关键的脚本，其他的启动脚本如startup，shutdown.sh,都是使用了不同的参数调用了该脚本，startup是以start参数调用了catalina脚本，shutdown使用stop调用了catalina脚本！
+[root@XueGod63 apache-tomcat-8.0.26]# cd .. ； mv apache-tomcat-8.0.26/  /usr/local/tomcat ； cd
+Tomcat启动脚本
+         [root@XueGod63 ~]# vim /etc/init.d/tomcat
+#!/bin/bash
+# Tomcat init script for Linux
+# chkconfig: 2345 96 14
+# discription: The Apache Tomcat Server/JSP container
+JAVA_OPTS='-server -Xms64m -Xmx128m'
+JAVA_HOME=/usr/java/jdk1.8.0_60
+CATALINA_HOME=/usr/local/tomcat
+$CATALINA_HOME/bin/catalina.sh $*
+################################################################################
+JAVA_OPTS='-server -Xms64m -Xmx128m'是用来设置JAVA相关运行参数的变量
+                     -server   一定要作为第一个参数，在多个CPU时性能佳
+                     -Xms       初始heap（堆）大小，使用最小内存大小，cpu性能高时此值应该设大一些
+                     -Xmx       Java heap最大值，使用内存的最大值
+                     上面两个值分配的是JVM的最小和最大值，取决于硬件的物理内存大小，建议为物理内存的一半，不超过80%
+JAVA_HOME=/usr/local/jdk1.8.0_60        指定Tomcat目录
+$CATALINA_HOME=/usr/local/tomcat $*        指定运行tomcat的脚本
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\fcfd51870d134f44a169948ea8fe2c8c\ip_image029.jpeg
+[root@XueGod63 ~]# chmod +x /etc/init.d/tomcat
+[root@XueGod63 ~]# service tomcat start
+Using CATALINA_BASE:   /usr/local/tomcat
+Using CATALINA_HOME:   /usr/local/tomcat
+Using CATALINA_TMPDIR:/usr/local/tomcat/temp
+Using JRE_HOME:        /usr
+Using CLASSPATH:       /usr/local/tomcat/bin/bootstrap.jar:/usr/local/tomcat/bin/tomcat-juli.jar
+Tomcat started
+[root@XueGod63 ~]# chkconfig --add tomcat
+[root@XueGod63 ~]# chkconfig tomcat on
+[root@XueGod63 ~]# netstat -antup | grep 8080                                             //查看是否启动
+tcp        0      0:::8080       :::*                 LISTEN      3154/java
+测试Tomcat
+览器访问 http://192.168.1.63:8080
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\8b4ce844dbfd4d0b89edef0ce4d80585\ip_image015.jpeg
+         点击manager App,需要一个用户名和密码：
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\e50ceca0769f48d08d5f252f20ac4e6d\ip_image017.jpeg
+       创建管理Manger App用户
+         [root@XueGod63 ~]# vim /usr/local/tomcat/conf/tomcat-users.xml
+<!--
+  <role rolename="tomcat"/>
+  <role rolename="role1"/>
+  <user username="tomcat" password="tomcat" roles="tomcat"/>
+  <user username="both" password="tomcat" roles="tomcat,role1"/>
+  <user username="role1" password="tomcat" roles="role1"/>
+-->
+#修改为如下，去掉注释<!--    -->
+  <role rolename="tomcat"/>
+  <role rolename="role1"/>
+  <role rolename="manager-gui"/>                                                               #添加此行
+  <user username="redhat" password="123456" roles="manager-gui"/>   #修改此行
+  <user username="both" password="tomcat" roles="tomcat,role1"/>
+  <user username="role1" password="tomcat" roles="role1"/>
+################################################################################
+几种角色
+1：“manager-gui”：Allows access to the html interface（允许通过web的方式登录查看服务器信息）。
+2：“manager-script”: Allows access to the plain text interface（允许以纯文本的方式访问）。
+3：“manager-jmx”: Allows access to the JMX proxy interface（允许jmx的代理访问）。
+4：“manager-status”: Allows access to the read-only status pages（允许以只读状态访问）。
+
+         [root@XueGod63 ~]# service tomcat stop
+[root@XueGod63 ~]# service tomcat start//没有restart命令，只能先stop在start
+测试访问
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\c29e3c838ae9407cb88798d494f5a799\ip_image019.jpeg
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\2f04578b9a0143eebc17da5d4fba352d\ip_image021.jpeg
+搭建基于域名的虚拟主机
+[root@XueGod63 ~]# ls /usr/local/tomcat/conf/
+Catalina         catalina.properties  logging.properties  tomcat-users.xml  web.xml
+catalina.policy  context.xml          server.xml          tomcat-users.xsd
+server.xml是Tomcat的主配置文件（全局）,服务器设置的，例如端口设置，路径设置。
+context里设置tomcat数据源，用来连接数据库。
+tomcat_user主要是用户名和密码的设置。
+web是默认首页等等之类的设置
+[root@XueGod63 ~]# vim /usr/local/tomcat/conf/server.xml
+<Host name="xuegod.com"  appBase="/var/www/html">
+        <Context path="" docBase="/var/www/html/web1" />
+</Host>
+<Host name="xuegod.cn"  appBase="/var/www/html">
+        <Context path="" docBase="/var/www/html/web2" />
+</Host>
+#在末尾的</Engine>上面添加上面这几行
+appBase指定应用程序(网站)的基本路径,这里可以存放多个程序(网站),一般是相对路径,相对于tomcat的安装目录。
+Context path=""为虚拟目录，如果是空，表示直接就是/，如果是如path="aa",那么访问的时候就是site:8080/aa
+xuegod.cndocBase="……" 为实际目录，就是可以是绝对路径，如果是相对路径就是基于appBase
+[root@XueGod63 ~]# service tomcat stop ; service tomcat start
+         [root@XueGod63 ~]# mkdir -p /var/www/html/{web1,web2}
+         [root@XueGod63 ~]# echo xuegod.com > /var/www/html/web1/index.html
+         [root@XueGod63 ~]# echo xuegod.cn> /var/www/html/web2/index.html
+
+客户机host文件：
+         192.168.1.63    xuegod.com
+192.168.1.63    xuegod.cn
+
+网页测试
+         xuegod.com:8080    xuegod.cn:8080
+graphic
+graphic
+
+补充:真实的生产环境中，需要一个合法的域名和一个合法的公网IP，把域名解析到IP上，然后在web服务器里修改配置文件
+安装tomcat-Native
+         Tomcat 可以使用 apr 来提供更好的伸缩性、性能和集成到本地服务器技术。用来提高 tomcat 的性能。 tomcat native 在具体的运行平台上，提供了一种优化技术，它本身是基于 ARP（Apache Portable（轻便） Runtime）技术
+我们应用了 tomcat native 技术之后，tomcat 在跟操作系统级别的交互方面可以做得更好，并且它更像apache 一样，可以更好地作为一台 web server。 tomcat 可以利用 apache 的 apr 接口，使用操作系统的部分本地操作，从而提升性能APR 提升的是静态页面处理能力
+         关于tomcat-native的相关介绍及下载： http://tomcat.apache.org/download-native.cgi
+         [root@XueGod63 ]# yum install apr-devel gcc gcc-c++ openssl-devel openssl
+         [root@XueGod63 ]# tar xf tomcat-native-1.1.34-src.tar.gz -C /usr/local/src/
+     [root@XueGod63 ]# cd /usr/local/src/tomcat-native-1.1.33-src/jni/native/
+[root@XueGod63 native]# ./configure --with-apr=/usr/ --with-java-home=/usr/java/jdk1.8.0_60/ --with-ssl
+         [root@XueGod63 native]# make ; make install；cd
+安装完：提示：
+C:\Users\shuangjunli\AppData\Local\YNote\data\m18789215299@163.com\d3ad6c7293dd43bab08dd54f7df58f41\clipboard.png
+
+需要添加库文件：
+[root@xuegod63 native]# vim /etc/ld.so.conf
+/usr/local/apr/lib  ##添加此行
+[root@xuegod63 native]# ldconfig
+[root@xuegod63 native]# echo "ldconfig" >>/etc/rc.local
+[root@XueGod63 ~]# service tomcat stop ; service tomcat start
+    [root@xuegod63 ~]#  cat /usr/local/tomcat/logs/catalina.out | grep Native              //看日志看是否支持native
+17-Sep-2015 20:09:24.293 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent Loaded APR based Apache Tomcat Native library 1.1.33 using APR version 1.3.9.
+17-Sep-2015 20:09:24.293 INFO [main] org.apache.catalina.core.AprLifecycleListener.lifecycleEvent APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true].
+安装mysql
+解决依赖
+[root@XueGod63 ~]# yum install -y cmake     ncurses-devel              //gcc等相关在编译apache已安装
+编译安装MySql
+         [root@XueGod63 ~]# tar xf mysql-5.6.26.tar.gz -C /usr/local/src/ ; cd /usr/local/src/mysql-5.6.26
+         [root@XueGod63 mysql-5.6.26]# useradd -M -s /sbin/nologin mysql                            //创建mysql运行用户
+[root@XueGod63 mysql-5.6.26]# cmake \
+ -DCMAKE_INSTALL_PREFIX=/usr/local/mysql \
+ -DMYSQL_UNIX_ADDR=/tmp/mysql.sock \
+ -DDEFAULT_CHARSET=utf8 \
+ -DDEFAULT_COLLATION=utf8_general_ci \
+ -DWITH_EXTRA_CHARSETS=all \
+ -DWITH_MYISAM_STORAGE_ENGINE=1\
+ -DWITH_INNOBASE_STORAGE_ENGINE=1\
+ -DWITH_MEMORY_STORAGE_ENGINE=1\
+ -DWITH_READLINE=1\
+ -DENABLED_LOCAL_INFILE=1\
+ -DMYSQL_DATADIR=/usr/local/mysql/data \
+ -DMYSQL-USER=mysql
+*****************************************************************************************************************
+DCMAKE_INSTALL_PREFIX                                      #制定mysql的安装根目录，目录在安装的时候会自动创建，这个值也可以在服务器启动时，用--basedir来设置
+DMYSQL_UNIX_ADDR                                           #服务器与本地客户端进行通信的Unix套接字文件，必须是绝对路径，默认位置/tmp/mysql.sock，可以在服务器启动时，用--socket改变
+DDEFAULT_CHARSET                        #mysql默认使用的字符集，不指定将默认使用Latin1西欧字符集
+DDEFAULT_COLLATION                           #默认字符校对
+DWITH_EXTRA_CHARSETS                  #制定mysql拓展字符集，默认值也是all支持所有的字符集
+DWITH_MYISAM_STORAGE_ENGINE #静态编译MYISAM，INNOBASE，MEMORY存储引擎到MYSQL服务
+                                   器，这样MYSQL就支持这三种存储引擎
+DWITH_INNOBASE_STORAGE_ENGINE
+DWITH_MEMORY_STORAGE_ENGINE
+DWITH_READLINE                    #支持readline库
+DENABLED_LOCAL_INFILE                    #允许本地倒入数据，启用加载本地数据
+DMYSQL_DATADIR                                #mysql数据库存放路径
+DMYSQL-USER                                    #运行mysql的用户
+这些编译参数的帮助寻找方法：
+http://www.mysql.com→→Documentation→→选择对应的版本（5.6）→→HTML Online→→View→→Installation & Upgrades→→Installing MySQL from Source →→MySQL Source-Configuration Options→→
+http://dev.mysql.com/doc/refman/5.6/en/source-configuration-options.html                 //最终的URL
+ [root@XueGod63 mysql-5.6.26]# ccmake /usr/local/src/mysql-5.6.26/       //除开在线，可以使用本地帮助
+ [root@XueGod63 mysql-5.6.26]# make -j 2 ; make install          //以2个进程来编译，不要超过CPU核心数
+上面的make过程比较漫长，我们使用了-j 2来增加编译速度
+配置mysql
+         [root@XueGod63 mysql-5.6.26]# cd && chown -R mysql:mysql /usr/local/mysql/                //属主属组更改
+ [root@XueGod63 ~]# cp /usr/local/mysql/support-files/my-default.cnf /etc/my.cnf       //覆盖原配置文件
+ [root@XueGod63 ~]# cp /usr/local/mysql/support-files/mysql.server /etc/init.d/mysqld    //启动脚本
+         [root@XueGod63 ~]# vim /etc/init.d/ mysqld                                                   //更改启动脚本中指定mysql位置
+basedir=
+datadir=
+#修改为
+basedir=/usr/local/mysql
+datadir=/usr/local/mysql/data
+         [root@XueGod63 ~]# chkconfig mysqld  on                                         //开机启动
+初始化数据库
+ [root@XueGod63 ~]# /usr/local/mysql/scripts/mysql_install_db \
+--defaults-file=/etc/my.cnf  \
+--basedir=/usr/local/mysql/\
+--datadir=/usr/local/mysql/data/\
+--user=mysql
+#类似于在rpm安装的时候启动数据库弹出的初始化消息
+[root@XueGod63 ~]# ls /usr/local/mysql/data/                     //初始化看这个下面有无mysql和test等数据库
+ibdata1  ib_logfile0  ib_logfile1  mysql  performance_schema  test
+[root@XueGod63 ~]# ln -s /usr/local/mysql/bin/* /bin/                  //这个里面是部分命令，让系统直接调用
+[root@XueGod63 ~]# servie mysqld  start                                 //启动数据库
+[root@XueGod63 ~]# mysql_secure_installation                                   //初始安全设置（设置root密码，123456）[记住，编译安装之前，记得除去mysql mysql-devel mysql-libs三个软件]
+[root@XueGod63 ~]# mysql -uroot -p123456                                //测试登录（OK）
+也可以借助下面的脚本来实现，脚本需要修改，注意
+#!/bin/bash
+yum remove -y mysql mysql-server
+clear
+echo'This shell will Auto Install Mysql5.6'
+yum install -y cmake ncurses-devel
+tar -xf mysql-5.6.26.tar.gz -C /usr/local/src && cd /usr/local/src/mysql-5.6.26
+useradd -M -s /sbin/nologin mysql
+mkdir /usr/local/mysql
+cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DMYSQL_UNIX_ADDR=/tmp/mysql.sock -DDEFAULT_CHARSET=utf8 -DDEFAULT_COLLATION=utf8_general_ci -DWITH_EXTRA_CHARSETS=all -DWITH_MYISAM_STORAGE_ENGINE=1-DWITH_INNOBASE_STORAGE_ENGINE=1-DWITH_MEMORY_STORAGE_ENGINE=1-DWITH_READLINE=1-DENABLED_LOCAL_INFILE=1-DMYSQL_DATADIR=/usr/local/mysql/data -DMYSQL_USER=mysql
+make -j 3 && make install
+chown -R mysql:mysql /usr/local/mysql
+/usr/local/mysql/scripts/mysql_install_db --user=mysql --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data
+rm -rf /etc/my.cnf
+cp /usr/local/mysql/support-files/my-default.cnf /etc/my.cnf
+sed -i '/^\[mysqld\]/adatadir = /usr/local/mysql/data' /etc/my.cnf
+sed -i '/^\[mysqld\]/abasedir = /usr/local/mysql' /etc/my.cnf
+cp /usr/local/mysql/support-files/mysql.server  /etc/init.d/mysqld
+chmod +x /etc/init.d/mysqld
+service mysqld restart && echo "install success"
+echo "PATH=/usr/local/mysql/bin:$PATH" >> /etc/profile
+source /etc/profile
+echo "source /etc/profile" >> /etc/rc.local
+ [root@XueGod63 ~]# echo "PATH=/usr/local/mysql/bin:$PATH" >> /etc/profile && source /etc/profile
+[root@XueGod63 ~]# vim /etc/my.cnf
+[mysqld]
+character-set-server=utf8      #添加此行，修改mysql数据库默认编码（和低版本的mysql写法不一样， 低版本的写法是：default-character-set=utf8
+[root@XueGod63 ~]# service mysqld restart
+[root@XueGod63 ~]# mysql_secure_installation       //数据库安全初始化
+[root@XueGod63 ~]# mysql -uroot -p123456             //检测登陆（OK）
+mysql> show variables like "%char%";                         //查看默认字符编码
++---------------------------+-----------------------------------+
+| Variable_name             | Value                             |
++---------------------------+-----------------------------------+
+| character_set_client      | utf8                              |
+| character_set_connection  | utf8                              |
+| character_set_database    | utf8                              |
+| character_set_filesystem  | binary                            |
+| character_set_results     | utf8                              |
+| character_set_server      | utf8                              |
+| character_set_system      | utf8                              |
+| character_sets_dir        |/usr/local/mysql/share/charsets/  |
++---------------------------+-----------------------------------+
+
+注意：以上安装MySQL部分，根据实际情况来选择安装方式，可以选择编译安装，也可以用rpm包来安装，只要保证服务正常运行即可。
+测试数据
+mysql> create database tomcat;        //测试数据库，为了和后面方便测试，这里创建tomcat
+mysql> use tomcat
+mysql> create table tt(id int,name varchar(128));                //创建测试表
+mysql> insert into tt values (1,"come on boy"),(2,"come on girl");//创建测试数据
+mysql> grant all on tomcat.* to tomcat@localhost identified by 'tomcat';              //授权用户
+         mysql> \q
+         [root@XueGod63 ~]# mysql -utomcat -ptomcat          //测试tomcat可以登陆（OK）
+
+测试jsp链接mysql
+         Jsp链接mysql，官方提供了工具：安装mysql-connector
+安装mysql-connector
+[root@XueGod63 ~]# tar xvf mysql-connector-java-5.1.36.tar.gz -C /usr/local/src/
+         [root@XueGod63 ~]# cd /usr/local/src/mysql-connector-java-5.1.36/
+[root@XueGod63 ~]# cp /usr/local/src/mysql-connector-java-5.1.36/mysql-connector-java-5.1.36-bin.jar /usr/local/tomcat/lib/                  #只需要复制到tomcat的lib目录下，重启tomcat就可以生效
+         [root@XueGod63 ~]# service tomcat stop; service tomcat start
+测试
+[root@XueGod63 ~]# vim /usr/local/tomcat/webapps/ROOT/mysql.jsp       //建立测试页面
+<%@ page contentType="text/html;charset=utf-8"%>
+<%@ page import="java.sql.*"%>
+<html>
+<body>
+<%
+Class.forName("org.gjt.mm.mysql.Driver").newInstance();
+String url ="jdbc:mysql://localhost/tomcat?user=tomcat&password=tomcat&useUnicode=true&characterEncoding=utf-8";
+Connection conn= DriverManager.getConnection(url);
+Statement stmt=conn.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+String sql="select * from tt";
+ResultSet rs=stmt.executeQuery(sql);
+while(rs.next()){%>
+step:<%=rs.getString(1)%>
+context:<%=rs.getString(2)%><br><br>
+<%}%>
+<%out.print("Congratulations!!! JSP connect MYSQL IS OK!!");%>
+<%rs.close();
+stmt.close();
+conn.close();
+%>
+</body>
+</html>
+#代码复制注意核对，由于编码问题，复制到vim中可能会增加多余的%号，记得删除
+浏览器访问：http://192.168.1.63:8080/mysql.jsp
+graphic

@@ -1,0 +1,389 @@
+
+
+本节所讲内容：
+nginx调优
+实验环境：  centos7.4  nginx 1.12.2
+
+nginx 下载链接： http://nginx.org/en/download.html
+
+
+LNMP调优
+LNMP的调优着重体现在Nginx服务器上的调优，Linux内核调优有专门的课程为大家讲解，Mysql和PHP的调优方式和LAMP的中的调试方式雷同！
+
+Nginx编译前的优化
+[root@xuegod63 ~]# tar zxvf  nginx-1.12.2.tar.gz  -C /usr/local/src/
+[root@xuegod63 local]# cd /usr/local/src/nginx-1.12.2/
+编译前的优化主要是用来修改程序名等等，例如：
+[root@xuegod63 nginx-1.12.2]# curl -I http://www.baidu.com
+……
+Server: BWS/1.1
+……
+[root@xuegod63 nginx-1.12.2]# curl -I http://www.sina.com.cn
+……
+Server: nginx
+……
+[root@xuegod63 nginx-1.12.2]# curl -I http://www.xuegod.cn
+HTTP/1.1 200 OK
+Server: nginx/1.6.2                         #我们目标是将nginx更改名字
+Content-Type: text/html; charset=UTF-8
+Connection: keep-alive
+X-Powered-By: PHP/5.4.45
+Set-Cookie: PHPSESSID=smm0i6u4f9v7bj0gove79ja1g7; path=/
+Cache-Control: no-cache
+Date: Mon, 07 Mar 2016 06:09:11 GMT
+
+[root@xuegod63 nginx-1.12.2]# vim src/core/nginx.h             //目的更改源码隐藏软件名称和版本号
+改：
+13 #define NGINX_VERSION      "1.12.2"   #此行修改的是你想要的版本号
+14 #define NGINX_VER          "nginx/" NGINX_VERSION #此行修改的是你想修改的软件
+名称
+为：
+13 #define NGINX_VERSION      "8.8.2"
+ 14 #define NGINX_VER          "XWS/" NGINX_VERSION
+
+[root@xuegod63 nginx-1.12.2]# vim src/http/ngx_http_header_filter_module.c
+改：49 static u_char ngx_http_server_string[] = "Server: nginx" CRLF;   //修改HTTP头信息中的connection字段，防止回显具体版本号
+为：49 static u_char ngx_http_server_string[] = "Server: XWS" CRLF;
+拓展：通用http头域
+通用头域包含请求和响应消息都支持的头域，通用头域包含Cache-Control、 Connection、Date、Pragma、Transfer-Encoding、Upgrade、Via。对通用头域的扩展要求通讯双方都支持此扩展，如果存在不支持的通用头域，一般将会作为实体头域处理。那么也就是说有部分设备，或者是软件，能获取到connection，部分不能，要隐藏就要彻底！
+
+[root@xuegod63 nginx-1.12.2]# vim src/http/ngx_http_special_response.c
+//这个文件定义了http错误码的返回，有时候我们页面程序出现错误，Nginx会代我们返回相应的错误代码，回显的时候，会带上nginx和版本号，我们把他隐藏起来
+改：22 "<hr><center>" NGINX_VER "</center>" CRLF   #这里 就不需要修改了，以前老版本1.10需要修改，这里新版本中直接调用的是一个之前定义的" #define NGINX_VER          "XWS/" NGINX_VERSION "  这里不需要修改
+为：22 "<hr><center>" XWS "</center>" CRLF    #老版本改这里
+
+Nginx正式安装
+[root@xuegod63 nginx-1.12.2]# yum install gcc gcc-c++ autoconf automake zlib zlib-devel openssl openssl-devel  pcre pcre-devel -y                                          //安装依赖包
+
+[root@xuegod63 nginx-1.12.2]#  ./configure --prefix=/usr/local/nginx --with-http_dav_module --with-http_stub_status_module --with-http_addition_module --with-http_sub_module --with-http_flv_module --with-http_mp4_module --with-pcre
+
+--with-http_dav_module          #启用支持（增加PUT,DELETE,MKCOL：创建集合，COPY和MOVE方法）
+                                    默认关闭，需要编译开启
+--with-http_stub_status_module  #启用支持（获取Nginx上次启动以来的工作状态）
+--with-http_addition_module         #启用支持（作为一个输出过滤器，支持不完全缓冲，分部分相应请求）
+--with-http_sub_module              #启用支持（允许一些其他文本替换Nginx相应中的一些文本）
+--with-http_flv_module              #启用支持（提供支持flv视频文件支持）
+--with-http_mp4_module              #启用支持（提供支持mp4视频文件支持，提供伪流媒体服务端支持）
+--with-pcre   #需要注意，这里指的是源码,用#./configure --help |grep pcre查看帮助
+
+[root@xuegod63 nginx-1.12.2]# make -j 4 && make install
+
+启动nginx
+[root@xuegod63 ~]# cd  /usr/local/nginx/   #查看nginx启动前目录
+[root@xuegod63 nginx]# ls
+conf  html  logs  sbin
+[root@xuegod63 nginx]# ./sbin/nginx
+[root@xuegod63 nginx]# ls   #启动后，会多一些临时文件
+client_body_temp  fastcgi_temp  logs        sbin       uwsgi_temp
+conf              html          proxy_temp  scgi_temp
+
+[root@xuegod63 nginx-1.12.2]# /usr/local/nginx/sbin/nginx
+[root@xuegod63 nginx-1.12.2]# netstat -antup | grep nginx
+tcp        0      0 0.0.0.0:80      0.0.0.0:*              LISTEN      52553/nginx
+
+
+测试是否隐藏了版本和软件名
+[root@xuegod63 nginx-1.12.2]# curl  -I 192.168.1.63
+HTTP/1.1 200 OK
+Server: XWS/8.8.2
+错误代码测试（尽量使用firefox或者类360流览器）
+[root@xuegod63 nginx-1.12.2]# iptables -F   #防火墙清空一下
+http://192.168.1.63/aaa.html
+
+
+Nginx运行用户
+[root@xuegod63~]# useradd -M -s /sbin/nologin nginx           //修改nginx默认运行用户
+[root@xuegod63 ~]# ps -aux | grep nginx                                             //默认是nobody用户
+nobody    52554  0.0  0.1  22660  1568 ?  S    14:39   0:00 nginx: worker process
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+改：#user  nobody;
+为：user  nginx;
+[root@xuegod63 ~]# /usr/local/nginx/sbin/nginx -s reload
+[root@xuegod63 ~]# ps -aux | grep nginx
+nginx    52555  0.0  0.1  22660  1568 ?  S    14:39   0:00 nginx: worker process
+在这里我们还可以看到在查看的时候，work进程是nginx用户了，但是master进程还是root
+其中，master是监控进程，也叫主进程，work是工作进程.
+
+所以我们可以master监控进程使用root，可以是降级使用普通用户，如果都是用普用户，注意编译安装的时候，是用普通用户执行，sudo方式操作！可以直接理解为master是管理员，work进程才是为用户提供服务的！
+
+Nginx运行进程个数
+Nginx运行进程个数一般我们设置CPU的核心或者核心数x2,如果你不了解，top命令之后按1也可以看出来。
+我是4核cpu，这里设为4
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+  改： 4 worker_processes  4;
+  为：4 worker_processes  4;
+
+[root@xuegod63 ~]# /usr/local/nginx/sbin/nginx -s reload
+[root@xuegod63 ~]# ps -axu | grep nginx
+[root@xuegod63 nginx-1.12.2]# ps -axu | grep nginx   #运行4个worker进程
+[root@xuegod63 ~]# ps -axu | grep nginx
+root      6483  0.0  0.0  20580  1400 ?        Ss   21:05   0:00 nginx: master process ./sbin/nginx
+root      6648  0.0  0.2 151796  5372 pts/2    S+   21:12   0:00 vim conf/nginx.conf
+nginx     6871  0.0  0.0  23088  1512 ?        S    21:22   0:00 nginx: worker process
+nginx     6872  0.0  0.0  23088  1512 ?        S    21:22   0:00 nginx: worker process
+nginx     6873  0.0  0.0  23088  1512 ?        S    21:22   0:00 nginx: worker process
+nginx     6874  0.0  0.0  23088  1512 ?        S    21:22   0:00 nginx: worker process
+
+Nginx运行CPU亲和力
+这个要根据你的CPU线程数配置
+比如4核4线程配置
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+4  worker_processes  4;
+5  worker_cpu_affinity 0001 0010 0100 1000;
+比如8核8线程配置
+4  worker_processes  8;
+5  worker_cpu_affinity 00000001 00000010 00000100 00001000 00010000 00100000 01000000 10000000;
+那么如果我是4线程的CPU，我只想跑两个进程呢？
+worker_processes  2;
+worker_cpu_affinity 0101 1010;
+注：表示第一个进程在第一个和第三个cpu上运行，第二个和第四个cpu上运行，两个进程分别在这两个组合上轮询！
+
+worker_processes最多开启8个，8个以上性能提升不会再提升了，而且稳定性变得更低，所以8个进程够用了。
+
+Nginx最多可以打开文件数
+7 worker_rlimit_nofile 102400;
+　这个指令是指当一个nginx进程打开的最多文件描述符数目，理论值应该是最多打开文件数（ulimit -n）与nginx进程数相除，但是nginx分配请求并不是那么均匀，所以最好与ulimit -n的值保持一致。
+
+Nginx事件处理模型
+events {
+    use epoll;
+    worker_connections  1024;
+}
+扩展：
+　select，poll，epoll都是IO多路复用的机制。I/O多路复用就通过一种机制，可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。
+Epoll 在Linux2.6内核中正式引入，和select相似，其实都I/O多路复用技术。
+
+epoll优势：
+1、Epoll没有最大并发连接的限制，上限是最大可以打开文件的数目，这个数字一般远大于2048, 一般来说这个数目和系统内存关系很大，具体数目可以cat /proc/sys/fs/file-max察看。
+[root@xuegod63 nginx-1.12.2]# cat /proc/sys/fs/file-max
+198588
+2、 效率提升，Epoll最大的优点就在于它只管你“活跃”的连接，而跟连接总数无关，因此在实际的网络环境中，Epoll的效率就会远远高于select和poll。
+3、 内存拷贝，Epoll在这点上使用了“共享内存”，这个内存拷贝也省略了。
+
+
+单个进程允许客户端最大并发连接数
+17     worker_connections  10240;   #改第17行
+这个数值一般根据服务器性能和内存来制定，也就是单个进程最大连接数，实际最大并发值就是work进程数乘以这个数。
+如何设置，可以根据设置一个进程启动所占内存，top -u nginx，但是实际我们填入一个10240，足够了，这些都算并发值，一个网站的并发达到这么大的数量，也算一个大站了！
+例：
+top -u nginx
+PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+47221 nginx     20   0   23088   1764    832 S   0.0  0.1   0:01.06 nginx
+47223 nginx     20   0   23088   1772    840 S   0.0  0.1   0:00.77 nginx
+47225 nginx     20   0   23088   1768    836 S   0.0  0.1   0:00.64 nginx
+47226 nginx     20   0   23088   1764    832 S   0.0  0.1   0:00.87 nginx
+刚启动是1.7M左右
+
+
+ServerName匹配和location
+对应需要修改的配置文件的位置：
+
+ServerName匹配
+1：精确匹配：www.aa.com
+2：左侧通配符匹配：*.aa.com
+3：右侧通配符匹配：www.*
+4：正则表达式：~ ^.*\.aa\.com$
+5: default_server
+6、服务IP地址
+
+[root@xuegod63 sbin]# ./nginx -t   #检测nginx配置文件是否正确
+nginx: the configuration file /usr/local/nginx/conf/nginx.conf syntax is ok
+nginx: configuration file /usr/local/nginx/conf/nginx.conf test is successful
+[root@xuegod63 sbin]# ./nginx -s reload
+
+location
+= 绝对匹配
+^~：URL前半部分匹配，不检查正则
+~：正则匹配，区分大小写
+~*“正则匹配”不区分大小写
+=，^~,~,~*
+
+开启高效传输模式
+include mime.types;                  媒体类型
+default_type  application/octet-stream;          默认媒体类型 足够
+
+31  sendfile   on；                       开启高效文件传输模式，sendfile指令指定nginx是否调用sendfile函数来输出文件，对于普通应用设为 on，如果用来进行下载等应用磁盘IO重负载应用，可设置为off，以平衡磁盘与网络I/O处理速度，降低系统的负载。注意：如果图片显示不正常把这个改成off。
+32  tcp_nopush on；                          必须在sendfile开启模式才有效，防止网路阻塞，积极的减少网络报文段的数量
+
+连接超时时间
+主要目的是保护服务器资源，CPU，内存，控制连接数，因为建立连接也是需要消耗资源的，TCP的三次握手四次挥手等，我们一般断掉的是那些建立连接但是不做事儿，也就是我建立了链接开始，但是后续的握手过程没有进行，那么我们的链接处于等待状态的，全部断掉！
+同时我们也希望php建议短链接，消耗资源少
+35  keepalive_timeout  65;
+
+文件上传大小限制
+我们知道PHP可以修改上传文件大小限制，nginx也可以修改
+http {
+……
+40  client_max_body_size 10m;
+
+gzip调优
+使用gzip压缩功能，可能为我们节约带宽，加快传输速度，有更好的体验，也为我们节约成本，所以说这是一个重点
+Nginx启用压缩功能需要你来ngx_http_gzip_module模块，apache使用的是mod_deflate
+一般我们需要压缩的内容有：文本，js，html，css，对于图片，视频，flash什么的不压缩，同时也要注意，我们使用gzip的功能是需要消耗CPU的！
+
+gzip on;        #开启压缩功能
+gzip_min_length  1k;    #设置允许压缩的页面最小字节数，页面字节数从header头的Content-Length中获取，默认值是0，不管页面多大都进行压缩，建议设置成大于1K，如果小与1K可能会越压越大。
+
+gzip_comp_level 9;  #压缩比例，用来指定GZIP压缩比，1压缩比最小，处理速度最快，9压缩比最大，传输速度快，但是处理慢，也比较消耗CPU资源。
+gzip_types  text/css text/xml application/javascript;   #用来指定压缩的类型，‘text/html’类型总是会被压缩。
+
+expires缓存调优
+缓存，主要针对于图片，css，js等元素更改机会比较少的情况下使用，特别是图片，占用带宽大，我们完全可以设置图片在浏览器本地缓存365d，css，js，html可以缓存个10来天，这样用户第一次打开加载慢一点，第二次，就非常快乐！缓存的时候，我们需要将需要缓存的拓展名列出来！
+
+Expires缓存配置在server{}字段里面
+location ~ *\.(gif|jpg|jpeg|png|bmp|swf)$
+      {
+      expires      3650d;
+      }
+location
+= 绝对匹配
+^~：URL前半部分匹配，不检查正则
+~：正则匹配，区分大小写
+~*“正则匹配”不区分大小写
+\转义
+* 配置任意个任意字符
+$ 以什么结尾
+例：
+[root@xuegod63 sbin]# grep bash$ /etc/passwd
+root:x:0:0:root:/root:/bin/bash
+
+
+location ~ .*\.(js|css)?$
+      {
+      expires      30d;
+      }
+
+expire功能优点
+（1）expires可以降低网站购买的带宽，节约成本
+（2）同时提升用户访问体验
+（3）减轻服务的压力，节约服务器成本，甚至可以节约人力成本，是web服务非常重要的功能。
+expire功能缺点：
+被缓存的页面或数据更新了，用户看到的可能还是旧的内容，反而影响用户体验。
+解决办法：
+第一个 缩短缓存时间，例如：1天，不彻底，除非更新频率大于1天
+第二个 对缓存的对象改名
+a.图片，附件一般不会被用户修改，如果用户修改了，实际上也是更改文件名重新传了而已
+b.网站升级对于js，css元素，一般可以改名，把css，js，推送到CDN。
+
+网站不希望被缓存的内容
+1）广告图片
+2）网站流量统计工具
+
+
+日志切割优化
+[root@xuegod63 ~]# cd /usr/local/nginx/logs/
+日志优化的目的，是为了一天日志一压缩，超过10天的删除
+
+
+[root@xuegod63 logs]# vim cut_nginx_log.sh                  //每天日志分割脚本
+（tar  tvf 2017-011-08.tar.bz2 显示文件内容）
+
+#!/bin/bash
+date=$(date +%F -d -1day)
+cd /usr/local/nginx/logs
+
+if [ ! -d cut ] ; then
+        mkdir cut
+fi
+mv access.log cut/access_$(date +%F -d -1day).log
+mv error.log cut/error_$(date +%F -d -1day).log
+/usr/local/nginx/sbin/nginx -s reload
+tar -jcvf cut/$date.tar.bz2 cut/*
+rm -rf cut/access* && rm -rf cut/error*
+cat >>/var/spool/cron/root<<eof
+00 00 * * * /bin/sh /usr/local/nginx/logs/cut_nginx_log.sh >/dev/null 2>&1
+eof
+find -type f -mtime +10 | xargs rm -rf
+
+健康检查的日志，不用输入到log中，因为这些日志没有意义，我们分析的话只需要分析访问日志，看看一些页面链接，如200，301，404的状态吗，在SEO中很重要，而且我们统计PV是页面计算，这些都没有意义，反而消耗了磁盘IO，降低了服务器性能，我们可以屏蔽这些如图片，js，css这些不宜变化的内容
+
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+       location ~ .*\.(js|jpg|jpeg|JPG|JPEG|css|bmp|gif|GIF)$ {
+            access_log off;
+        }
+
+日志目录权限优化
+[root@xuegod63 ~]# chown -R root.root /xuegod/logs/
+[root@xuegod63 ~]# chmod -R 700 /xuegod/logs/
+
+日志格式优化
+      #vim /usr/local/nginx/conf/nginx.conf
+           log_format access ‘$remote_addr – $remote_user [$time_local] “$request” ‘‘$status $body_bytes_sent “$http_referer” ‘‘”$http_user_agent” $http_x_forwarded_for’;
+其中，各个字段的含义如下：
+       1.$remote_addr 与$http_x_forwarded_for 用以记录客户端的ip地址；
+        2.$remote_user ：用来记录客户端用户名称；
+        3.$time_local ： 用来记录访问时间与时区；
+        4.$request ： 用来记录请求的url与http协议；
+        5.$status ： 用来记录请求状态；成功是200，
+        6.$body_bytes_s ent ：记录发送给客户端文件主体内容大小；
+        7.$http_referer ：用来记录从那个页面链接访问过来的；
+        8.$http_user_agent ：记录客户端浏览器的相关信息；
+
+目录文件访问控制
+主要用在禁止目录下指定文件被访问，当然也可以禁止所有文件被访问！一般什么情况下用？比如是有存储共享，这些文件本来都只是一下资源文件，那么这些资源文件就不允许被执行，如sh.py,pl,php等等
+例如：禁止访问images下面的php程序文件
+        location ~ ^/images/.*\.(php|php5|.sh|.py|.py)$ {
+            deny all；
+        }
+[root@xuegod63 ~]# /usr/local/nginx/sbin/nginx -s reload
+[root@xuegod63 ~]# mkdir /usr/local/nginx/html/images
+ [root@xuegod63 ~]# echo "<?php phpinfo(); ?>" > /usr/local/nginx/html/images/index.php
+测试访问
+
+
+配置规则，禁止访问
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf              //server字段中
+   location ~* \.(txt|doc)$ {
+                if ( -f $request_filename) {
+                root /usr/local/nginx/html;
+         break;
+        }
+              deny all;
+       }
+[root@xuegod63 ~]# /usr/local/nginx/sbin/nginx -s reload
+
+当然，可以重定向到某一个URL
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+     location ~* \.(txt|doc)$ {
+                if ( -f $request_filename) {
+                root /usr/local/nginx/html;
+                rewrite ^/(.*)$ http://www.baidu.com last;
+                break;
+        }
+        }
+
+来源访问控制
+这个需要ngx_http_access_module模块支持，不过，默认会安装
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf              //写法类似Apache
+        location ~ ^/(xuegod)/ {
+        allow 192.168.1.0/24;
+        deny all;
+        }
+
+错误页面的提示
+对于自定义的错误页面，我们只需要将errorpage写入到配置文件
+        error_page   404  /404.html;
+
+内部身份验证
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+       location /xuegod/ {
+                auth_basic "haha";
+                auth_basic_user_file /usr/local/nginx/conf/passwd;
+        }
+
+用户创建
+[root@xuegod63 ~]# htpasswd -cb /usr/local/nginx/conf/passwd aaa 123
+[root@xuegod63 ~]# chmod 400 /usr/local/nginx/conf/passwd
+[root@xuegod63 ~]# chown nginx /usr/local/nginx/conf/passwd
+[root@xuegod63 ~]# /usr/local/nginx/sbin/nginx -s reload
+
+
+防止DDOS攻击
+通过使用limit_conn_zone进行控制单个IP或者域名的访问次数
+[root@xuegod63 ~]# vim /usr/local/nginx/conf/nginx.conf
+http字段中配置
+   limit_conn_zone $binary_remote_addr zone=addr:10m;
+server的location字段配置
+    location / {
+            root   html;
+            limit_conn addr 1;

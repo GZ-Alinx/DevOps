@@ -1,0 +1,288 @@
+
+
+1-24-case流程控制和for、while循环语句的使用
+case - 流程控制语句
+循环语句for…do...done语句
+循环语句while...do…done语句
+使用((…)) 扩展shell中算数运算的使用方法
+循环语句嵌套
+
+
+Shell有一套自己的流程控制语句，其中包括条件语句、循环语句、选择语句
+
+第1章 流程控制语句：case
+
+控制语句即用来实现对程序流程的选择、循环、转向和返回等进行控制。case是开关语句的一个组成部分；
+它是根据变量的不同进行取值比较，然后针对不同的取值分别执行不同的命令操作
+适用于多分支，是一个多选择语句
+case     变量值     in
+              模式1）
+                     命令序列1
+                     ；；
+              模式2）
+                     命令序列2
+                     ；；
+                     ……
+                     *）
+                     默认命令序列
+ esac
+wKiom1aBS3GSdweWAAXUYXd1bus720.png
+执行流程：
+首先使用“变量值”与模式1进行比较，若取值相同则执行模式1后的命令序列，直到遇见双分号“；； ”后跳转至esac，表示分支结束；若与模式1不相匹配，则继续与模式2 进行比较，若取值相同则执行模式2 后的命令序列，直到遇见双分号“；； ”后跳转至esac，表示结束分支，……依次类推，若找不到任何匹配的值，则执行默认模式“ *） ”后的命令序列，直到遇见esac后结束分支
+注意事项：
+取值后面必须为单词in，每一模式必须以右括号结束。取值可以为变量或常数。匹配发现取值符合某一模式后，其间所有命令开始执行直至 ;;
+取值将检测匹配每一个模式。一旦模式匹配，则执行完匹配模式相应命令后不再继续其他模式。如果无一匹配模式，使用星号 * 捕获该值，再执行后面的命令
+它需要一个esac（就是case反过来）作为结束标记，每个case分支用右圆括号，用两个分号表示break
+【1-1】
+/mnt|⇒ cat case-1.sh
+#!/bin/bash
+cat <<_eof_
+**************************
+*** 1.backup   ***********
+*** 2.copy     ***********
+*** 3.quit     ***********
+**************************
+_eof_
+read -p "Input a choose: " op
+case $op in
+       1) echo "Your selection is backup"
+       ;;
+       2) echo "Your selection is copy"
+       ;;
+       3) exit
+       ;;
+       *) echo "error"
+esac
+【1-2】
+/mnt|⇒ cat case-2.sh
+#!/bin/bash
+case $1 in
+       start)
+              systemctl $1 httpd
+              ;;
+       stop)
+              systemctl $1 httpd
+              ;;
+       status)
+              systemctl $1 httpd
+              ;;
+       restart)
+              systemctl $1 httpd
+              ;;
+       *)
+              echo "usage:$0 start|stop|status|restart"
+esac
+【1-3】
+/mnt|⇒ cat case-3.sh
+#!/bin/bash
+read -p "Type a digit or letter --> " char
+case $char in
+       [0-9])
+              echo "You typed the digit $char"
+              ;;
+       [[:lower:]]|[[:upper:]])
+              echo "You typed the letter $char"
+              ;;
+       *)
+              echo "Type a digit or letter"
+esac
+第2章 循环语句
+2.1 for…do...done
+根据变量的不同取值，重复执行一组命令的操作
+语法格式：
+for 变量 in 取值列表
+do
+命令列表
+done
+wKioL1aBSvvi_Cs2AAMxHiA38X8851.png
+【1-1】
+/mnt|⇒ cat for-1.sh
+#!/bin/bash
+DAY="sun mon tue wen fri sat"
+for x in $DAY
+do
+       echo "The day is : $x"
+done
+【1-2】
+/mnt|⇒ cat for-2.sh
+#!/bin/bash
+for i in `seq 9`
+do
+       echo "num is $i"
+done
+【1-3】
+/mnt|⇒ cat for-3.sh
+#!/bin/bash
+for x in /var/log/*
+do
+       echo "$basename $x is a file"
+done
+【1-4】
+/mnt|⇒ cat for-4.sh
+#!/bin/bash
+#ULIST=$(cat /mnt/ulist.txt)
+for uname in `cat /mnt/ulist.txt`
+do
+       useradd $uname
+       echo "123456" |passwd --stdin $uname &> /dev/null
+done
+【1-5】
+/mnt|⇒ cat for-5.sh
+#!/bin/bash
+for i in $(find /mnt -name "mysql*")
+do
+       tar zcf $(date +%F)-$(basename $i).tar.gz $i
+done
+扩展SEQ命令
+/mnt|⇒ seq 5 15
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+/mnt|⇒ seq 5 2 15
+5
+7
+9
+11
+13
+15
+/mnt|⇒ seq -w 10
+01
+02
+03
+04
+05
+06
+07
+08
+09
+10
+2.2 while循环语句
+重复测试指令的条件，只要条件成立就反复执行对应的命令操作，直到命令不成立或为假；
+语法格式如下：
+while 条件
+do
+命令
+done
+wKiom1aBSqLT4wOLAAMp3-Sn1og899.png
+注意：避免陷入死循环
+While  true
+While  false
+【1-1】
+求10以内的自然数的平方值
+如： 1*1=1  2*2=4 3*3=9 …
+涉及到的一个命令：let(是bash中用于计算的工具)
+用法：
+自加操作：let var++
+自减操作：let var—
+/mnt|⇒ cat while-1.sh
+#!/bin/bash
+num=1
+while [ $num -lt 10 ]
+do
+       sum=$(expr $num \* $num)
+       echo "$num * $num = $sum"
+       let num++
+#     ((num++))
+done
+/mnt|⇒ cat while-2.sh
+#!/bin/bash
+number=0
+while [ "$number" -lt 10 ];do
+       echo  "NUM = $number"
+       number=$((number+1))
+done
+2.3 无限循环模式
+下面是几种语法格式：
+while :
+do
+  命令
+done
+或者
+for (( ; ; ))
+或者
+while true
+do
+   命令
+done
+【1-2】
+/mnt|⇒ cat while-3.sh
+#!/bin/bash
+i=1
+while true
+do
+       let i++
+       echo "num is $i"
+done
+【1-3】
+/mnt|⇒ cat while-4.sh
+#!/bin/bash
+price=50
+times=0
+echo "商品的实际价格为0--90之间，猜猜看是多少？"
+while true
+do
+       read -p "Input a price: " int
+       let times++
+       if [ $int -eq $price ];then
+              echo "恭喜，你猜对了"
+              echo "你一共猜了$times 次"
+              exit
+       elif [ $int -gt $price ];then
+              echo "猜大了"
+       else
+              echo "猜小了"
+       fi
+done
+2.4 扩展算数运算的方法
+使用((…)) 扩展shell中算数运算的使用方法
+使用 ”[…] ”时候，必须保证运算符与算数之间有空格。四则运算也只能借助expr命令完成。 今天讲的双括号”((…))”结构语句，就是对shell中算数及赋值运算的扩展。
+使用方法：
+语法：
+（（表达式1,表达式2…））
+特点：
+在双括号结构中，所有表达式可以像c语言一样，如：a++,b--等。 a=a+1
+在双括号结构中，所有变量可以不加入：“$”符号前缀
+双括号可以进行逻辑运算，四则运算
+双括号结构扩展了for，while,if条件测试运算
+支持多个表达式运算，各个表达式之间用逗号“;”分开
+[1-5]
+/mnt|⇒ cat while-5.sh
+#!/bin/bash
+for ((i=1;i<=10;i++))
+do
+       echo $(expr $i + 5)
+done
+2.5循环语句嵌套
+语法格式如下：
+for    变量1   in
+              do
+                     for    变量2    in
+                            do
+                                   命令2
+                            done
+              命令1
+       done
+for    变量1   in
+              do
+                if […];then
+         fi
+              命令1
+       done
+【1-6】
+/mnt|⇒ cat while-6.sh
+#!/bin/bash
+for dir in `find /var/log -type d`
+do
+       if [ -d $dir ];then
+       num=`find $dir -type f|wc -l`
+       echo $dir has dir $num
+       fi
+done

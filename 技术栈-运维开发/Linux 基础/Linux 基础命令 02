@@ -1,0 +1,471 @@
+
+ Linux基本命令操作
+
+
+
+
+history 历史命令  默认1000条上限
+ctrl + r  搜索关键字查找历史命令  回车执行
+！100   代表执行历史命令的第100条
+
+
+
+时间
+
+
+hwclock  硬件时间
+date     系统时间
+ date -s "2017-9-8 11:00" 修改时间
+
+可以自己定义时间格式调用
+
+     UTC     世界标准时间
+     GMT    格林尼治时间
+     CST      中国标准时间
+
+在执行命令前加time 命令 会显示执行命令的时间
+
+比如压缩一个包 或者加压一个包 可以加上time zip -r /etc    会显示最终的时间
+
+
+
+
+
+
+命令帮助的使用
+
+内部命令与外部命令的帮助是不一样的
+
+一个使用  h  一个使用 --help     总之一个不行敲另外一个   哈哈
+
+
+
+开关机计算机
+
+                         shutdown  -h            关机
+                         shutdown  -h 22:00  指定时间关机
+                         init 0                         关机
+                         reboot                       重启
+
+
+
+Linux终端介绍 Shell提示符 Bash Shell基本语法
+基本命令的使用：ls、pwd、cd、history
+查看系统和BIOS硬件时间
+Linux如何获得帮助
+设置服务器在来电后自动开机
+
+
+
+第1章 Linux终端介绍
+
+1.1 基本概念
+tty：终端设备和控制台的统称，这个是由mingetty（虚拟终端）
+
+                crtl+alt+fn    ---->n为数字
+虚拟终端切换方法
+                ctrl+shift+t  新建伪终端
+                Alt + 数字键  终端切换
+                Alt + F4 关闭终端(可以设置)
+                crtl+ 等号上面的那个加号 放大字体   crtl+- 是缩小字体
+pts：模拟终端
+
+                   通过网络连接
+
+
+[root@panda ~]# echo "我要关机" > /dev/pts/7
+[root@panda ~]# cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.20.135 xuegod.com
+[root@panda ~]# cat /etc/hosts > /dev/pts/7
+[root@panda ~]# wall hello   --广播群发
+Broadcast message from root@panda (pts/4) (Thu Jun  8 20:41:36 2017):
+hello
+复制代码
+VPN,XSHELL,CRT
+
+
+
+
+第2章 认识SHELL
+Shell俗称壳，它提供了用户与内核进行交互操作的一种接口，它接收用户输入的命令并把它送入内核去执行
+        Shell实际上是一个命令解释器，它通过解释用户输入的命令并把它传输给系统内核去执行。
+        Shell有自己的编程语言用于对命令的编辑，它允许用户编写由shell命令组成的程序。Shell编程语言具有普通编程语言的很多特点，比如它也有循环结构和分支控制结构等，用这种编程语言编写的Shell程序与其他应用程序具有同样的效果。
+
+通过SHELL，我们可以对LINUX实现哪些操作或管理：
+例如：
+1、 对文件的管理（创建、删除、复制、修改）
+2、 对用户的管理（添加、删除）
+3、 相关权限的管理（授权用户对相关文件的管理，比如增删改查）
+4、 对磁盘的管理（分区、raid、lvm）
+5、 对软件的管理
+6、 对网络的管理
+
+
+2.1 提示符“#”号与“$”号的区别
+[root@panda ~]#         ---表示是root用户登录，管理员账号登陆
+[miao@panda ~][        DISCUZ_CODE_17        ]nbsp;                 ---表示普通用户登录
+复制代码
+上面各颜色对应的内容代表的意思如下：
+用户名---主机名---当前所在目录(~表示当前用户的家目录)---(# root/$普通用户)$这个符号后面跟上一个环境变量，可以改变当前环境
+
+
+2.2 认识Bash Shell
+查看所有的SHELL类型
+[root@panda ~]# cat /etc/shells
+[root@panda ~]# chsh –l
+复制代码
+命令格式如下：
+命令 【选项】 【参数】
+命令： 具体执行的命令，整条SHELL命令的主体
+选项：会影响到命令的一些形为操作，通常以“- ” “ - –”实现
+参数：命令作用的对象
+
+
+
+
+
+
+第3章 基本命令操作
+
+3.1 基本命令之--ls
+作用：查看当前目录下有哪些文件（list）
+语法：ls 目录/文件 ，如果不加目录查看当前目录
+常用选项：
+-l  列出文件的详细信息，如创建者，创建时间，文件的读写权限列表等等
+
+
+- rw-r--r--  1 root root 2.7K Jun  8 20:38 /etc/passwd
+
+上面显示的内容中，
+d：目录文件
+l：链接文件
+b：块设备文件
+c：字符设备文件
+p：管道文件
+-: 表示普通文件
+
+为什么有的目录文件有不同的颜色呢？
+linux系统中不同的颜色代表了不同的文件类型
+颜 色
+代表内容
+举 例
+蓝色
+目录
+/etc
+黑色
+文件
+/etc/passwd
+浅蓝色
+链接
+/etc/grub2.cfg
+红色
+压缩包
+boot.tar.gz
+绿色
+可执行文件
+/etc/init.d/network
+黑底黄字
+设备文件
+/dev/sda
+列出目录下所有的文件，包括以“.“开头的隐藏文件（linux下隐藏文件是以 . 开头的，如果存在..代表存在着父目录）　
+
+
+-d 查看目录(不查看里面的内容)
+
+
+-S 以文件的大小进行排序
+
+
+ls –l 和ll 是等价的
+
+
+
+
+
+
+3.1.1 别名的使用
+定义一个别名：
+[root@panda ~]# ls -l /opt
+total 912
+drwxr-xr-x. 9  1001  1001   4096 May 15 22:21 nginx-1.11.2
+-rw-r--r--. 1 root  root  924979 May 11 11:21 nginx-1.11.2.tar.gz
+drwxr-xr-x. 2 root  root       6 Mar  9  2015 rh
+drwx------. 3 user4 user2   4096 May 21 08:46 user2
+[root@panda ~]# xuegod
+bash: xuegod: command not found...
+[root@panda ~]# alias xuegod='ls -l /opt'
+[root@panda ~]# xuegod
+total 912
+drwxr-xr-x. 9  1001  1001   4096 May 15 22:21 nginx-1.11.2
+-rw-r--r--. 1 root  root  924979 May 11 11:21 nginx-1.11.2.tar.gz
+drwxr-xr-x. 2 root  root       6 Mar  9  2015 rh
+drwx------. 3 user4 user2   4096 May 21 08:46 user2
+复制代码
+删除别名：
+[root@panda ~]# unalias xuegod
+[root@panda ~]# xuegod
+bash: xuegod: command not found...
+复制代码
+设置别名永久生效
+--》当前用户
+[miao@panda ~]$ echo "alias xuegod='ls -l /mnt'" >> .bashrc
+[miao@panda ~]$ . ./.bashrc
+[miao@panda ~]$ echo "alias xuegod1='ls -l /mnt'" >> .bashrc
+[miao@panda ~]$ . ./.bashrc
+[miao@panda ~]$ xuegod1
+total 0
+drwxr-xr-x 3 root root 30 May 26 21:24 test1
+复制代码
+--》全局使用
+[root@panda ~]# echo "alias xuegod-1705='ls -ld /opt'" >> /etc/bashrc
+[root@panda ~]# source /etc/bashrc
+[root@panda ~]# xuegod-1705
+drwxr-xr-x. 5 root root 72 May 21 08:31 /opt
+[root@panda ~]# su - miao
+Last login: Thu Jun  8 21:50:24 CST 2017 on pts/1
+[miao@panda ~]$ xuegod-1705
+drwxr-xr-x. 5 root root 72 May 21 08:31 /opt
+复制代码
+
+
+
+
+3.2 基本命令之--pwd
+作用：打印当前用户所在的当前目录位置（print working directory）
+语法：直接输入pwd
+
+
+
+3.3 基本命令之--cd
+作用：切换目录（change directory）
+语法：cd 目录
+说明：
+直接输入cd表示回到当前用户的宿主（家）目录
+
+
+cd ..  表示返回到上级目录位置，也就是父目录
+cd . 表示进入到当前用户所在的目录
+
+
+
+
+
+
+3.4 历史命令之history
+命令：history
+如何使用这个命令?
+第一： 光标上下键
+第二： ctrl+r //搜索历史命令(输入一段某条命令的关键字：必须是连续的)第三： !168 //执行历史命令中第168条命令
+第四：!字符串 //搜索历史命令中最近一个以xxxx字符开头的命令，例如!syst
+
+
+3.5 快捷键
+都是用ctrl+下面的单词
+^C
+        终止前台运行的程序 //ping 192.16.1.200
+^D
+        退出 等价exit
+^L
+清屏与clear一样
+^A
+        跳到命令行的开头
+^E
+        跳到命令行的末尾
+^U
+        将光标处到命令行开头的内容删除
+^K
+        将光标处到命令行末尾的内容删除
+^R
+搜索历史命令，可以利用好关键词ESC+ .  引用上一个命令的最后一个参数，等价于!$
+[root@panda ~]# ls /root /home
+/home:
+miao
+
+/root:
+anaconda-ks.cfg  initial-setup-ks.cfg  下载  公共  图片  文档  桌面  模板  视频  音乐
+[root@panda ~]# cd !$
+cd /home
+复制代码
+补全命令使用tab键，Tab只能补全命令和文件
+
+
+
+第4章 系统时间管理
+在Linux中有硬件时钟与系统时钟等两种时钟。硬件时钟是指主机板上的时钟设备，也就是通常可在BIOS画面设定的时钟；系统时钟则是指kernel中 的时钟；所有Linux相关指令与函数都是读取系统时钟的设定
+当Linux启动时，系统时钟会去读取硬件时钟的设定，之后系统时钟即独立运作
+
+
+
+4.1 两种时间
+查看硬件时间：
+[root@panda etc]# hwclock
+复制代码
+比如还有其它的一些使用
+hwclock –s         将系统时钟调整为与目前的硬件时钟一致
+hwclock –w        将硬件时钟调整为与目前的系统时钟一致
+[root@panda mnt]# hwclock
+Wed 30 Nov 2016 10:04:56 PM CST  -0.766052 秒
+复制代码
+时区：
+UTC  （Universal Time Coordinated）：世界标准时间
+GMT （Greenwich Mean Time）：格林尼治时间
+CST  （China standard Time）：中国标准时间
+查看系统时间
+[root@panda mnt]# date
+Wed Nov 30 22:05:38 CST 2016
+复制代码
+
+
+
+
+4.2 如何修改时间
+
+[root@panda ~]# date -s "2017-6-8 22:21"
+Thu Jun  8 22:21:00 CST 2017
+[root@panda ~]# date
+Thu Jun  8 22:21:01 CST 2017
+[root@panda ~]# date -s "2017-8-8"
+Tue Aug  8 00:00:00 CST 2017
+[root@panda ~]# date -s "2017-6-8 22:22"
+Thu Jun  8 22:22:00 CST 2017
+
+[root@panda ~]# date "+%Y%m%d %H%M%S"
+20170330 222046
+[root@panda ~]# date "+%Y%m%d %H%D%S"
+20170330 2203/30/1751
+[root@panda ~]# date "+%Y%m%d %H%M%S"
+20170330 222059
+[root@panda ~]# date "+%Y%m%d %H:%M:%S"
+20170330 22:21:07
+[root@panda ~]# date "+%Y/%m/%d %H:%M:%S"
+2017/03/30 22:21:19
+[root@panda ~]# date -d "+1 months"
+Sun Apr 30 22:25:59 CST 2017
+[root@panda ~]# date
+Thu Mar 30 22:26:03 CST 2017
+[root@panda ~]# date -d "+1 months" +%F
+2017-04-30
+复制代码
+
+
+
+
+4.3 另外一种时间方式
+
+命令：time（了解）
+作用：一般用来测量一个命令的运行时间
+使用方法：time 在后面直接跟上命令和参数
+root@panda ~]# time ls -l /etc
+…………………
+drwxr-xr-x.  2 root root       20 Jul 28 06:27 xml
+drwxr-xr-x.  6 root root     4096 Jul 28 06:28 yum
+-rw-r--r--.  1 root root      813 Sep 11  2015 yum.conf
+drwxr-xr-x.  2 root root       41 Nov 30 15:59 yum.repos.d
+real        0m0.022s
+user        0m0.005s
+sys        0m0.017s
+复制代码
+
+说明：
+real：实际使用时间
+user：用户状态使用的时间
+sys：内核状态使用的时间
+
+
+
+
+
+第5章 帮助命令使用
+遇到命令不知道添加哪个参数，可以使用命令帮助查看相关介绍，常用的查看帮助信息命令有如下几个
+whatis  命令：显示命令的简短功能
+
+man  命令  ：查看手册页或命令描述
+[root@panda ~]# man date
+复制代码
+
+退出用：q（man命令退出用）
+-h
+-help
+适用外部命令
+<命令> --help
+
+
+适用内部命令
+help <命令>
+
+
+如何区分外部命令和外部命令
+type <命令>
+
+
+
+
+第6章 关机命令
+常用的几个关机命令
+shutdown
+init
+reboot
+poweroff
+
+
+
+6.1 关机命令之--shutdown
+作用：关机，重启，定时关机
+语法：shutdown  [选项
+参数：
+-r    => 重新启动计算机
+-h    => 关机
+-h + 时间  =>定时关机
+
+[root@panda ~]# shutdown -h +10
+10分钟之后关机
+[root@panda ~]# shutdown -h 23:30
+指定具体的时间点进行关机
+[root@panda ~]# shutdown -h now
+立即关机
+[root@panda ~]#shutdown -r  22：22
+22:22 以后重启
+复制代码
+
+
+6.1.1 关机命令之--init 命令
+作用：切换系统运行级别
+语法：init  0-6
+Linux 7个启动级别：
+l 0 系统停机模式，系统默认运行级别不能设置为0，否则不能正常启动，机器关的
+l 1 单用户模式，root权限，用于系统维护，禁止远程登陆，就像Windows下的安全模式登录
+l 2 多用户模式，没有NFS网络支持
+l 3 完整的多用户文本模式，有NFS，登陆后进入控制台命令行模式
+l 4 系统未使用，保留一般不用，在一些特殊情况下可以用它来做一些事情。例如在笔记本电脑的电池用尽时，可以切换到这个模式来做一些设置
+l 5 图形化模式，登陆后进入图形GUI模式，X Window系
+l 6 重启模式，默认运行级别不能设为6，否则不能正常启动。运行init 6机器就会重启
+[root@panda ~]# init 0  init 6   init 3   init 5
+复制代码
+
+第7章 定时开机
+BIOS
+进入bios，一般是在开机后出现主板画面是按Delete这个键，部分品牌机可能按F2或者F1
+Power Management Setup，就进入电源管理设置了
+
+通过回车进入这个设置后，选择Wake Up Event Setup，回车选择Press Enter
+
+
+继续回车选择，将Disabied 更改为Enabled，然后继续回车确定。然后再继续设置时间点和日期
+
+
+
+需要掌握
+1、 如何查看帮助命令
+2、 基本命令使用 ls pwd cd 关机命令
+3、 修改时间 date
+4、 Linux中的使用的一些快捷方式
+5、别名的使用
+
+
+
+
+
+
+

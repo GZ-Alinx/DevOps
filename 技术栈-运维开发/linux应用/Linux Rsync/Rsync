@@ -1,0 +1,334 @@
+RSYNC数据备份
+RSYNC=Remote Sync 远程同步   高效，一定要结合shell
+官方网站：https://rsync.samba.org/
+Author：     Andrew Tridgell, Wayne Davison, and others
+                     Andrew Tridgell是Samba项目的领导者和主要开发人员，同时还在参与开发rsync、Linux Kernel。
+#rsync --version                          #查看rsync版本，可以看到相关作者相信
+rsync  version 3.0.6  protocol version 30
+Copyright (C)1996-2009 by Andrew Tridgell, Wayne Davison, and others.
+Web site: http://rsync.samba.org/
+与SCP的比较：scp=无法备份大量数据，类似windows的复制
+     rsync=边复制 ，边统计，边比较
+Rysnc特性和优点
+可以镜像保存整个目录树和文件系统。
+可以很容易做到保持原来文件的权限、时间、软硬链接等等。
+无须特殊权限即可安装。
+快速：第一次同步时 rsync 会复制全部内容，但在下一次只传输修改过的文件。
+压缩传输：rsync 在传输数据的过程中可以实行压缩及解压缩操作，因此可以使用更少的带宽。
+安全：可以使用scp、ssh等方式来传输文件，当然也可以通过直接的socket连接。
+支持匿名传输，以方便进行网站镜象。
+选择性保持：符号连接，硬链接，文件属性，权限，时间等
+常见备份分类
+完整备份，差异备份，增量备份
+ 完整备份：每次备份都是从备份源将所有的文件或目录备份到目的地
+差量备份：备份上次完全备份以后有变化的数据(他针对的上次的完全备份,他备份过程中不清除存档属性)
+增量备份：备份上次备份以后有变化的数据.(他才不管是那种类型的备份,有变化的数据就备份,他会清除存档属性)
+运行模式和端口
+采用C/S模式（客户端/服务器模式）[ 就是一个点到点的传输，直接使用rsync命令 ]
+端口873
+发起端和备份源
+四个名词的解释：
+发起端：负责发起rsync同步操作的客户机叫做发起端，通知服务器我要备份你的数据
+备份源：负责相应来自客户机rsync同步操作的服务器脚在备份源，需要备份的服务器
+服务端：运行rsyncd服务，一般来说，需要备份的服务器
+客户端：存放备份数据
+数据同步方式
+推push：一台主机负责把数据传送给其他主机，服务器开销很大，比较适合后端服务器少的情况
+拉pull：所有主机定时去找一主机拉数据，可能就会导致数据缓慢
+推：目的主机配置为rsync服务器，源主机周期性的使用rsync命令把要同步的目录推过去（需要备份的机器是客户端，存储备份的机器是服务端）
+拉：源主机配置为rsync服务器，目的主机周期性的使用rsync命令把要同步的目录拉过来（需要备份的机器是服务端，存储备份的机器是客户端）
+两种方案，rsync都有对应的命令来实现
+C:\Users\andyli\AppData\Local\YNote\data\m18789215299@163.com\ed8043e115404c1e8b27eb2ffb5c9fa6\lip_image001.png
+Xinetd管理Rsync工作原理
+C:\Users\andyli\AppData\Local\YNote\data\m18789215299@163.com\3a85a012af5b4230aa847358f669bac5\lip_image002.png
+       使用rsync来同步是先通过xinetd监听873号端口，如果rsync进来的是873号端口，那么xinetd就会通知它所管辖的rsync服务来做回应，接下来就是rsync俩服务于之间的通讯
+
+Rsync服务安装
+       实验拓扑：
+XueGod63（Server 192.168.1.63）====XueGod64（Client 192.168.0.64）
+Rsync服务依赖Xinetd，是使用超级服务来管理的
+      [root@XueGod63 ~]# yum install xinetd
+[root@xuegod63 ~]# yum install rsync -y
+[root@xuegod63 ~]# vim /etc/xinetd.d/rsync
+# default: off
+# description: The rsync server is a good addition to an ftp server, as it \
+#       allows crc checksumming etc.
+service rsync
+{
+        disable = no                    #此行原=yes，改为=no
+        flags           = IPv6
+        socket_type     = stream
+        wait            = no
+        user            = root
+        server          =/usr/bin/rsync
+        server_args     =--daemon
+        log_on_failure  += USERID
+}
+       [root@XueGod63 ~]# /etc/init.d/xinetd restart
+       [root@XueGod63 ~]# netstat -antup | grep 873
+tcp        0      0:::873                      :::*                        LISTEN      2349/xinetd
+
+Rsync命令
+       rsync命令和scp命令很相似
+-a, --archive archive mode 权限保存模式,相当于 -rlptgoD 参数，存档，递归，保持属性等
+-r, --recursive 复制所有下面的资料，递归处理
+-p, --perms 保留档案权限 ，文件原有属性
+-t, --times 保留时间点，文件原有时间
+-g, --group 保留原有属组
+-o, --owner 保留档案所有者(root only)
+-D, --devices 保留device资讯(root only)
+-l, --links 复制所有的连接 ，拷贝连接文件
+-z, --compress 压缩模式, 当资料在传送到目的端进行档案压缩.
+-H, --hard-links 保留硬链接文件
+-A, --acls 保留ACL属性文件，需要配合--perms
+-P,-P参数和 --partial --progress 相同.只是为了把参数简单化,表示传进度
+--version， 输出rsync版本
+-v , --verbose 复杂的输出信息
+-u, --update 仅仅进行更新，也就是跳过已经存在的目标位置，并且文件时间要晚于要备份的文件，不覆盖新的文件
+--port=PORT， 定义rsyncd(daemon)要运行的port(预设为tcp 873)
+--delete， 删除那些目标位置有的文件而备份源没有的文件
+--password-file=FILE ，从 FILE 中得到密码
+--bwlimit=KBPS， 限制 I/O 带宽
+--filter “-filename”，需要过滤的文件
+--exclude=filname，需要过滤的文件
+--progress，显示备份过程
+常用的–avz
+使用rsync备份数据
+对XueGod63网站根目录的/var/www/html目录备份到XueGod64的/web-back
+建立测试用户
+  [root@XueGod63 ~]# useradd rget1                        //测试用户，rget1用于下载
+ [root@XueGod63 ~]# echo rget1:123456 | chpasswd
+对目录赋予ACL权限
+ [root@XueGod63 ~]# setfacl -R -m user:rget1:rwx /var/www/html/                          //设置rget1的权限
+[root@XueGod63 ~]# setfacl -R -m default:rget1:rwx /var/www/html/
+       [root@XueGod63 ~]# getfacl  /var/www/html
+getfacl: Removing leading '/' from absolute path names
+# file: var/www/html
+# owner: root
+# group: root
+user::rwx
+user:rget1:rwx
+group::r-x
+mask::rwx
+other::r-x
+default:user::rwx
+default:user:rget1:rwx
+default:group::r-x
+default:mask::rwx
+default:other::r-x
+
+创建测试数据
+       [root@XueGod63 ~]# cp -r /boot/* /var/www/html/                  //boot目录下的所有数据作为测试数据
+ [root@XueGod64 ~]# rsync -avz --delete rget1@192.168.1.63:/var/www/html/ /web-back/
+录备份到本地的哪个目录
+              ……
+rsync: send_files failed to open "/var/www/html/initramfs-2.6.32-431.el6.x86_64.img": Permission denied (13)
+……
+rsync: send_files failed to open "/var/www/html/initrd-2.6.32-431.el6.x86_64kdump.img": Permission denied (13)
+……
+rsync: send_files failed to open "/var/www/html/grub/grub.conf": Permission denied (13)
+#几行报错，排错
+同步数据出错排查
+       [root@XueGod63 ~]# getfacl /var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+getfacl: Removing leading '/' from absolute path names
+# file: var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+# owner: root
+# group: root
+user::rw-
+user:rget1:rwx          #effective:---                虽然在前面看到是rwx，但是后面备注上说出有效权限是---
+user:rput1:rwx          #effective:---
+group::r-x                 #effective:---
+mask::---
+other::---
+       [root@XueGod63 ~]# ll /var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+-rwx------+ 1 root root 17497376 Sep 1814:36/var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+#除开属主之外，其他人没有任何权限
+       [root@XueGod63 ~]# chmod 744 /var/www/html/initramfs-2.6.32-431.el6.x86_64.img            //加上权限
+[root@XueGod63 ~]# getfacl /var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+getfacl: Removing leading '/' from absolute path names
+# file: var/www/html/initramfs-2.6.32-431.el6.x86_64.img
+# owner: root
+# group: root
+user::rwx
+user:rget1:rwx          #effective:r--                有效权限可读了
+user:rput1:rwx          #effective:r--
+group::r-x                 #effective:r--
+mask::r--
+other::r--
+同理方法修改
+/var/www/html/initrd-2.6.32-431.el6.x86_64kdump.img
+/var/www/html/grub/grub.conf
+再次客户端测试
+       [root@XueGod64 ~]# rm -rf /web-back/*
+[root@XueGod64 ~]# rsync -avz --delete rget1@192.168.1.63:/var/www/html/ /web-back/      //没报错
+非系统用户备份数据
+使用系统配置文件/etc/rsyncd.conf来备份数据，创建备份账户，最后把rsync以deamon方式运行
+rsyncd.conf配置文件
+配置文件分为两部分：全局参数，模块参数
+全局参数：对rsync服务器生效，如果模块参数和全局参数冲突，冲突的地方模块参数生效
+模块参数：定义需要通过rsync输出的目录定义的参数
+常见的全局参数：
+port          #→指定后台程序使用的端口号，默认为873。
+uid            #→该选项指定当该模块传输文件时守护进程应该具有的uid，配合gid选项使用可以确定哪些可以访问怎么样的文件权限，默认值是" nobody"。
+gid            #→该选项指定当该模块传输文件时守护进程应该具有的gid。默认值为" nobody"。
+max connections        #→指定该模块的最大并发连接数量以保护服务器，超过限制的连接请求将被告知随后再试。默认值是0，也就是没有限制。
+lock file                  #→指定支持max connections参数的锁文件，默认值是/var/run/rsyncd.lock。
+motd file         #→" motd file"参数用来指定一个消息文件，当客户连接服务器时该文件的内容显示给客户，默认
+是没有motd文件的。
+log file             #→" log file"指定rsync的日志文件，而不将日志发送给syslog。
+pid file              #→指定rsync的pid文件，通常指定为“/var/run/rsyncd.pid”，存放进程ID的文件位置。
+hosts allow =    #→单个IP地址或网络地址   //允许访问的客户机地址
+常见的模块参数：主要是定义服务器哪个要被同步输出，其格式必须为“ [ 共享模块名 ]” 形式，这个名字就是在 rsync 客户端看到的名字，其实很像 Samba 服务器提供的共享名。而服务器真正同步的数据是通过 path 来指定的。
+Comment         #→给模块指定一个描述，该描述连同模块名在客户连接得到模块列表时显示给客户。默认没有描述定义。
+Path                  #→指定该模块的供备份的目录树路径，该参数是必须指定的。
+read only         #→yes为只允许下载，no为可以下载和上传文件到服务器
+exclude             #→用来指定多个由空格隔开的多个文件或目录(相对路径)，将其添加到exclude列表中。这等同于在客户端命令中使用―exclude或----filter来指定某些文件或目录不下载或上传(既不可访问)
+exclude from   #→指定一个包含exclude模式的定义的文件名，服务器从该文件中读取exclude列表定义，每个文件或目录需要占用一行
+include             #→用来指定不排除符合要求的文件或目录。这等同于在客户端命令中使用--include来指定模式，结合include和exclude可以定义复杂的exclude/include规则。
+include from   #→指定一个包含include模式的定义的文件名，服务器从该文件中读取include列表定义。
+auth users       #→该选项指定由空格或逗号分隔的用户名列表，只有这些用户才允许连接该模块。这里的用户和系统用户没有任何关系。如果" auth users"被设置，那么客户端发出对该模块的连接请求以后会被rsync请求challenged进行验证身份这里使用的challenge/response认证协议。用户的名和密码以明文方式存放在" secrets file"选项指定的文件中。默认情况下无需密码就可以连接模块(也就是匿名方式)。
+secrets file      #→该选项指定一个包含定义用户名:密码对的文件。只有在" auth users"被定义时，该文件才有作用。文件每行包含一个username:passwd对。一般来说密码最好不要超过8个字符。没有默认的secures file名，注意：该文件的权限一定要是600，否则客户端将不能连接服务器。
+hosts allow      #→指定哪些IP的客户允许连接该模块。定义可以是以下形式：
+    单个IP地址，例如：192.167.0.1，多个IP或网段需要用空格隔开，
+    整个网段，例如：192.168.0.0/24，也可以是192.168.0.0/255.255.255.0
+“*”则表示所有，默认是允许所有主机连接。
+hosts deny      #→指定不允许连接rsync服务器的机器，可以使用hosts allow的定义方式来进行定义。默认是没有hosts deny定义。
+list              #→该选项设定当客户请求可以使用的模块列表时，该模块是否应该被列出。如果设置该选项为false，
+可以创建隐藏的模块。默认值是true。
+timeout   #→通过该选项可以覆盖客户指定的IP超时时间。通过该选项可以确保rsync服务器不会永远等待一个崩溃的客户端。超时单位为秒钟，0表示没有超时定义，这也是默认值。对于匿名rsync服务器来说，一个理想的数字是600。
+用配置文件定义目录输出
+      [root@XueGod63 ~]# vim /etc/rsyncd.conf                    //文件不存在，需要自己创建
+uid = nobody                           #运行进程的身份
+gid = nobody                           #运行进程的组
+address =192.168.1.63                       #监听IP
+port =873                               #监听端口
+hosts allow =192.168.0.64                           #允许同步客户端的IP地址，可以是网段，或者用*表示所有 192.168.1.0/24或192.168.1.0/255.255.255.0
+use chroot = yes                               #是否囚牢，锁定家目录，rsync被黑之后，黑客无法再rsync运行的家目录之外创建文件，选项设置为yes
+max connections =5                             #最大连接数
+pid file =/var/run/rsyncd.pid          #进程PID，自动生成
+lock file =/var/run/rsync.lock         #指max connectios参数的锁文件
+log file =/var/log/rsyncd.log          #日志文件位置
+motd file =/etc/rsyncd.motd
+Evernote 20170715 00.15.47.wav
+66.6 KB
+
+          #客户端登陆之后弹出的消息，需要创建
+
+[wwwroot]                              #共享模块名称
+path =/var/www/html                       #路径
+comment = used for web-data root    #描述
+read only = yes                                 #只读方式（只可以下载）
+list = yes                                         #是否允许查看模块信息
+auth users = rsyncuser                        #备份的用户，和系统用户无关
+secrets file =/etc/rsync.passwd        #存放用户的密码文件，格式是  用户名：密码
+创建提示文件和用户密码
+[root@XueGod63 ~]# echo "Welcome to Backup Server" > /etc/rsyncd.motd
+      [root@XueGod63 ~]# vim /etc/rsync.passwd
+rsyncuser:password123
+[root@XueGod63 ~]# chmod 600 /etc/rsync.passwd                 //目录权限必须是700或者600，否则的话身份验证会失效，设置rsync user的时候
+启动服务测试
+       [root@XueGod63 ~]# vim /etc/xinetd.d/rsync
+        disable = no        #将原来的yes改为no（部分版本可能是no，则不用改）
+[root@XueGod63 ~]# /etc/init.d/xinetd restart                           //启动服务
+或者启动方式用
+       [root@XueGod63 ~]# rsync --daemon --config=/etc/rsyncd.conf
+       [root@XueGod63 ~]# netstat -antup | grep :873
+tcp        0      0:::873                      :::*                        LISTEN      45089/xinetd
+       [root@XueGod63 ~]# chkconfig xinetd on
+测试，rsync语法：   rsync 选项 用户名@备份源服务器IP::共享模块名 目标目录
+       [root@XueGod64 ~]# rsync -avz rsyncuser@192.168.1.63::wwwroot /web-back/
+Welcome to Backup Server
+Password:       #输入密码password123
+或者：使用下面的命令，输出详细信息
+[root@XueGod64 ~]# rsync -avz --progress --delete rsyncuser@192.168.1.63::wwwroot /web-back/
+Welcome to Backup Server
+Password:           #输入密码password123
+receiving incremental file list
+./
+System.map-2.6.32-431.el6.x86_64
+     2518236100%   80.05MB/s    0:00:00(xfer#1, to-check=26/28)
+……
+sent 502 bytes  received 29590149 bytes  6575700.22 bytes/sec
+total size is 29584842  speedup is 1.00
+密码处理
+新建一个文件保存好密码，然后在rsync命令中使用--password-file指定此文件即可
+[root@xuegod64 ~]# vim passfile
+Password123
+[root@xuegod64 ~]# chmod 600 passfile
+[root@xuegod64 ~]# rsync -avz rsyncuser@192.168.1.63::wwwroot --password-file=passfile /backup/
+脚本实现定时自动备份
+       [root@XueGod64 ~]# vim autobackup.sh
+#!/bin/bash
+rsync -avz rsyncuser@192.168.0.63::wwwroot --password-file=passfile /backup/
+       [root@XueGod64 ~]# chmod +x autobackup.sh
+[root@XueGod64 ~]# rm -rf /web-back/*                       //测试脚本
+[root@XueGod64 ~]# sh autobackup.sh
+       [root@XueGod64 ~]# echo "01 3 * * * sh /root/autoback.sh &" >> /var/spool/cron/root
+Rsync+Inotify 实时同步
+Linux 内核从 2.6.13 版本开始提供了 inotify 通知接口，用来监控文件系统的各种变化情况，如文件存取、删除、移动等。利用这一机制，可以非常方便地实现文件异动告警、增量备份，并针对目录或文件的变化及时作出响应。
+可以监控某个用户，什么时间，做了什么动作！
+使用 rsync 工具与 inotify 机制相结合，可以实现触发式备份（实时同步），只要原始位置的文档发生变化，则立即启动增量备份操作，否则处于静态等侍状态，这样一来，就避免了按固定周期备份进存在的延迟性、周期过密等问题。
+我们把XueGod63上/var/www/html目录实时同步到XueGod64的/web-back目录中
+查看内核支持inotify和调整
+       [root@XueGod63 ~]# uname -r                           //inotify从kernel2.6.13开始正式并入内核，开始支持
+2.6.32-431.el6.x86_64
+       [root@XueGod63 ~]# ls /proc/sys/fs/inotify/                 //查看调控参数
+max_queued_events       #表示监控时间队列           默认16384 可以使用cat命令查看
+max_user_instances          #表示最多监控实例数        默认128
+max_user_watches            #表示每个实例最多监控文件数    默认8192
+#在Linux内核中，默认的Inotify机制提供了三种调控参数，当要监控的目录，文件数比较多的时候或者变化比较频
+繁的时候，要加大三个数值
+可以直接修改/etc/sysctl.conf配置文件，将管理队列设置为32786，实例数：1024，文件数：9000000（大于监控目标总数即可）
+       [root@XueGod63 ~]# vim /etc/sysctl.conf
+……          #末尾添加下面三行
+fs.inotify.max_queued_events =32768
+fs.inotify.max_user_instances =1024
+fs.inotify.max_user_watches =90000000
+安装inotify-tools
+安装 inotify-tools 后，将拥有 inotifywait、inotifywatch 辅助工具程序，从而来监控、汇总文件系统改动情况。
+yum方式来安装：yum install inotify* -y
+测试inotifywait
+       使用 inotifywait 命令监控网站目录/var/www/html发生的变化。然后在另一个终端向/var/www/html目录下添加文件、移动文件，查看屏幕输出结果。
+inotifywait常用参数：
+-e  用来指定要监控哪些事件。这些事件包括： create 创建,move 移动,delete 删除,modify 修改文件内容,attrib 属性更改。
+-m 表示持续监控
+-r  表示递归整个目录
+-q 表示简化输出信息。
+[root@XueGod63 ~]# inotifywait -mrq -e create,move,delete,modify /var/www/html/
+另外开一终端，做一些改动
+       [root@xuegod63 ~]# echo aaa > /var/www/html/a.html
+[root@xuegod63 ~]# mkdir /var/www/html/test
+[root@xuegod63 ~]# cp /etc/passwd /var/www/html/test/
+[root@xuegod63 ~]# rm -rf /var/www/html/test/passwd
+查看监控终端
+/var/www/html/ CREATE a.html
+/var/www/html/ MODIFY a.html
+/var/www/html/ CREATE,ISDIR test
+/var/www/html/test/ CREATE passwd
+/var/www/html/test/ MODIFY passwd
+/var/www/html/test/ DELETE passwd
+#使用 inotifywait 输出的监控结果中，每行记录中依次包括目录、事件、文件。据此可以识别变动情况。
+使用触发试同步脚本
+首先要做好免密码链接
+       [root@XueGod63 ~]# ssh-keygen
+       [root@XueGod63 ~]# ssh-copy-id root@192.168.0.64
+编写脚本
+       [root@XueGod63 ~]# vim inotify.sh
+#!/bin/bash
+SRC=/var/www/html/
+DST=root@192.168.0.64:/web-back
+inotifywait -mrq -e modify,delete,create,attrib ${SRC}|while read D E F
+        do
+                /usr/bin/rsync -avz --delete $SRC  $DST
+        done
+#思路：只要检测到变动时间，执行rsync上行同步操作，拉数据
+#while read D E F是是哪个变量，前面输出的内容是三段，每一段对应的就是后面的D E F
+ [root@XueGod63 ~]# chmod +x inotify.sh ; echo "sh /root/inotify.sh &" >> /etc/rc.local
+把这个脚本放在后台运行：
+nohup ./inotify.sh &
+先运行这个脚本,在触发动作
+
+补充：
+推荐了解下：rsync+sersync
+当有海量的小数据文件的时候，inotify 会有延迟！！
+2、有利有弊，慎用

@@ -1,0 +1,554 @@
+重要章节必须掌握！
+
+
+
+LVM管理和ssm存储管理器使用&磁盘配额
+
+LVM逻辑卷的管理
+
+
+问题：对于生产环境下的服务器来说,如果存储数据的分区磁盘空间不够了怎么办?
+
+graphic
+
+因为如果要把一个分区的内容都拷贝到另一个分区上去，势必要首先卸载掉之前的那个分区，然后*对整个分区进行拷贝，如果服务器上运行着一个重要的服务，比如说WWW或者FTP，其要求是 7*24 小时运行正常的，那么卸载掉分区这是不可想象的，同时如果该分区保存的内容非常非常的多，那么在对分区进行转移时时间可能会耗费很久，所以，这个时候我们就会受到传统磁盘管理的限制，因为其不能够进行动态的磁盘管理。因此，为了解决这个问题，LVM技术就诞生了！！！：
+
+LVM：在线扩容    快照snapshot MYSQL是可以通过快照实现一致性的物理备份
+
+1.1  LVM的工作原理
+       LVM是在磁盘分区和文件系统之间添加的一个逻辑层，来为文件系统屏蔽下层磁盘分区布局，提供一个抽象的盘卷，在盘卷上建立文件系统。管理员利用LVM可以在磁盘不用重新分区的情况下动态调整文件系统的大小，并且利用LVM管理的文件系统可以跨越磁盘，当服务器添加了新的磁盘后，管理员不必将原有的文件移动到新的磁盘上，而是通过LVM可以直接扩展文件系统跨越磁盘
+       它就是通过将底层的物理硬盘封装起来，然后以逻辑卷的方式呈现给上层应用。在LVM中，其通过对底层的硬盘进行封装，当我们对底层的物理硬盘进行操作时，其不再是针对于分区进行操作，而是通过一个叫做逻辑卷的东西来对其进行底层的磁盘管理操作。
+
+1.1  LVM常用的术语
+先来了解一下常用的名词解释
+物理存储介质（The physical media）
+       这里指系统的存储设备：硬盘，如：/dev/hda、/dev/sda等等，是存储系统最低层的存储单元。
+
+物理卷PV（physical volume）
+       物理卷就是指硬盘分区或从逻辑上与磁盘分区具有同样功能的设备(如RAID)，是LVM的基本存储逻辑块，但和基本的物理存储介质（如分区、磁盘等）比较，却包含有与LVM相关的管理参数 ,创建物理卷它可以用硬盘分区，也可以用硬盘本身或者回环文件。
+
+卷组VG（Volume Group）
+       LVM卷组类似于非LVM系统中的物理硬盘，其由物理卷组成。可以在卷组上创建一个或多个“LVM分区”（逻辑卷），LVM卷组由一个或多个物理卷（PV）组成。也可以把VG理解成一个大的仓库或者几块大的硬盘  ll
+
+逻辑卷LV（logical volume）
+       是从VG中划分的逻辑分区；LVM的逻辑卷类似于非LVM系统中的硬盘分区，在逻辑卷之上可以建立文件系统(比如/home或者/usr等)。
+
+PE（physical extent）
+       每一个物理卷被划分为称为PE(Physical Extents)的基本单元，具有唯一编号的PE是可以被LVM寻址的最小单元。PE的大小是可配置的，默认为4MB；其实PE就是我们逻辑卷管理的最基本单位。比如说我有一个400M的硬盘，那么在将其格式化成PV的时候，其实际就是将这块物理硬盘划分成了100个的PE，因为PE默认的大小就是4M
+
+LE（logical extent）
+       逻辑卷也被划分为被称为LE(Logical Extents) 的可被寻址的基本单位。在同一个卷组中，LE的
+
+大小和PE是相同的，并且一一对应
+
+
+
+graphic
+
+1.2  LVM优点
+使用卷组，使多个硬盘空间看起来像是一个大的硬盘
+使用逻辑卷，可以跨多个硬盘空间的分区  sdb1 sdb2  sdc1  sdd2  sdf
+在使用逻辑卷时，它可以在空间不足时动态调整它的大小
+在调整逻辑卷大小时，不需要考虑逻辑卷在硬盘上的位置，不用担心没有可用的连续空间
+可以在线对LV,VG 进行创建，删除，调整大小等操作。LVM上的文件系统也需要重新调整大小。
+可以将正在使用中的硬盘迁移到别的硬盘上
+允许创建快照，可以用来保存文件系统的备份。只能使用一次
+解释：
+
+       LVM是软件的卷管理方式，而RAID是磁盘保护的方法。对于重要的业务来说，一般是同时存在。RAID用来保护物理的磁盘不会因为故障而中断业务。LVM用来实现对卷的良性的管理，更好的利用磁盘资源
+
+创建Raid+LVM系统分区结构在正常的生产环境和企业日常环境中，使用基于软件RAID的冗余备份技术和磁盘的动态管理是非常有实用价值的
+
+创建逻辑卷的顺序：Linux分区---物理卷---卷组---逻辑卷
+
+第2章 创建LVM的基本步骤
+1) 物理磁盘被格式化为PV，(空间被划分为一个个的PE) #PV包含PE
+2) 不同的PV加入到同一个VG中，(不同PV的PE全部进入到了VG的PE池内) #VG包含PV
+
+3) LV基于PE创建，(组成LV的PE可能来自不同的物理磁盘) #LV基于PV创建
+
+4) LV直接可以格式化后挂载使用    #格式化挂载使用
+
+5) LV的扩充缩减实际上就是增加或减少组成该LV的PE数量，其过程不会丢失原始数据
+
+2.1 lvm常用的命令
+功能
+PV管理命令
+VG管理命令
+LV管理命令
+scan 扫描
+pvscan
+vgscan
+lvscan
+create 创建
+pvcreate
+vgcreate
+lvcreate
+display显示
+pvdisplay
+vgdisplay
+lvdisplay
+remove 移除
+pvremove
+vgremove
+lvremove
+extend 扩展
+
+vgextend
+lvextend
+reduce减少
+
+vgreduce
+lvreduce
+2.2 创建并使用LVM逻辑卷
+
+下面的操作会用的一些查看命令：
+查看卷名
+简单对应卷信息的查看
+扫描相关的所有的对应卷
+详细对应卷信息的查看
+物理卷
+pvs
+pvscan
+pvdisplay
+卷组
+vgs
+vgscan
+vgdisplay
+逻辑卷
+lvs
+lvscan
+lvdisplay
+环境：添加一块硬盘，并且创建三个分区 sdb1 sdb2 sdb3
+
+graphic
+
+通过lvmdiskscan可以看到那些设备成为了物理卷.扫描块设备
+
+[root@xuegod72 ~]# lvmdiskscan
+
+  /dev/sda1 [     300.00 MiB]
+  /dev/sda2 [       2.93 GiB]
+  /dev/sda3 [     196.78 GiB]
+  /dev/sdb1 [     500.00 MiB]
+  /dev/sdb2 [     500.00 MiB]
+  /dev/sdb3 [     500.00 MiB]
+  /dev/sdb5 [     500.00 MiB]
+  /dev/sdb6 [     500.00 MiB]
+  /dev/sdb7 [     500.00 MiB]
+  0 disks
+  9 partitions
+  0 LVM physical volume whole disks
+  0 LVM physical volumes
+2.3 创建PV
+创建PV=pvcreate 设备名称  …..
+创建VG=vgcreate 卷组名称  设备成员
+
+[root@xuegod72 ~]# pvcreate /dev/sdb[1-3]
+
+  Physical volume "/dev/sdb1" successfully created
+  Physical volume "/dev/sdb2" successfully created
+  Physical volume "/dev/sdb3" successfully created
+[root@xuegod72 ~]# pvs   --查看PV信息
+
+  PV         VG   Fmt  Attr PSize   PFree
+  /dev/sdb1       lvm2 ---  500.00m 500.00m
+  /dev/sdb2       lvm2 ---  500.00m 500.00m
+  /dev/sdb3       lvm2 ---  500.00m 500.00m
+[root@xuegod72 ~]# pvdisplay   ---查看具体PV信息
+
+  "/dev/sdb2" is a new physical volume of "500.00 MiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/sdb2
+  VG Name
+  PV Size               500.00 MiB
+  Allocatable           NO
+  PE Size               0
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               jDdWpu-AoeP-vpd9-ROsV-CWQo-Y4ip-kSc0u1
+
+  "/dev/sdb3" is a new physical volume of "500.00 MiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/sdb3
+  VG Name
+  PV Size               500.00 MiB
+  Allocatable           NO
+  PE Size               0
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               inND8V-4qgE-Bv1K-pm6g-xeWA-FPXt-N91wH0
+
+  "/dev/sdb1" is a new physical volume of "500.00 MiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/sdb1
+  VG Name
+  PV Size               500.00 MiB
+  Allocatable           NO
+  PE Size               0
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               Kif8cx-ONaT-WRBA-y3j2-FhCK-RZj3-gSMrGZ
+2.4 创建VG
+[root@xuegod72 ~]# vgcreate datavg /dev/sdb[1-3]
+  Volume group "datavg" successfully created
+[root@xuegod72 ~]# vgs
+
+  VG     #PV #LV #SN Attr   VSize VFree
+  datavg   3   0   0 wz--n- 1.45g 1.45g
+[root@xuegod72 ~]# vgdisplay
+
+  --- Volume group ---
+  VG Name               datavg
+  System ID
+  Format                lvm2
+  Metadata Areas        3
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                3
+  Act PV                3
+  VG Size               1.45 GiB
+  PE Size               4.00 MiB
+  Total PE              372
+  Alloc PE / Size       0 / 0
+  Free  PE / Size       372 / 1.45 GiB
+  VG UUID               izTXxE-jM2m-PRub-eVbD-4kVU-dBtZ-A51Lc0
+[root@xuegod72 ~]# pvdisplay /dev/sdb1
+
+  --- Physical volume ---
+  PV Name               /dev/sdb1
+  VG Name               datavg
+  PV Size               500.00 MiB / not usable 4.00 MiB
+  Allocatable           yes
+  PE Size               4.00 MiB
+  Total PE              124
+  Free PE               124
+  Allocated PE          0
+  PV UUID               Kif8cx-ONaT-WRBA-y3j2-FhCK-RZj3-gSMrGZ
+[root@xuegod72 ~]# pvcreate /dev/sdb5
+
+  Physical volume "/dev/sdb5" successfully created
+[root@xuegod72 ~]# pvdisplay /dev/sdb5
+
+  "/dev/sdb5" is a new physical volume of "500.00 MiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/sdb5
+  VG Name
+  PV Size               500.00 MiB
+  Allocatable           NO
+  PE Size               0
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               2men8N-H82z-KwIP-vCui-OblB-eMhn-L96yWL
+2.5 创建LV
+lvcreate  -n 指定逻辑卷名称（LV的名字）  -L 指定大小（SIZE）| -l 指定LE数量  VG名
+[root@panda ~]# lvcreate -L 40M -n lv1 vg1    ---L指定LV的SIZE
+
+[root@panda ~]# lvcreate -l 20 -n lv2 vg1     --l  指定LE的数量
+
+2.6 格式化并挂载使用
+[root@xuegod72 datavg]# mkfs.xfs /dev/datavg/datalv
+meta-data=/dev/datavg/datalv     isize=256    agcount=4, agsize=65536 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=262144, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@xuegod72 datavg]# mkdir /data
+
+[root@xuegod72 datavg]# mount /dev/datavg/datalv /data/
+
+[root@xuegod72 datavg]# df
+
+文件系统                      1K-块    已用      可用 已用% 挂载点
+/dev/sda3                 206234228 2999280 203234948    2% /
+devtmpfs                     477820       0    477820    0% /dev
+tmpfs                        492364      84    492280    1% /dev/shm
+tmpfs                        492364    7156    485208    2% /run
+tmpfs                        492364       0    492364    0% /sys/fs/cgroup
+/dev/sr0                    3947824 3947824         0  100% /media
+/dev/sda1                    303788  130864    172924   44% /boot
+tmpfs                         98476      16     98460    1% /run/user/42
+tmpfs                         98476       0     98476    0% /run/user/0
+/dev/mapper/datavg-datalv   1038336   32928   1005408    4% /data
+第3章 实验
+3.1 PE大小的更改
+要求：创建sdb5 为PV,设置PE大小是16MB
+指定PE的大小：-s
+
+[root@xuegod72 datavg]# vgcreate -s 16M vg01 /dev/sdb5
+
+  Volume group "vg01" successfully created
+[root@xuegod72 datavg]# pvdisplay /dev/sdb5
+
+  --- Physical volume ---
+  PV Name               /dev/sdb5
+  VG Name               vg01
+  PV Size               500.00 MiB / not usable 4.00 MiB
+  Allocatable           yes
+  PE Size               16.00 MiB
+  Total PE              31
+  Free PE               31
+  Allocated PE          0
+  PV UUID               2men8N-H82z-KwIP-vCui-OblB-eMhn-L96yWL
+参数 -s 指定PE的大小为16M，并且PE大小只能为2的冪数，且最大为512M
+3.2 LV扩容
+
+首先，确定一下是否有可用的扩容空间，空间是从卷组里扩建的，并且LV不能跨VG扩容
+graphic
+
+用的命令如下：
+
+extend扩展
+vgextend
+lvextend
+扩容逻辑卷
+
+[root@xuegod72 datavg]# lvextend -L +300m /dev/datavg/datalv  --->如果指定大小的时候，
+
+扩容300M和扩容到300M是不一样的写法
+
+扩容300M    -----》 –L +300M
+
+扩容到300M   ----> -L 300M
+
+
+
+  Size of logical volume datavg/datalv changed from 1.00 GiB (256 extents) to 1.29 GiB (331 extents).
+  Logical volume datalv successfully resized.
+[root@xuegod72 datavg]# lvs
+
+  LV     VG     Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  datalv datavg -wi-ao---- 1.29g
+[root@xuegod72 datavg]# vgs
+
+  VG     #PV #LV #SN Attr   VSize   VFree
+  appvg    1   0   0 wz--n- 496.00m 496.00m
+  datavg   3   1   0 wz--n-   1.45g 164.00m
+  vg01     1   0   0 wz--n- 496.00m 496.00m
+[root@xuegod72 datavg]# df -Th
+
+文件系统                  类型      容量  已用  可用 已用% 挂载点
+/dev/sda3                 xfs       197G  2.9G  194G    2% /
+devtmpfs                  devtmpfs  467M     0  467M    0% /dev
+tmpfs                     tmpfs     481M   84K  481M    1% /dev/shm
+tmpfs                     tmpfs     481M  7.0M  474M    2% /run
+tmpfs                     tmpfs     481M     0  481M    0% /sys/fs/cgroup
+/dev/sr0                  iso9660   3.8G  3.8G     0  100% /media
+/dev/sda1                 xfs       297M  128M  169M   44% /boot
+tmpfs                     tmpfs      97M   16K   97M    1% /run/user/42
+tmpfs                     tmpfs      97M     0   97M    0% /run/user/0
+/dev/mapper/datavg-datalv xfs      1014M   33M  982M    4% /data
+RHEL6对文件系统进行扩容：resize2fs
+
+注意在:RHEL7对文件系统进行扩容，使用：xfs_growfs
+
+xfs_growfs与 resize2fs两者之间的区别主要是传递的参数不一样，xfs_growfs是采用的挂载点，而resize2fs采用的是逻辑卷名称，并且resize2fs命令不能对xfs类型文件系统进行扩展
+
+[root@xuegod72 datavg]# xfs_growfs /dev/datavg/datalv
+
+meta-data=/dev/mapper/datavg-datalv isize=256    agcount=4, agsize=65536 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=262144, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal               bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 262144 to 338944
+[root@xuegod72 datavg]# df -Th
+
+文件系统                  类型      容量  已用  可用 已用% 挂载点
+/dev/sda3                 xfs       197G  2.9G  194G    2% /
+devtmpfs                  devtmpfs  467M     0  467M    0% /dev
+tmpfs                     tmpfs     481M   84K  481M    1% /dev/shm
+tmpfs                     tmpfs     481M  7.0M  474M    2% /run
+tmpfs                     tmpfs     481M     0  481M    0% /sys/fs/cgroup
+/dev/sr0                  iso9660   3.8G  3.8G     0  100% /media
+/dev/sda1                 xfs       297M  128M  169M   44% /boot
+tmpfs                     tmpfs      97M   16K   97M    1% /run/user/42
+tmpfs                     tmpfs      97M     0   97M    0% /run/user/0
+/dev/mapper/datavg-datalv xfs       1.3G   33M  1.3G    3% /data
+[root@xuegod72 datavg]# ls /data/
+
+mima
+[root@xuegod72 datavg]# tail -3 /data/mima
+
+sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+tcpdump:x:72:72::/:/sbin/nologin
+miao:x:1000:1000:miao:/home/miao:/bin/bash
+当然上面的文件系统扩展方式还有一种替代方式：在lvextend命令中加参数 –r，它可以用于多种不同的文件系统。比如xfs、ext4....
+
+[root@xuegod72 ~]# lvextend -L +40m -r /dev/datavg/datalv
+
+  Size of logical volume datavg/datalv changed from 52.00 MiB (13 extents) to 92.00 MiB (23 extents).
+  Logical volume datalv successfully resized.
+meta-data=/dev/mapper/datavg-datalv isize=256    agcount=2, agsize=6656 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=13312, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal               bsize=4096   blocks=853, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 13312 to 23552
+3.3 VG扩容卷组的扩容
+准备一个分区SDB6
+graphic
+
+开始进行VG扩容
+
+[root@xuegod72 ~]# vgs vg01
+
+  VG   #PV #LV #SN Attr   VSize    VFree
+  vg01   1   0   0 wz--n- 1008.00m 1008.00m
+[root@xuegod72 ~]# pvcreate /dev/sdb6
+
+  Physical volume "/dev/sdb6" successfully created
+[root@xuegod72 ~]# pvs
+
+  PV         VG      Fmt  Attr PSize    PFree
+  /dev/sdb1  vg_file lvm2 a--  1020.00m       0
+  /dev/sdb2  vg_file lvm2 a--  1020.00m  204.00m
+  /dev/sdb3  vg_file lvm2 a--  1020.00m 1020.00m
+  /dev/sdb5  vg01    lvm2 a--  1008.00m 1008.00m
+  /dev/sdb6          lvm2 ---     1.00g    1.00g
+[root@xuegod72 ~]# vgextend vg01 /dev/sdb6
+
+  Volume group "vg01" successfully extended
+[root@xuegod72 ~]# vgs
+
+  VG      #PV #LV #SN Attr   VSize VFree
+  vg01      2   0   0 wz--n- 1.97g 1.97g
+  vg_file   3   1   0 wz--n- 2.99g 1.20g
+[root@xuegod72 ~]# pvs
+
+  PV         VG      Fmt  Attr PSize    PFree
+  /dev/sdb1  vg_file lvm2 a--  1020.00m       0
+  /dev/sdb2  vg_file lvm2 a--  1020.00m  204.00m
+  /dev/sdb3  vg_file lvm2 a--  1020.00m 1020.00m
+  /dev/sdb5  vg01    lvm2 a--  1008.00m 1008.00m
+  /dev/sdb6  vg01    lvm2 a--  1008.00m 1008.00m
+3.4 LVM 缩小步骤
+[root@xuegod72 ~]# lvs
+  LV      VG      Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_file vg_file -wi-ao---- 1.79g
+[root@xuegod72 ~]# lvreduce -L 500m /dev/vg_file/lv_file    --- -L参数 后面加大小注意+ -符号
+
+  WARNING: Reducing active and open logical volume to 500.00 MiB
+  THIS MAY DESTROY YOUR DATA (filesystem etc.)
+Do you really want to reduce lv_file? [y/n]: y
+  Size of logical volume vg_file/lv_file changed from 1.79 GiB (459 extents) to 500.00 MiB (125 extents).
+  Logical volume lv_file successfully resized.
+[root@xuegod72 ~]# lvs
+
+  LV      VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_file vg_file -wi-ao---- 500.00m
+文件系统并没有变化
+
+[root@xuegod72 ~]# df -h /lv_file/
+
+Filesystem                   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_file-lv_file  1.8G   33M  1.8G   2% /lv_file
+[root@xuegod72 ~]# xfs_growfs /dev/vg_file/lv_file
+
+meta-data=/dev/mapper/vg_file-lv_file isize=256    agcount=5, agsize=98304 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=470016, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal               bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data size 128000 too small, old size is 470016
+[root@xuegod72 ~]# df -h /lv_file/
+
+Filesystem                   Size  Used Avail Use% Mounted on
+/dev/mapper/vg_file-lv_file  1.8G   33M  1.8G   2% /lv_file
+造成文件系统不能缩小的原因
+
+RHEL7只能对LV动态的增加 但是XFS不支持文件系统缩减
+
+3.5 VG缩减
+我要把/dev/sdb1 移除
+所在的VG=vg1
+
+必须保障咱们的物理卷是否被使用，因为它无法缩减一个有数据存在的pv
+
+如下图：
+
+graphic
+
+我们的sdb5 是未使用的
+
+graphic
+
+3.6 LVM删除
+lv    à    vg   à    pv
+[root@xuegod72 ~]# umount  ---->  remove lv -----> rmove vg  -----> remove pv  删除
+
+[root@xuegod72 ~]# create pv -----> create vg ----> create lv ----> mkfs ----> mount  创建
+
+删除之前必须把设备进行卸载，否则会产生以下错误
+
+graphic
+
+删除之前必须把设备进行卸载，否则会产生以下错误
+
+graphic
+
+[root@xuegod72 ~]# umount /vg1/
+
+[root@xuegod72 ~]# lvremove /dev/vg1/lv1
+
+Do you really want to remove active logical volume lv1? [y/n]: y
+  Logical volume "lv1" successfully removed
+[root@xuegod72 ~]# lvs
+
+[root@xuegod72 ~]# vgremove /dev/vg1
+
+  Volume group "vg1" successfully removed
+[root@xuegod72 ~]# vgs
+
+  VG   #PV #LV #SN Attr   VSize    VFree
+  vg01   1   0   0 wz--n- 1008.00m 1008.00m
+[root@xuegod72 ~]# pvs
+
+  PV         VG   Fmt  Attr PSize    PFree
+  /dev/sdb1       lvm2 ---     1.00g    1.00g
+  /dev/sdb2       lvm2 ---     1.00g    1.00g
+  /dev/sdb3  vg01 lvm2 a--  1008.00m 1008.00m
+  /dev/sdb5       lvm2 ---     1.00g    1.00g
+[root@xuegod72 ~]# pvremove /dev/sdb{1,2,5}
+
+  Labels on physical volume "/dev/sdb1" successfully wiped
+  Labels on physical volume "/dev/sdb2" successfully wiped
+  Labels on physical volume "/dev/sdb5" successfully wiped
+[root@xuegod72 ~]# pvs
+
+  PV         VG   Fmt  Attr PSize    PFree
+  /dev/sdb3  vg01 lvm2 a--  1008.00m 1008.00m
+
+
+底层存储更换：原来在EMC存储上，现在要换到日立上，步骤如下：
+
+新建PV   pvcreate /dev/sdb6
+扩容VG  vgextend datavg /dev/sdb6
+移动数据 pvm      ove /dev/sdb1 /dev/sdb6
+VG缩小  vgreduce datavg /dev/sdb1
+去掉替换下来的存储盘   pvremove /dev/sdb1

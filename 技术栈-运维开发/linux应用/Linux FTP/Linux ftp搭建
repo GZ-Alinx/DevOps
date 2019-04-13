@@ -1,0 +1,504 @@
+FTP 服务器
+
+vsftp服务端  lftp客户端工具
+
+20 21 端口运作
+
+20 是数据端口   21是指令端口       分为： 主动模式 ： 与被动模式。都是以ftp server 为参考
+
+也就是说，在建立连接之前 是需要线连接21端口：  指令传输   （发送用户名密码） 最后用20端口 来传输数据！
+
+
+主动就是server 去连接cient   被动则相反！~
+
+
+     1.使用yum -y install vsftpd lftp 安装
+
+本节所讲内容：
+VSFTP服务器概述
+安装配置VSFTP
+实战：匿名访问VSFTP
+实战：用户名密码方式访问VSFTP
+实战：ftp虚拟帐号方式访问VSFTP
+
+FTP服务端：xuegod63.cn   IP：192.168.0.63
+FTP客户端：xuegod64.cn   IP：192.168.0.64
+FTP服务概述：
+FTP服务器（File Transfer Protocol Server）是在互联网上提供文件存储和访问服务的计算机，它们依照FTP协议提供服务。
+FTP（File Transfer Protocol: 文件传输协议）作用： Internet 上用来传送文件的协议
+常见FTP服务器：
+windows：Serv-U FTP Server，filezilla_server
+Linux：ProFTPD:（Professional FTP daemon）一个Unix平台上或是类Unix平台上（如Linux, FreeBSD等）的FTP服务器程序。
+
+今天的主角：vsftp
+VSFTP是一个基于GPL发布的类Unix系统上使用的FTP服务器软件，它的全称是Very Secure FTP 从此名称可以看出来，编制者的初衷是代码的安全。
+特点：
+它是一个安全、高速、稳定的FTP服务器；
+模式： C/S 模式
+端口：
+[root@xuegod64 ~]# vim /etc/services graphic
+20 (传数据)   21 (传指令)
+fsp（File Service Protocol）： 文件服务协议。
+工作流程（原理）：
+##面试经常会遇到这样问题，大家需要注意下
+graphic
+C:\Users\andyli\AppData\Local\YNote\data\m18789215299@163.com\297387c58c3d406d8eeed234d6775257\clipboard.png
+C:\Users\andyli\AppData\Local\YNote\data\m18789215299@163.com\68f6020e4e214c5fb37af33d91e125d2\clipboard.png
+C:\Users\andyli\AppData\Local\YNote\data\m18789215299@163.com\040e12e3a57144dd876a2555e2698bfc\clipboard.png
+这里的主动和被动，是相对于的FTP server 端来判断的
+如果server 去连接client 开放的端口，说明是主动的，相反，如果client去连接server开放的端口，则是被动的。
+安装vsftp服务器端、客户端
+[root@xuegod63 ~]# rpm -ivh /mnt/Packages/vsftpd-2.2.2-6.el6_0.1.x86_64.rpm
+或
+yum -y install vsftpd lftp
+安装客户端：
+[root@xuegod64 ~]# yum install -y lftp
+lftp
+注：从RHEL6开始，系统镜像中默认没有ftp客户端命令。取而代之的是lftp命令
+Linux客户端：
+lftp 是一个功能强大的下载工具，它支持访问文件的协议: ftp, ftps, http, https, hftp, fish.(其中ftps和https需要在编译的时候包含openssl库)。llftp的界面非常好一个shell: 有命令补全，历史记录，允许多个后台任务执行等功能，使用起来非常方便。它还有书签、排队、镜像、断点续传、多进程下载等功能。
+配置文件位置：
+2.vsftpd 相关文档
+/etc/vsftpd/vsftpd.conf：vsftpd 的核心配置文件
+/etc/vsftpd/ftpusers：用于指定哪些用户不能访问FTP 服务器。  黑名单
+/etc/vsftpd/user_list：指定允许使用vsftpd 的用户列表文件。  白名单
+vim  /etc/vsftpd/user_list
+graphic
+# 如果userlist_deny= YES（默认），绝不允许在这个文件中的用户登录ftp，甚至不提示输入密码
+#prompt 提示
+/etc/vsftpd/vsftpd_conf_migrate.sh：是vsftpd 操作的一些变量和设置脚本
+/var/ftp/：默认情况下匿名用户的根目录
+
+启动服务
+[root@xuegod63 ~]# service vsftpd restart
+[root@xuegod63 ~]#chkconfig vsftpd on
+##注意关闭iptables 和selinux
+[root@xuegod63 ~]# netstat -antup | grep ftp
+tcp        0      0 0.0.0.0:21                  0.0.0.0:*                   LISTEN      11725/vsftpd
+互动： 为什么看不到20端口？。
+因为没有数据通信。
+此服务的使用方法
+Linux：
+[root@xuegod63 vuserconfig]# rpm -vih /mnt/Packages/lftp-4.0.9-1.el6.x86_64.rpm
+[root@xuegod63 vsftpd]# lftp 192.168.0.63
+windows：
+通过浏览器访问或 打开文件夹，在地址栏输入地址：ftp://192.168.0.63/
+graphic
+修改配置文件，实战举例
+例1：公司技术部准备搭建一台功能简单的FTP 服务器，允许所有员工上传和下载文件，并允许创建用
+户自己的目录。
+分析：
+允许所有员工上传和下载文件需要设置成允许匿名用户登录并且需要将允许匿名用户上传功能
+开启，
+anon_mkdir_write_enable 字段可以控制是否允许匿名用户创建目录。
+[root@xuegod63 vsftpd]# cp vsftpd.conf vsftpd.conf.back
+vim  /etc/vsftpd/vsftpd.conf  #修改以下内容
+允许匿名用户访问
+anonymous_enable=YES
+允许匿名用户上传文件并可以创建目录
+anon_upload_enable=YES
+anon_mkdir_write_enable=YES
+graphic
+graphic
+启动服务：
+service vsftpd restart
+测试：  不能写
+graphic
+[root@xuegod74 vsftpd]# chown  ftp.ftp  /var/ftp/pub/
+然后测试，是可以新建文件夹了，但是不能重命名，不能删除！
+
+[root@xuegod74 vsftpd]# vim vsftpd.conf
+anon_other_write_enable=YES  ##默认没有，需要手动添加下这行
+重启服务，即可重命名文件夹。
+但是可以删除文件夹了，不安全，均衡使用这个参数
+注意，默认匿名用户家目录的权限是755，这个权限是不能改变的。切记！
+下面我们来一步一步的实现,先修改目录权限,创建一个公司上传用的目录，叫xuegoddata,设置拥有者为ftp 用户所有，目录权限是755
+[root@xuegod63 vsftpd]# mkdir /var/ftp/xuegoddata
+[root@xuegod63 vsftpd]# chown ftp.ftp /var/ftp/xuegoddata/
+[root@xuegod63 vsftpd]# ll -d !$
+ll -d /var/ftp/xuegoddata/
+drwxr-xr-x 2 ftp root 4096 Mar  9 19:30 /var/ftp/xuegoddata/
+然后重新启动服务
+[root@xuegod63 ~]# service vsftpd restart
+Shutting down vsftpd:                                      [  OK  ]
+Starting vsftpd for vsftpd:                                [  OK  ]
+测试
+匿名登录FTP
+现在我们匿名上传
+graphic
+现在匿名上传的文件是禁止删除滴~
+graphic
+这样匿名用户的上传就算成功了
+注：工作中，匿名用户只是只读访问，写的权限也没有的。
+例2：
+公司内部现在有一台FTP 和WEB 服务器，FTP 的功能主要用于维护公司的网站内容，包括上传文
+件、创建目录、更新网页等等。公司现有两个部门负责维护任务，他们分别适用team1 和team2
+帐号进行管理。先要求仅允许team1 和team2 帐号登录FTP 服务器，但不能登录本地系统，并将
+这两个帐号的根目录限制为/var/www/html，不能进入该目录以外的任何目录。
+ftp 和www web服务器相结合。
+www web服务器根目录：  /var/www/html
+只允许：team1和team2两用户 可以上传。 vsftp禁止匿名。
+分析：
+将FTP 和WEB 服务器做在一起是企业经常采用的方法，这样方便实现对网站的维护，为了增强安
+全性，首先需要使用仅允许本地用户访问，并禁止匿名用户登录。其次使用chroot 功能将team1
+和team2 锁定在/var/www/html 目录下。如果需要删除文件则还需要注意本地权限
+解决方案：
+（1）建立维护网站内容的ftp 帐号team1 和team2 并禁止本地登录，然后设置其密码
+[root@xuegod63 ~]# useradd -s /sbin/nologin team1
+[root@xuegod63 ~]# useradd -s /sbin/nologin team2
+[root@xuegod63 ~]# echo "123456" | passwd --stdin team1
+Changing password for user team1.
+passwd: all authentication tokens updated successfully.
+[root@xuegod63 ~]# echo "123456" | passwd --stdin team2
+Changing password for user team2.
+passwd: all authentication tokens updated successfully.
+2）配置vsftpd.conf 主配置文件并作相应修改
+[root@xuegod63 vsftpd]# cp vsftpd.conf.back vsftpd.conf
+vim /etc/vsftpd/vsftpd.conf
+anonymous_enable=NO：禁止匿名用户登录
+local_enable=YES：允许本地用户登录
+graphic
+改：
+graphic
+为：
+graphic
+local_root=/var/www/html：设置本地用户的根目录为/var/www/html
+chroot_list_enable=YES：激chroot 功能
+chroot_list_file=/etc/vsftpd/chroot_list：设置锁定用户在根目录中的列表文件。此文件存放要锁定的用户名
+allow_writeable_chroot=YES
+保存退出
+（3）建立/etc/vsftpd/chroot_list 文件，添加team1 和team2 帐号
+[root@xuegod63 vsftpd]# touch /etc/vsftpd/chroot_list
+[root@xuegod63 ~]# ll !$
+ll /etc/vsftpd/chroot_list
+-rw-r--r-- 1 root root 0 Nov 10 17:08 /etc/vsftpd/chroot_list
+[root@xuegod63 ~]# vim /etc/vsftpd/chroot_list  #写入以下内容，一行，一个用户名
+team1
+team2
+（5）重启vsftpd 服务使配置生效
+service vsftpd restart
+（6）修改本地权限
+[root@xuegod63 ~]# ll -d /var/www/html/
+drwxr-xr-x. 2 root root 4096 Oct  6  2011 /var/www/html/
+[root@xuegod63 ~]# chmod -R o+w /var/www/html/
+[root@xuegod63 ~]# ll -d /var/www/html/
+drwxr-xrwx. 2 root root 4096 Oct  6  2011 /var/www/html/
+（7）测试
+测试：
+graphic
+graphic
+windows  : windows+R  再运行cmd
+C:\Users\shen>ftp 192.168.0.63
+连接到 192.168.0.63。
+220 (vsFTPd 2.2.2)
+用户(192.168.0.63:(none)): team1
+331 Please specify the password.
+密码:123456
+230 Login successful.
+ftp> pwd
+257 "/"
+ftp> ls
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+226 Directory send OK.
+ftp>mkdir test
+257 "/test" created
+ftp> ls
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+test
+226 Directory send OK.
+ftp: 收到 6 字节，用时 0.00秒 6.00千字节/秒。
+测试删除：
+ftp> rm -rf test
+550 Remove directory operation failed.
+ftp> rmdir test#删除时，不用能用rm命令，因为rm命令不是ftp上的命令。
+250 Remove directory operation successful.
+ftp> ls
+200 PORT command successful. Consider using PASV.
+150 Here comes the directory listing.
+226 Directory send OK.
+ftp>
+客户端用lftp登陆查看：
+root@xuegod64 ~]# lftp 192.168.0.63 -u team1,123456
+lftp team1@192.168.0.63:~> ls
+-rw-r--r--    1 0        0            1384 Jul 30 01:56 passwd
+lftp team1@192.168.0.63:/>
+
+
+
+
+例3： ftp虚拟帐号：
+企业环境
+公司为了宣传最新的产品信息，计划搭建FTP 服务器，为客户提供相关文档的下载。对所有互
+联网开放共享目录，允许下载产品信息，禁止上传。公司的合作单位能够使用FTP 服务器进行上
+传和下载，但不可以删除数据。需要保证服务器的稳定性并做优化。
+创建ftp虚拟帐号。允许客户使用ftp帐号下载文件。 但是，你们自己的合作伙伴帐号：vip可以上传一内部文件。
+需求分析
+根据企业的需求，对于不同用户进行不同的权限限制，FTP 服务器需要实现用户的审核。需考虑
+到服务器的安全性，所以关闭实体用户登录，使用虚拟帐号验证机制，并对不同虚拟帐号设置不
+同的权限。为了保证服务器的性能，还需要根据用户的等级，限制客户端的连接数及下载速度。
+1、创建用户数据库
+（1）创建用户文本文件
+先建立用户文本文件vsftpd_virtualuser.txt，添加两个虚拟帐号，非会员帐号commuser及会员帐号
+vip
+[root@xuegod63 vsftpd]# vim /etc/vsftpd/vsftpd_virtualuser.txt  #写入以下内容。格式一行用户一行密码。
+commuser  #用户
+123456  #密码
+vip
+123456
+保存退出
+（2）生成数据库
+保存虚拟帐号和密码的文本文件无法被系统帐号直接调用。我们需要使用db_load 命令生成db
+数据库文件
+安装：
+[root@xuegod63 vsftpd]# rpm -qf `which db_load `
+db4-utils-4.7.25-16.el6.x86_64
+# db_load -T -t hash -f /etc/vsftpd/vsftpd_virtualuser.txt /etc/vsftpd/vsftpd_virtualuser.db
+参数说明：
+选项-T允许应用程序能够将文本文件转译载入进数据库。
+由于我们之虚拟用户信息，以文本文件存储的。为让Vsftpd应用程序能够通过来载入用户数据，必须要使用选项来转译成vsftpd可以读懂的内容。
+-t hash使用hash码加密
+-f 指定包含用户名和密码文本文件。此文件格式要示：奇数行用户名、偶数行密码
+[root@xuegod63 vsftpd]# rm -rf /etc/vsftpd/vsftpd_virtualuser.txt   #为了安全，删除此文件。后期不再使用此文件。
+（3）修改数据库文件访问权限
+数据库文件中保存着虚拟帐号的密码信息，为了防止非法用户盗取哈，我们可以修改该文件的访
+问权限。生成的认证文件的权限应设置为只对root 用户可读可写，即600
+[root@xuegod63 vsftpd]# chmod 600 /etc/vsftpd/vsftpd_virtualuser.db
+[root@xuegod63 vsftpd]# ll !$
+ll /etc/vsftpd/vsftpd_virtualuser.db
+-rw------- 1 root root 12288 Nov 10 21:16 /etc/vsftpd/vsftpd_virtualuser.db
+2、配置PAM 文件
+为了使服务器能够使用数据库文件，对客户端进行身份验证，需要调用系统的PAM 模块.
+PAM概述：
+PAM(Plugable Authentication Module)为可插拔认证模块，不必重新安装应用系统，通过修
+改指定的配置文件，调整对该程序的认证方式。PAM 模块配置文件路径为/etc/pam.d/目录，此
+目录下保存着大量与认证有关的配置文件，并以服务名称命名。
+修改vsftpd 对应的PAM 配置文件/etc/pam.d/vsftpd。将默认配置使用“#”全部注释，添加两行应字段。
+改：
+graphic
+为：
+[root@xuegod63 vsftpd]# cat /etc/pam.d/vsftpd
+##%PAM-1.0
+#session    optional     pam_keyinit.so    force revoke
+#auth       required      pam_listfile.so item=user sense=deny file=/etc/vsftpd/ftpusers onerr=succeed
+#auth       required      pam_shells.so
+#auth       include password-auth
+#account    include      password-auth
+#session    required     pam_loginuid.so
+#session    include       password-auth
+auth       required /lib64/security/pam_userdb.so  db=/etc/vsftpd/vsftpd_virtualuser
+account  required /lib64/security/pam_userdb.so  db=/etc/vsftpd/vsftpd_virtualuser
+注意：这里的db=db=/etc/vsftpd/vsftpd_virtualuser
+，是pam文件的写法规范，不是真正指向db=/etc/vsftpd/vsftpd_virtualuser 这个文件，而是/etc/vsftpd/vsftpd_virtualuser.db 这个文件中
+注意： 很多同学在这此敲错。
+是account      required /lib64/security/pam_userdb.so  db=/etc/vsftpd/vsftpd_virtualuser不是：
+account  required /lib64/security/pam_userdb.so  db=/etc/vsftpd/vsftpd_virtualuser.db
+最后没有扩展名。
+3、创建虚拟帐号对应的系统用户及ftp共享的目录
+对于公共帐号和客户帐号，因为需要配置不同的权限，所以可以将两个帐号的目录进行隔离，控
+制用户的文件访问。公共帐号ftp 对应系统帐号ftpuser，并指定其主目录为/var/ftp/share，
+而客户帐号vip 对应系统帐号ftpvip，指定主目录为/var/ftp/vip。
+[root@xuegod63 vsftpd]# useradd -d  /var/ftp/share  ftpuser
+[root@xuegod63 vsftpd]# useradd -d  /var/ftp/vip  ftpvip
+[root@xuegod63 vsftpd]# chmod -R 500  /var/ftp/share/  #修改权限
+[root@xuegod63 vsftpd]# chmod -R 700  /var/ftp/vip/
+chmod -R 500 /var/ftp/share/ ：公共帐号commuser只允许下载，修改share 目录其他用户权限为
+rx 可读可执行。
+chmod -R 700 /var/ftp/vip/ ：客户帐号vip 允许上传和下载，所以对vip 目录权限设置为rwx，
+可读可写可执行。
+注：如果不设置可执行用户登录会出不能更改目录错误。
+4、建立配置文件
+互动：如何设置多个虚拟帐号的不同权限？ 以前都配置好服务后，对所有用户有效。现在需要对不同用户配置不同的权限。 怎么办？
+一个配置文件无法实现此功能，需要为每个虚拟帐号建立独立的配置文件，并根据需要进行相应的设置。
+（1）修改vsftpd.conf 主配置文件
+配置主配置文件/etc/vsftpd/vsftpd.conf 添加虚拟帐号的共同设置并添加user_config_dir 字
+段，定义虚拟帐号的配置文件目录。
+开始配置：
+[root@xuegod63 vsftpd]# cp vsftpd.conf.back vsftpd.conf
+禁用匿名用户登录并启用本地用户登录设置
+vim vsftpd.conf
+改：
+anonymous_enable=YES
+为：
+anonymous_enable=NO
+local_enable=YES   #确认此选项打开，允许本地用户登录。 Uncomment ：取消注释a
+chroot_local_user=YES   #确认此选项打开。将所有本地用户限制在家目录中，NO 则不限制
+pam_service_name=vsftpd  #确认在文件的最后有选项。配置vsftpd 使用的PAM 模块为vsftpd
+graphic
+在此选项后面追加：
+graphic
+user_config_dir=/etc/vsftpd/vuserconfig：设置虚拟帐号的主目录为/vuserconfig
+max_clients=300：设置FTP 服务器最大接入客户端数为300 个
+max_per_ip=10：设置每个IP 地址最大连接数为10 个
+（2）建立虚拟帐号配置文件
+在user_config_dir 指定路径下，建立与虚拟帐号同名的配置文件并添加相应的配置字段
+首先建立公共帐号ftp 的配置文件
+[root@xuegod63 ~]# grep vuserconfig /etc/vsftpd/vsftpd.conf   #查看要创建的目录名
+user_config_dir=/etc/vsftpd/vuserconfig
+[root@xuegod63 ~]# mkdir /etc/vsftpd/vuserconfig
+[root@xuegod63 ~]# touch /etc/vsftpd/vuserconfig/commuser
+[root@xuegod63 ~]# touch /etc/vsftpd/vuserconfig/vip
+配置虚拟帐号配置文件，写入以下内容：
+[root@xuegod63 ~]# vim /etc/vsftpd/vuserconfig/commuser
+guest_enable=yes
+guest_username=ftpuser
+anon_world_readable_only=no
+anon_max_rate=50000
+解释：
+guest_enable=yes：开启虚拟帐号登录
+guest_username=ftpuser：设置ftp 对应的系统帐号为ftpuser
+anon_world_readable_only=no：允许匿名用户浏览整个服务器的文件系统
+anon_max_rate=50000：限定传输速率为50KB/s
+注意：
+vsftpd 对于文件传输速度限制并不是绝对锁定在一个数值上哈，而是在80%~120%之间变化
+比如设置100KB/s 则实际是速度在80KB/s~120KB/s 之间变化
+下面是合作伙伴帐号的配置文件vip
+[root@xuegod63 ~]# vim /etc/vsftpd/vuserconfig/vip  #写入以下内容
+解释：
+guest_enable=yes：开启虚拟帐号登录
+guest_username=ftpvip：设置ftp 对应的系统帐号为ftpvip
+anon_world_readable_only=no：允许匿名用户浏览器整个服务器的文件系统
+write_enable=yes：允许在文件系统写入权限
+anon_mkdir_write_enable=yes：允许创建文件夹
+anon_upload_enable=yes：开启匿名帐号的上传功能
+anon_max_rate=100000：限定传输速度为100KB/s
+5、重启vsftpd 使配置生效
+[root@xuegod63 ~]# service vsftpd restart
+6、测试
+（1）公共帐号ft
+p 测试
+在公共帐号测试前，我们先建立个测试文件
+[root@xuegod63 vsftpd]#  cp /mnt/Packages/mysql-server-5.1.52-1.el6_0.1.x86_64.rpm /var/ftp/share/productinfo.xls   #共享的文件要大一些，方便后期测试下载速度。
+[root@xuegod63 vsftpd]# cp -r /boot/grub/ /var/ftp/share/   #复制一个目录
+这次在Linux下测试。
+ftp客户端命令
+lftp  ftpIP   -u  username,passwd
+或：
+lftp  ftpIP   -u  username
+使用公共帐号ftp，登录ftp 服务器
+[root@xuegod64 ~]# lftp 192.168.0.63 -u commuser,123456
+lftp ftp@192.168.0.63:~> ls
+-r--r--r--    1 0        0         8492640 Nov 10 13:49 produtinfo.xls
+lftp ftp@192.168.0.63:/> get produtinfo.xls  #下载单个文件  。并测试限速50KB/s
+graphic
+lftp ftp@192.168.0.63:/> mget  *.txt
+lftp ftp@192.168.0.63:/> mirror grub/  #下载一个文件夹
+lftp ftp@192.168.0.63:/> !ls grub   #！bash命令
+测试 vip帐号
+[root@xuegod63 vsftpd]# lftp 192.168.0.63 -u vip
+Password:
+lftp vip@192.168.0.63:~> ls
+lftp vip@192.168.0.63:/> !ls
+chroot_list      user_list    vsftpd_conf_migrate.sh
+ftpusers   vsftpd.conf      vsftpd_virtualuser.db
+grub               vsftpd.conf.anon  vuserconfig
+productinfo.xls  vsftpd.conf.back
+lftp vip@192.168.0.63:/> put chroot_list   #测试上传
+12 bytes transferred
+graphic
+例5：
+允许：vip帐号 删除文件
+[root@xuegod63 vsftpd]# cat vuserconfig/vip
+guest_enable=yes
+guest_username=ftpvip
+anon_world_readable_only=no
+write_enable=yes
+anon_mkdir_write_enable=yes
+anon_upload_enable=yes
+anon_other_write_enable=YES  # 允许删除，重命名等
+anon_max_rate=100000
+[root@xuegod63 vsftpd]# service vsftpd restart
+[root@xuegod63 vsftpd]# lftp 192.168.0.63 -u vip
+Password:
+lftp vip@192.168.0.63:~> ls
+lftp vip@192.168.0.63:/> rm -rf chroot_list
+rm ok, `chroot_list' removed
+lftp vip@192.168.0.63:/> ls
+-r--r--r--    1 0        0         8492640 Mar 09 14:21 a.zip
+[root@xuegod63 vuserconfig]# lftp 192.168.0.63 -u vip,123456
+或：
+[root@xuegod63 vsftpd]# lftp 192.168.0.63 -u vip
+Password:
+互动：你认为哪一种更好？为什么？
+lftp [OPTS]
+-u [,] 使用指定的用户名/口令进行验证
+-p 连接指定的端口
+lftp 192.168.0.63  -u vip   后，可以执的命令：
+* 下载单个文件和一组文件，断点续传用-c参数
+lftp ................:/> get -c ls-lR.txt   #下载单个文件
+lftp ...............:/> mget  *.txt   #下载多个文件
+lftp ................:/> mirror  dir   # 镜像一个目录。下载一个目录时用。
+查看数据传输过程中，vsftp服务器端传输数据端口：
+graphic
+没有看20端口。
+回顾配置文件参数：
+anonymous_enable=YES          #启用匿名用户（anonymous、ftp）
+local_enable=YES              #本地用户、启用
+write_enable=YES              #本地用户、可写
+#anon_upload_enable=YES       #匿名用户可写
+#anon_mkdir_write_enable=YES  #匿名用户可以创建目录
+#idle_session_timeout=600     #超时时间
+#data_connection_timeout=120  #超时时间
+listen=YES                    #是否监听
+pam_service_name=vsftpd       #开启pam支持
+userlist_enable=YES           #用户列表功能开启
+tcp_wrappers=YES              #开始tcp_wrappers支持
+黑白名单：
+userlist_deny=NO    #黑名单变白名单
+锁定用户访问的目录：
+chroot_local_user=NO
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chroot_list　　　#写谁锁谁
+chroot_local_user=YES
+chroot_list_enable=YES
+chroot_list_file=/etc/vsftpd/chroot_list　　　#写谁不锁谁
+其他功能：
+匿名用户可以重命名和删除：
+anon_other_write_enable＝YES
+bind IP（帮定监听IP）：
+listen_address=IP
+local_max_rate=N
+anon_max_rate=N
+max_client=N
+max_per_ip=N
+FTP数字代码的意义
+110 重新启动标记应答。
+120 服务在多久时间内ready。
+125 数据链路端口开启，准备传送。
+150 文件状态正常，开启数据连接端口。
+200 命令执行成功。
+202 命令执行失败。
+211 系统状态或是系统求助响应。
+212 目录的状态。
+213 文件的状态。
+214 求助的讯息。
+215 名称系统类型。
+220 新的联机服务ready。
+221 服务的控制连接端口关闭，可以注销。
+225 数据连结开启，但无传输动作。
+226 关闭数据连接端口，请求的文件操作成功。
+227 进入passive mode。
+230 使用者登入。
+250 请求的文件操作完成。
+257 显示目前的路径名称。
+331 用户名称正确，需要密码。
+332 登入时需要账号信息。
+350 请求的操作需要进一部的命令。
+421 无法提供服务，关闭控制连结。
+425 无法开启数据链路。
+426 关闭联机，终止传输。
+450 请求的操作未执行。
+451 命令终止:有本地的错误。
+452 未执行命令:磁盘空间不足。
+500 格式错误，无法识别命令。
+501 参数语法错误。
+502 命令执行失败。
+503 命令顺序错误。
+504 命令所接的参数不正确。
+530 未登入。
+532 储存文件需要账户登入。
+550 未执行请求的操作。
+551 请求的命令终止，类型未知。
+552 请求的文件终止，储存位溢出。
+553 未执行请求的的命令，名称不正确

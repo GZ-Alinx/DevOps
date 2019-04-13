@@ -1,0 +1,36 @@
+scp是一款文件传输工具，非常的简单实用
+
+ssh  连接远程ssh非22端口的服务器方法
+ssh -p 20086 tiaoban@远程ssh服务器ip
+scp 远程拷贝ssh非22端口的服务器文件是使用方法
+
+OpenOpenSSH是openBSD项目组开发的，基于BSD协议。一般linux发行版自带Openssh。2008年7月出了5.1版。 openssh包含一套程序。scp替换rcp,sftp替换了ftp. 包含sshd和sftp server端。scp: 远程文件拷贝（scp指定了远端的非默认22端口）：
+scp -P 20022 src.tar.gz
+scp -P 20022   .
+scp -o port=60066  .
+scp  -P 60066 -r /home/zhouhh/src/.*
+拷贝目录,-r是将目录下的目录递归拷贝。".*"是将隐藏文件也拷贝过去。需要先在远端创建好相应的目录。
+scp  -P 60066 -r *
+最 后一个命令存在一个问题，就是如果172.16.22.30不是默认22端口，无法指定端口。即-P 指定非缺省的ssh端口时，对远程的拷贝，无法指定两个不同的端口。这应该是scp的命令缺陷。如果谁知道怎么指定两个远端的非缺省22端口的语法，请告 诉我。联系地址ablozhou[at]gmail.com。
+scp的优点是使用简单，缺点是无法列出远端目录和改变目录。复杂一点的用法是用sftp。
+sftp：
+sftp -o port=60066
+其中-o port选项指定非缺省的ssh端口。
+Connecting to 192.168.12.12...
+ password:
+Changing to: /home/zhouhh
+sftp> pwd
+Remote working directory: /home/zhouhh
+在命令行模式下可以执行一系列命令
+ls,cd,pwd,mkdir,rmdir,rm 等远端文件操作
+lls,lcd,lpwd等本地操作。
+!command 执行本地shell命令
+!进入本地shell，exit再进入sftp的命令提示。
+可以用help或"?"来查询所有的sftp支持的命令。
+get  从远端下载文件
+put 将本地文件上传到远程。
+sftp配置，需要在/etc/ssh/sshd_config
+配置文件增加sftp子系统：
+Subsystem       sftp    /usr/libexec/openssh/sftp-server
+然后重启sshd:
+service sshd restart

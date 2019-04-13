@@ -1,0 +1,745 @@
+
+
+本节所讲内容：
+
+网络管理相关类
+IP址址的分类
+IP地址分类与TCP/IP四层模型
+什么是网络？
+通过通信介质和通信设备 将分布不同地点的两台或多台计算机，经过相应的程序实现通信。
+
+网络的功能：
+
+数据通信：利用网络传播各种信息和数据。
+
+资源共享：计算机中有很多大型的高级的计算机，每个用户可能都没有
+
+                     硬件资源共享： 远程桌面连接： 将自己的本地磁盘分享给其他用户。
+
+           软件资源共享： 将文件上传到FTP :用户可以共同下载。
+
+中国第一次接入互联网：1994/4/20
+
+七层参考模型、TCP/IP四层参考模型
+七层模型，称OSI（Open System Interconnection）参考模型，是国际标准化组织（ISO）制定的一个用于计算机或通信系统间互联的标准体系
+
+OSI—（Open System Interconnection）开放式系统互联
+
+ISO—（International Organization for Standardization）国际标准化组织
+
+IOS—（Internetwork Operating System）思科网络设备的操作维护系统
+
+分层的作用：方便管理（领导没时间去管理农民，他只要管理好部长就行了）、权责明晰
+
+graphic
+
+网线：双绞线  6类 超6类 7类  一根网线里面有4对8根双色线
+
+         纯色线：橙 绿 蓝 棕
+
+         非纯色线：白橙  白绿  白蓝  白棕
+
+
+
+          线序： 568A   白绿 绿 白橙 蓝 白蓝 橙 白棕 棕
+
+                            568B         白橙 橙 白绿 蓝 白蓝 绿 白棕 棕
+
+                   交叉线：A-B
+
+                   直通线：A-A B-B
+
+                   同交叉，异直通
+
+         百兆：用4根，2根发送 2根接收
+
+         千兆：用8根
+
+光纤线：FCoE  玻璃纤维  光信号
+
+优点：
+
+1、把复杂的网络划分成为更容易管理的层（将整个庞大而复杂的问题划分为若干个容易处理的小问题）
+
+2、没有一个厂家能完整的提供整套解决方案和所有的设备，协议.
+
+3、独立完成各自该做的任务，互不影响
+
+分工明确，上层不关心下层具体细节
+
+分层同样有益于网络排错
+
+功能与代表设备
+
+分层
+名字
+功能
+工作在该层的设备
+7
+应用层
+提供用户界面
+QQ，IE 。应用程序
+6
+表示层
+表示数据，进行加密等处理
+5
+会话层
+将不同应用程序的数据分离
+4
+传输层
+提供可靠或不可靠的传输，在重传前执行纠错
+防火墙
+3
+网络层
+提供逻辑地址，路由器使用它们来选择路径
+三层交换机、路由器
+2
+数据链路层
+将分组拆分为字节，并讲字节组合成帧，使用MAC地址提供介质访问，执行错误检测，但不纠错
+二层交换机，网卡
+1
+物理层
+在设备之间传输比特，指定电平，电缆速度和电缆针脚
+集线器
+1.3 IP地址分类
+
+IPV4:32bit   有（2的32次方 ）地址   40亿
+ipv6:128bit  mac:64bit  无限
+
+MAC: 48bit  (00:0c:29:66:c5:95)  唯一的
+
+子网掩码： ipv4(32bit)   ping6
+
+网段：同一网段是指网络地址相同
+
+路由：路由表，选路的过程
+
+路由器：实现路由的功能设备，通常来说它是用来连接多个不同的网段
+
+网关：大门 出口
+
+IP分两种：一种公有   一种私有IP，是从公有IP取出来的
+
+IP地址分为四类：(0-127.0.0.0)
+
+A类地址:范围从1-127，0是保留的并且表示所有IP地址（例：0.0.0.0），而127也是保留的地址，并且是用于测试环回口用的。因此A类地址的可用的范围其实是从1-126之间。
+
+10.0.0.0
+
+保留的IP地址：
+
+网络地址全为0：表示当前网络或网段
+
+网络地址全为1：表示所有网络
+
+网段127.0.0.0/8：保留用于回环地址
+
+以子网掩码来进行区别五类地址：255.0.0.0  CIDR表示法： /8
+
+172.17.5.3 255.255.0.0     172.17.5.3/16
+
+
+
+file://C:\Users\ADMINI~1\AppData\Local\Temp\ct_tmp/1.png
+
+
+
+范围
+0
+*
+*
+*
+*
+*
+*
+*
+二进制
+十进制
+最小
+0
+0
+0
+0
+0
+0
+0
+0
+00000000
+0
+最大
+0
+1
+1
+1
+1
+1
+1
+1
+01111111
+127
+ipv4-->   11101111.11110110.11101111.11111111   127.0.0.1   32bit
+
+ipv6--->   a34f:0000:00a1:0000:0000:0000:0000:0001     16进制   128bit
+
+                    a34f:0000:00a1::0001
+
+                    a34f: 0: a1:: 1   省略前导0
+
+B类地址：范围从128-191，如172.168.1.1，第一和第二段号码为网络号码，剩下的2段号码为本地以子网掩码来进行区别255.255.0.0   /16
+
+范围
+1
+0
+*
+*
+*
+*
+*
+*
+二进制
+十进制
+最小
+1
+0
+0
+0
+0
+0
+0
+0
+10000000
+128
+最大
+1
+0
+1
+1
+1
+1
+1
+1
+10111111
+191
+C类地址：范围从192-223，以子网掩码来进行区别： 255.255.255.0
+
+例如： 192.168.1.254
+
+范围
+1
+1
+0
+*
+*
+*
+*
+*
+二进制
+十进制
+最小
+1
+1
+0
+0
+0
+0
+0
+0
+11000000
+192
+最大
+1
+1
+0
+1
+1
+1
+1
+1
+11011111
+223
+D类地址：范围从224-239，被用在多点广播(Multicast)中。多点广播地址用来一次寻址一组计算机
+
+它标识共享同一协议的一组计算机。
+
+例：
+
+graphic
+
+E类地址：军工企业，科研部门
+
+私有IP
+
+A：10.0.0.0/8
+
+B:  172.16.0.0 ~ 172.31.0.0/16
+
+C:  192.168.0.0 ~ 192.168.255.0/24    255.255.255.0
+
+例子：
+
+有一个地址：192.168.1.110/24
+
+主机地址：192.168.1.110
+
+网络前缀：/24 （PREFIX=24）={NETMASK=255.255.255.0}
+
+网络地址：192.168.1.0
+
+广播地址：192.168.1.255
+
+错误的主机地址配置：错误是针对源地址
+
+192.168.5.0   错误
+
+192.168.5.255   错误
+
+127.x.x.2  错误
+
+192.168.1.288  错误
+
+300.22.0.2  错误
+
+主机地址+网络前缀=网络地址
+
+192.168.1.5+255.255.255.0=192.168.1.0
+
+网段：
+
+A类：后三位
+
+B类：后二位
+
+C类：后一位
+
+第2章 相关网络协议
+
+MAC地址全球唯一
+
+ARP(Address Resolution Protocol)：地址解析协议，将IP解析成MAC地址
+DNS：域名解析协议 www.baidu.com
+SNMP(Simple Network Management Protocol)网络管理协议
+DHCP(Dynamic Host Configuration Protocol)动态主机配置协议，它是在TCP/IP网络上使客户机获得配置信息的协议
+FTP(File Transfer Protocol)文件传输协议，它是一个标准协议，是在计算机和网络之间交换文件的最简单的方法。
+HTTP(Hypertext Transfer Protocol )：超文本传输协议
+HTTPS(Secure Hypertext Transfer Protocol)：安全超文本传输协议，它是由Netscape开发并内置于其浏览器中，用于对数据进行压缩和解压操作.
+ICMP(Internet Control Message Protocol)：Internet控制信息协议,互联网控制报文协议
+         ping  ip定义消息类型有：TTL超时、地址的请求与应答、信息的请求与应答、目的地不可到达
+
+SMTP(Simple Mail Transfer Protocol)：简单邮件传送协议
+TELNET Protocol：虚拟终端协议
+TFTP(Trivial File Transfer Protocol)：小文件传输协议
+UDP(User Datagram Protocol)：用户数据报协议，它是定义用来在互连网络环境中提供包交换的计算机通信的协议
+TCP（Transmission Control Protocol）： 传输控制协议，是一种面向连接的、可靠的、基于字节流的传输层通信协议  log转发：开启一个协议：tcp(三次握手和四次挥手)  udp
+2.1 TCP/IP协议簇
+
+TCP/IP协议是一个协议的集合。
+         包括很多协议，如：HTTP--超文本传输协议、FTP--文件传输协议 、TFTP--简单文件传输协议、Telnet--远程登录、SNMP--简单网络管理协议、TCP--Transmission Control Protocol，传输控制协议）是面向连接的协议、UDP--（User Data Protocol，用户数据报协议）非连接的协议、IP--Internet协议 、  ICMP --Internet控制信息协议、ARP--地址解析协议、RARP--反向地址解析协议RARP
+
+2.2 重点--TCP和UDP区别
+2.2.1 TCP协议
+TCP（Transmission Control Protocol，传输控制协议）是面向连接的协议，
+在收发数据前，必须和对方建立可靠的连接。
+
+一个TCP连接必须要经过三次“对话”才能建立起来，其中的过程非常复杂，
+
+graphic
+
+第一次对话：
+
+         主机A向主机B发出连接请求数据包：“我想给你发数据，可以吗？”
+
+第二次对话：
+
+         主机B向主机A发送同意连接和要求同步的数据包：“可以，你什么时候发？
+
+第三次对话：
+
+         主机A再发出一个数据包确认主机B的要求同步：“我现在就发，你接着吧！”
+
+总结:
+
+三次“对话”的目的是使数据包的发送和接收同步（同步就是两台主机一个在发送，一个在接收，协调工作），经过三次“对话”之后，主机A才向主机B正式发送数据。
+
+2.2.2 UDP协议
+UDP（User Data Protocol，用户数据报协议）
+UDP是一个非连接的协议，传输数据之前源端和终端不建立连接.
+
+UDP信息包的标题很短，只有8个字节，相对于TCP的20个字节信息包的额外开销很小。
+吞吐量不受拥挤控制算法的调节，只受应用软件生成数据的速率、传输带宽、源端和终端主机性能的限制。
+UDP使用尽最大努力交付，即不保证可靠交付，因此主机不需要维持复杂的链接状态表;
+
+例如：
+
+我们经常使用“ping”命令来测试两台主机之间TCP/IP通信是否正常，其实“ping”命令的原理就是向对方主机发送UDP数据包，然后对方主机确认收到数据包，如果数据包是否到达的消息能够及时反馈回来，那么网络就是通的。
+
+总结：
+
+UDP传输的速度很快,但是不会保障是否被成功接收
+
+总结--TCP与UDP的区别：
+1.基于连接与无连接；
+2.对系统资源的要求（TCP较多，UDP少）；
+3.UDP程序结构较简单；
+4.TCP保证数据正确性，UDP可能丢包；TCP保证数据顺序，UDP不保证。
+
+2.4 Linux下端口号的分配
+TCP和UDP 采用16位的端口号来识别应用程序
+TCP/IP协议簇里面的临时分配1024-5000之间的端口号
+
+大于5000以上的是为其他服务保留的
+
+2.4.1 TCP 端口分配
+21
+ftp
+文件传输服务
+22
+ssh
+安全远程连接服务
+23
+telnet
+远程连接服务
+25
+smtp
+电子邮件服务
+53
+DNS
+域名解析服务
+80
+http
+web服务
+443
+https
+安全web服务
+2.4.2 UDP 端口分配
+69
+tftp
+简单文件传输协议
+123
+ntp
+时间同步服务
+161
+snmp
+简单网络管理
+如果你不知道服务对应的端口号
+
+编辑  /etc/services 文件, 包含所有的端口号
+
+例如：查看ftp的端口号
+
+有的服务是UDP和TCP端口都会监听的
+
+graphic
+
+2.4.3 查看端口的监听状态
+用到的命令：netstat   用来显示本机网络连接，运行端口和路由表等信息
+常用的参数格式 :
+
+查看tcp端口：anpt
+
+查看udp端口：anpu
+
+查看全部：anput
+
+-a, --all  显示本机所有连接和监听的端口
+-n, --numeric    don't resolve names  以网络IP地址形式显示当前建立的有效连接和端口
+-p, --programs   显示连接对应的PID与程序名
+-t  显示tcp协议连接
+-u  显示udp协议连接
+-r 显示路由表信息
+graphic
+
+
+
+第3章 网络相关的调试命令
+
+3.1 查看网卡物理连接是否正常
+用到的命令：mii-tool
+语法：mii-tool 网卡名
+
+graphic
+
+3.2 查看网卡硬件相关信息
+常见的网络接口：
+eth0 以太网接口 (RHEL6)
+
+wlan0  无线接口
+
+eno16777736  以太网接口（RHEL7）
+
+bond0  网卡绑定 bonding接口
+
+team0   网卡绑定 team接口
+
+virbr0  虚拟交换机桥接接口
+
+br0   虚拟交换机桥接接口
+
+vnet0 KVM虚拟机网卡接口
+
+===================================================
+
+用到的命令：ethtool
+
+ethtool 是用于查询及设置网卡参数的命令。
+
+[root@xuegod72 ~]# ethtool eno16777736
+
+Settings for eno16777736:
+
+       Supported ports: [ TP ]
+
+       Supported link modes: （类型）  10baseT/Half 10baseT/Full
+
+                               100baseT/Half 100baseT/Full
+
+                               1000baseT/Full
+
+       Supported pause frame use: No
+
+       Supports auto-negotiation: Yes
+
+       Advertised link modes: （速率） 10baseT/Half 10baseT/Full
+
+                               100baseT/Half 100baseT/Full
+
+                               1000baseT/Full
+
+       Advertised pause frame use: No
+
+       Advertised auto-negotiation: Yes
+
+       Speed: 1000Mb/s
+
+       Duplex: Full   --通信模式全双工
+
+       Port: Twisted Pair
+
+       PHYAD: 0
+
+       Transceiver: internal
+
+       Auto-negotiation: on
+
+       MDI-X: off (auto)
+
+       Supports Wake-on: d
+
+       Wake-on: d
+
+       Current message level: 0x00000007 (7)
+
+                            drv probe link
+
+       Link detected: yes
+
+从多个设备中确定某个具体的设备（通过闪烁的LED网卡端口进行判断）
+
+ethtool –p eth0
+
+3.3 配置网络和IP地址
+方法一：[root@xuegod72 ~]# nmtui-edit eno33554976
+方法二：手工创建一个网卡配置文件
+
+[root@xuegod72 ~]# cp /etc/sysconfig/network-scripts/ ifcfg-eno16777736  ifcfg- eno33554976
+
+[root@xuegod72 network-scripts]# cat ifcfg-eno33554976
+
+TYPE=Ethernet   ----设备类型
+BOOTPROTO=none   ----静态  动态：DHCP  none\dhcp\static
+DEVICE=eno33554976
+ONBOOT=yes    ----是否启用这个接口
+IPADDR=192.168.1.133    -----IP地址
+PREFIX=24       -----子网掩码
+GATEWAY=192.168.1.1     ----网关
+DNS1=192.168.1.1
+方法三：通过命令nmcli来添加
+
+[root@xuegod72 ~]# nmcli con add con-name eno50332200 type ethernet ifname eno5033220  --默认是动态分配IP地址
+
+[root@xuegod72 ~]# nmcli con mod eno50332200 ipv4.method manual   --改为手工分配
+
+[root@xuegod72 ~]# nmcli con down eno50332200
+
+[root@xuegod72 ~]# nmcli con up eno50332200    ---重启生效
+
+3.4 永久添加IP-nmcli
+在RHEL7中NetworkManger管理功能更强大，可以通过nmcli命令实现网卡所有日常操作
+查看网络设备状态
+[root@panda ~]# nmcli dev status
+
+DEVICE       TYPE      STATE         CONNECTION
+
+eno16777736  ethernet  connected     eno16777736
+
+eno33554976  ethernet  disconnected  --
+
+lo           loopback  unmanaged     --
+
+查看已有的连接
+[root@panda ~]# nmcli conn show
+
+NAME         UUID                                  TYPE            DEVICE
+
+eno16777736  50eff37c-72b4-407a-a3ee-9ef8ca746b95  802-3-ethernet  eno16777736
+
+关闭打开网络连接，类似于ifdown、ifup网卡
+[root@panda ~]# nmcli conn down eno16777736
+
+[root@panda ~]# nmcli conn up eno16777736
+
+下面我们来看一下如何通过nmcli来配置一块网卡信息
+
+1）添加一块新网卡（可以在线添加）
+
+graphic
+
+2）查看网络信息
+
+[root@panda ~]# ip a
+
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+
+    inet 127.0.0.1/8 scope host lo
+
+       valid_lft forever preferred_lft forever
+
+    inet6 ::1/128 scope host
+
+       valid_lft forever preferred_lft forever
+
+2: eno16777736: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+
+    link/ether 00:0c:29:c3:35:f0 brd ff:ff:ff:ff:ff:ff
+
+    inet 192.168.1.222/24 brd 192.168.1.255 scope global eno16777736
+
+       valid_lft forever preferred_lft forever
+
+    inet 192.168.1.211/24 brd 192.168.1.255 scope global secondary eno16777736
+
+       valid_lft forever preferred_lft forever
+
+    inet6 fe80::20c:29ff:fec3:35f0/64 scope link
+
+       valid_lft forever preferred_lft forever
+
+5: eno33554976: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN qlen 1000
+
+link/ether 00:0c:29:c3:35:fa brd ff:ff:ff:ff:ff:ff
+
+3）给新添加的网卡添加一个IP地址
+
+[root@panda ~]# nmcli conn add con-name "office" ifname eno33554976 type ethernet autoconnect no ip4 192.168.1.200 gw4 192.168.1.1
+
+Connection 'office' (8b83ccd1-2ae8-4477-a4b0-7723fa0fe27a) successfully added.
+
+参数说明：
+
+con-name：连接名称
+ifname：要连接的设备
+type：设备类型
+autoconnect：是否开机自启动
+ip4：要配置的IP地址
+gw4：ip4地址的网关
+[root@panda network-scripts]# pwd
+
+/etc/sysconfig/network-scripts
+
+[root@panda network-scripts]# cat ifcfg-office
+
+TYPE=Ethernet
+
+BOOTPROTO=none
+
+IPADDR=192.168.1.200
+
+PREFIX=32
+
+GATEWAY=192.168.1.1
+
+DEFROUTE=yes
+
+IPV4_FAILURE_FATAL=no
+
+IPV6INIT=yes
+
+IPV6_AUTOCONF=yes
+
+IPV6_DEFROUTE=yes
+
+IPV6_PEERDNS=yes
+
+IPV6_PEERROUTES=yes
+
+IPV6_FAILURE_FATAL=no
+
+NAME=office
+
+UUID=8b83ccd1-2ae8-4477-a4b0-7723fa0fe27a
+
+DEVICE=eno33554976
+
+ONBOOT=no
+
+4）启动新添加的网卡
+
+[root@panda network-scripts]# nmcli conn up office
+
+Connection successfully activated (D-Bus active path: /org/freedesktop/NetworkManager/ActiveConnection/7)
+
+[root@panda network-scripts]# ip a
+
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN
+
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+
+    inet 127.0.0.1/8 scope host lo
+
+       valid_lft forever preferred_lft forever
+
+    inet6 ::1/128 scope host
+
+       valid_lft forever preferred_lft forever
+
+2: eno16777736: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+
+    link/ether 00:0c:29:c3:35:f0 brd ff:ff:ff:ff:ff:ff
+
+    inet 192.168.1.222/24 brd 192.168.1.255 scope global eno16777736
+
+       valid_lft forever preferred_lft forever
+
+    inet 192.168.1.211/24 brd 192.168.1.255 scope global secondary eno16777736
+
+       valid_lft forever preferred_lft forever
+
+    inet6 fe80::20c:29ff:fec3:35f0/64 scope link
+
+       valid_lft forever preferred_lft forever
+
+5: eno33554976: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc pfifo_fast state DOWN qlen 1000
+
+    link/ether 00:0c:29:c3:35:fa brd ff:ff:ff:ff:ff:ff
+
+    inet 192.168.1.200/32 brd 192.168.1.200 scope global eno33554976
+
+       valid_lft forever preferred_lft forever
+
+    inet6 fe80::20c:29ff:fec3:35fa/64 scope link tentative
+
+       valid_lft forever preferred_lft forever
+
+5）进行连接测试
+
+graphic
+
+
+
+
+
+
+
+
+

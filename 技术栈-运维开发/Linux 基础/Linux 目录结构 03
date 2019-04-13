@@ -1,0 +1,863 @@
+在WIN系统中，查看文件先进入相应的盘符，然后进入文件目录
+
+
+
+在LINUX中，一切皆文件·
+在win中，它是多根 c:\  d:\
+在linux中，它是单根 /
+那么在Linux中它是怎么显示的呢？我们可以查看目录树结构：
+
+我们可以通过TREE命令来查看，如果没有安装这个命令，可以通过下面这种方式安装一下
+
+[root@panda ~]# rpm -ivh /media/Packages/tree-1.6.0-10.el7.x86_64.rpm
+复制代码
+package tree-1.6.0-10.el7.x86_64 is already installed
+[root@panda ~]# tree -L 1 /
+/
+├── bin -> usr/bin
+├── boot
+├── dev
+├── etc
+├── home
+├── lib -> usr/lib
+├── lib64 -> usr/lib64
+├── media
+├── mnt
+├── opt
+├── proc
+├── raid0
+├── raid5
+├── root
+├── run
+├── sbin -> usr/sbin
+├── srv
+├── sys
+├── tmp
+├── usr
+└── var
+
+21 directories, 0 files
+
+RHEL-7的目录结构，和6有一点小区别（虚线部分）
+
+
+
+
+
+
+
+
+目 录
+
+说 明
+/
+处于linux系统树形结构的最顶端，它是linux文件系统的入口，所有的目录、文件、设备都在 / 之下
+/bin
+bin是Binary的缩写。常用的二进制命令目录。比如 ls、cp、mkdir、cut等；和/usr/bin类似
+/boot
+存放的系统启动相关的文件，例如：kernel.grub(引导装载程序)
+/dev
+dev是Device的缩写。设备文件目录，比如声卡、磁盘……在Linux中
+
+一切都被看做文件。终端设备、磁盘等等都被看做文件
+
+设备文件: /dev/sda,/dev/sda1,/dev/tty1,/dev/tty2,/dev/pts/1, /dev/zero, /dev/null, /dev/cdrom
+/etc
+常用系统及二进制安装包配置文件默认路径和服务器启动命令目录
+
+passwd 用户信息文件
+
+shadow  密码
+
+group 存储用户组信息
+
+fstab 系统开机启动自动挂载分区列表
+
+hosts 设定用户自己的IP与主机名对应的信息
+
+crontab 系统级别的守护进程配置文件
+
+profile  bashrc   系统全局环境变量配置文件
+
+sysconfig/network-scirpts/ifcfg-enoxxxx  IP地址配置文件
+
+systemd/system/*.wants 所有服务的启动脚本
+
+sysctl.conf  系统内核参数配置文件
+/home
+普通用户的家目录默认存放目录
+/lib
+库文件存放目录,函数库目录
+/lost+found
+默认为空，被FSCK（file system check用来检查和维护不一致的文件系统。若系统掉电或磁盘发生问题，可利用fsck命令对文件系统进行检查）用来放置零散文件（没有名称的文件）  当系统非法关机后，这里就会存放一些文件
+/mnt
+
+/media
+
+一般用来临时挂载存储设备的挂载目录，比如有cdrom、U盘等目录
+
+在RHEL7中会挂载到/run下面
+/opt
+表示的是可选择的意思，有些软件包也会被安装在这里，也就是定义软件包
+/proc
+操作系统运行时，进程（正在运行中的程序）信息及内核信息（比如cpu、硬盘分区、内存信息等）存放在这里。/proc目录是伪装的文件系统proc的挂载目录，proc并不是真正的文件系统。因此，这个目录是一个虚拟的目录，它是系统内存的映射，我们可以通过直接访问这个目录来获取系统信息。也就是说，这个目录的内容不在硬盘上而是在内存里
+
+du –sh /etc/
+
+du –sh /proc  因为存在内存中，不在硬盘里面，所以不占用空间
+
+查看咱们的内存信息,CPU信息
+
+cat /proc/meminfo  | grep “Mem”
+
+cat /proc/cpuinfo
+/sbin
+大多数涉及系统管理的命令都存放在该目录中，它是超级权限用户root的可执行命令存放地，普通用户无权限执行这个目录下的命令，凡是目录sbin中包含的命令都是root权限才能执行的
+/tmp
+该目录用于存放临时文件，有时用户运行程序的时候，会产生一些临时文件。/tmp就是用来存放临时文件的。/var/tmp目录和该目录的作用是相似的,不能存放重要数据，它的权限比较特殊
+
+[root@panda ~]# ls –ld /tmp
+
+drwxrwxrwt 10 root root 12288 Oct 3 20:45  /tmp/ à粘滞位（sticky bit）目录的sticky位表示这个目录里的文件只能被owner和root删除
+/var
+系统运行和软件运行时产生的日志信息，该目录的内容是经常变动的，存放的是一些变化的文件。比如/var下有/var/log目录用来存放系统日志的目录，还有mail、/var/spool/cron
+/usr
+存放应用程序和文件，
+  /usr/bin 普通用户使用的应用程序
+  /usr/sbin 管理员使用的应用程序
+  /usr/lib 库文件Glibc(32位)
+  /usr/lib64 库文件Glibc
+
+/lib
+
+/lib64
+
+都在/usr/目录下
+这个目录里存放着系统最基本的动态链接共享库，包含许多被/bin/和/sbin/中的程序使用的库文件，目录/usr/lib/中含有更多用于用户程序的库文件。作用类似于windows里的DLL文件，几乎所有的应用程序都需要用到这些共享库
+
+注：lib***.a是静态库
+       lib***.so是动态库
+
+静态库在编译时被加载到二进制文件中
+  动态库在运行时加载到进程的内存空间中
+
+简单的说：这些库是为了让你的程序能够正常编译运行的
+
+其实类似于WIN中.dll文件，几乎所有的应用程序都需要用到这些共享库
+
+
+第2章 绝对路径和相对路径
+2.1 概念
+路径：在我们平时使用计算机时要找到需要的文件就必须知道文件的位置，而表示文件的位置的方式就是路径
+绝对路径：在Linux中，绝对路径是从”/”开始的，比如/usr、/etc/passwd。如果一个路径是从根（/）开始的，它一定是绝对路径.
+相对路径：相对路径是以. 或 .. 开始的，
+
+2.2 位置判断
+
+pwd判断位置
+[root@localhost ~]# pwd 注：判断用户当前所处的位置，也就是说他到底位于哪？
+绝对路径： 从/开始的路径 /home/miao
+
+相对路径： 相对于当前目录开始, a.txt  ./a.txt ../miao/b.txt   当前目录在/etc
+
+例子：
+[root@panda home]# ls
+alice  miao  user1  user3  user4  user5  zhangsan
+[root@panda home]# touch user1/file1
+[root@panda home]# cd user1
+[root@panda user1]# ls
+file1
+[root@panda user1]# touch ../user3/file2
+复制代码
+
+
+第3章 文件的管理
+
+文件的管理方式有几种：
+改变目录：cd
+
+创建/修改/移动/删除：touch  mkdir  mv  rm
+
+
+3.1 创建文件和文件夹
+
+3.1.1 命令之：touch　
+作用：常用来创建空文件,如果文件存在，则修改这个文件的时间
+
+补充：文件的时间
+ls –l 文件名  这个仅可以看到文件的修改时间
+Linux文件有四种时间：
+stat /var/log/messages   --->查看文件的详细属性（其中包括文件时间属性）
+访问时间：atime，查看内容  //RHEL6会延后修改atime
+修改时间：mtime，修改内容
+改变时间：ctime，文件属性，比如权限
+删除时间：dtime，文件被删除的时间
+
+注：RHEL6开始relatime，atime延迟修改，必须满足其中一个条件：
+1. 自上次atime修改后，已达到86400秒；
+2. 发生写操作时
+
+[root@panda ~]# ls -l /var/log/messages
+复制代码
+-rw-------. 1 root root 817982 Mar 31 19:07 /var/log/messages
+[root@panda ~]# stat !$
+复制代码
+stat /var/log/messages
+  File: `/var/log/messages'
+  Size: 817982            Blocks: 1600       IO Block: 4096   regular file
+Device: 802h/2050d        Inode: 155464      Links: 1
+Access: (0600/-rw-------)  Uid: (    0/    root)   Gid: (    0/    root)
+Access: 2016-03-08 18:04:30.515999861 +0800
+Modify: 2017-03-31 19:07:43.655945912 +0800
+Change: 2017-03-31 19:07:43.655945912 +0800
+
+语法： touch 文件名
+
+[root@panda user1]# touch file2 file3
+[root@panda user1]# ls
+复制代码
+file1.txt  file2  file3
+[root@panda user1]# touch file{4..20}
+[root@panda user1]# ls
+复制代码
+file10  file12  file14  file16  file18  file1.txt  file20  file4  file6  file8
+file11  file13  file15  file17  file19  file2      file3   file5  file7  file9
+[root@panda user1]# touch xxx-{a..z}
+[root@panda user1]# ls
+复制代码
+file10  file15  file1.txt  file5  xxx-a  xxx-f  xxx-k  xxx-p  xxx-u  xxx-z
+file11  file16  file2      file6  xxx-b  xxx-g  xxx-l  xxx-q  xxx-v
+file12  file17  file20     file7  xxx-c  xxx-h  xxx-m  xxx-r  xxx-w
+file13  file18  file3      file8  xxx-d  xxx-i  xxx-n  xxx-s  xxx-x
+file14  file19  file4      file9  xxx-e  xxx-j  xxx-o  xxx-t  xxx-y
+[root@panda user1]# touch yyy-{a,c,z}
+[root@panda user1]# ls
+复制代码
+file10  file15  file1.txt  file5  xxx-a  xxx-f  xxx-k  xxx-p  xxx-u  xxx-z
+file11  file16  file2      file6  xxx-b  xxx-g  xxx-l  xxx-q  xxx-v  yyy-a
+file12  file17  file20     file7  xxx-c  xxx-h  xxx-m  xxx-r  xxx-w  yyy-c
+file13  file18  file3      file8  xxx-d  xxx-i  xxx-n  xxx-s  xxx-x  yyy-z
+file14  file19  file4      file9  xxx-e  xxx-j  xxx-o  xxx-t  xxx-y
+[root@panda user1]# touch  -d "20181010 10:10" xuegod.txt
+[root@panda user1]# ll xuegod.txt
+复制代码
+-rw-r--r-- 1 root root 0 Oct 10  2018 xuegod.txt
+
+补充：
+       用vi命令也可以创建一个新文件
+
+       用重定向也可以创建一个新文件
+
+
+
+
+3.1.2 命令之：mkdir
+作用：创建目录
+语法：mkdir  (选项) 文件名
+
+例子：
+
+[root@panda ~]# mkdir dir1
+[root@panda ~]# mkdir /home/dir2 /home/dir3
+[root@panda ~]# mkdir /home/{dir4,dir5}
+[root@panda ~]# mkdir -v /home/{dir6,dir7}
+[root@panda ~]# mkdir -v /homeee/dir8/aaa/bb
+[root@panda ~]# mkdir -pv /hoem/dir8/aaa/bbb  --->包括其父母目录的创建
+[root@panda ~]# mkdir -pv /home/{miao/{dir1,111},tianyun}
+复制代码
+
+
+3.2 删除文件与文件夹
+
+用到的命令为:rm
+作用: 可以删除一个目录中的一个或多个文件或目录，也可以将某个目录及其下属的所有文件及其子目录均删除掉。对于链接文件，只是删除整个链接文件，而原有文件保持不变
+语法: rm (选项) 文件名
+参数:
+q  -f 强制删除，没有提示
+q  -r 删除目录
+q  -v 显示详细过程
+
+举例如下:
+
+[root@panda ~]# mkdir /home/rm-dir
+[root@panda ~]# touch /home/rm-dir/file{1..5}
+[root@panda~]# rm /home/rm-dir/file1
+[root@panda~]# rm –f /home/rm-dir/file1
+[root@panda~]# rm –rf /home/rm-dir/*    ----->不包含隐藏文件在内
+[root@panda ~]# rm –rf *.file
+复制代码
+参数r是用来删除目录的,如果加入参数 –f 系统就不会提示,直接删除  rm –rf  (慎用,一定要在删除以前确定一下所在目录，防止误删除重要数据)
+
+3.3 复制文件
+命令：cp
+用到的选项：
+       -R/r：递归处理，将指定目录下的所有文件与子目录一并处理
+       -b：覆盖已存在的文件目标前将目标文件备份
+       -v：详细显示命令执行的操作
+
+
+
+[root@panda ~]# mkdir /home/dir{1,2}
+[root@panda ~]# cp -v /var/log/messages /home/dir1
+[root@panda ~]# cp /var/log/messages /home/dir1/wang.txt
+[root@panda ~]# cp –r /etc /home/dir1
+[root@panda ~]# cp -v /var/log/messages /home/dir90     --->没有/home/dir90
+[root@panda ~]# cp anaconda-ks.cfg ![        DISCUZ_CODE_51        ]nbsp;
+[root@panda ~]# cp -rv /etc/sysconfig/network-scripts/ifcfg-eno16777736 /etc/passwd /etc/grub.conf /home/dir2            ---->将多个文件拷贝到同一个目录
+[root@panda ~]# cp -r /etc /tmp
+[root@panda ~]# cp -rf /etc /tmp
+[root@panda ~]# \cp -r /etc /tmp    ---> 因为别名优先。cp -i 会进行交互。加\去掉使用别名
+[root@panda ~]# type -a  cp
+复制代码
+
+cp is aliased to `cp -i'
+cp is /usr/bin/cp
+[root@panda ~]# cp -rv /etc/{hosts,host.bak}
+[root@panda ~]# cp -v /opt/a.txt{,bak}
+
+3.4 查看文件
+
+3.4.1 命令之:ls
+
+作用:列出指定目录下的所有文件和文件夹
+语法:ls (选项)目录地址
+参数:
+q  -a 显示所有文件及文件夹
+q  -l 格式化显示目录下的内容列表。输出的信息从左到右依次为文件类型、权限模式、硬连接数、所有者、组、文件大小和文件的最后修改时间、文件名称
+q  -ltr 按最近时间进行排序
+
+
+
+
+3.4.2 命令之:cat
+语法：cat 文件名
+参数：
+q  -n 对输出的所有行进行编号
+q  -b 对非空的输出行进行编号
+q  -s 不输出多行的空行
+作用：
+       1）查看文件内容,一次显示整个文件内容
+       2）从键盘创建一个文件
+       3）将几个文件合并为一个文件
+
+范例：
+
+
+等价的命令(参数-s表示将多个空行合并为一个空行进行显示)
+
+
+3.4.3 命令之:more
+作用:以分布形式显示文件内容
+语法:more + 文件名
+说明:按下回车刷新一行，按下空格刷新一屏，输入q键退出
+
+举例如下:
+
+
+3.4.4 命令之:less
+
+作用:和more功能一样
+语法:less +文件名
+说明:linux中more与less的区别
+q  more:不支持后退，但几乎不需要加参数，空格键是向下翻页，Enter键是向下翻一行，在不需要后退的情况下比较方便
+q  less：支持前后翻滚，既可以向上翻页（pageup按键），也可以向下翻页（pagedown按键）。，空格键是向下翻页，Enter键是向下翻一行
+如下图所示:
+
+常用命令操作在LESS中
+
+
+
+[root@panda user1]# less -M /var/log/messages
+复制代码
+
+
+3.4.5 命令之:head
+
+作用: 用于显示文件的开头的内容。在默认情况下，head命令显示文件的头10行内容
+语法:head(选项)文件名
+
+参数: -n 显示从文件头开始的行数
+
+
+3.4.6 命令之:tail
+作用: 用于显示文件中的尾部内容。默认在屏幕上显示指定文件的末尾10行
+语法:tail (选项)文件名
+参数:
+q  -n 显示文件尾部多少行的内容(n为数字)
+q  -f  动态显示数据（不关闭）,常用来查看日志,也可以写成tailf，它是根据文件的索引号来追踪数据变化的
+
+q  -F 动态显示数据。它是根据文件名来进行追踪数据变化的
+
+
+[root@panda ~]# echo 222 >> a.txt
+[root@panda ~]# ls -i a.txt
+复制代码
+524291 a.txt
+[root@panda ~]# echo 333 >> a.txt
+[root@panda ~]# tailf a.txt   --->可以看到数据动态更新
+[root@panda ~]# vim a.txt
+[root@panda ~]# ls -i a.txt
+543781 a.txt
+[root@panda ~]# tailf a.txt   ---->这时看到动态数据已经不更新了
+复制代码
+
+换另外一种监控方式：
+
+[root@panda ~]# vim a.txt
+[root@panda ~]# ls -i a.txt
+复制代码
+524709 a.txt
+[root@panda ~]# tail -F a.txt
+[root@panda ~]# echo 555 >> a.txt
+[root@panda ~]# vim a.txt
+[root@panda ~]# ls -i a.txt
+复制代码
+543781 a.txt
+
+[root@panda ~]# tail -F a.txt
+复制代码
+111
+222
+333
+444
+555
+tail: `a.txt' has been replaced;  following end of new file
+111
+222
+333
+444
+555
+666
+
+grep（global search regular expression(RE) and print out the line，全面搜索正则表达式并把行打印出来）是一种强大的文本搜索工具，它能使用正则表达式搜索文本，并把匹配的行打印出来
+
+3.5 移动文件
+[root@panda ~]# mv file1 /home/dir3        ----->将file2移动到/home/dir3
+[root@panda ~]# mv file2 /home/dir3/file20   ---> 将file2移动到/home/dir3，并改名为file20
+[root@panda ~]# mv file4 file5    --->将file4重命名为file5，当前位置的移动就是重命名
+复制代码
+
+第4章 xfs文件系统的备份和恢复
+
+XFS提供了 xfsdump 和 xfsrestore 工具协助备份XFS文件系统中的数据。xfsdump 按inode顺序备份一个XFS文件系统。
+与传统的UNIX文件系统不同，XFS不需要在dump前被卸载；对使用中的XFS文件系统做dump就可以保证镜像的一致性。这与XFS对快照的实现不同，XFS的dump和restore的过程是可以被中断然后继续的，无须冻结文件系统。xfsdump 甚至提供了高性能的多线程备份操作——它把一次dump拆分成多个数据流，每个数据流可以被发往不同的目的地
+首先了解一下xfsdump的备份级别有以下两种，默认为0（即完全备份）
+q  完全备份 0
+
+q  增量备份 1-9
+
+
+4.1 环境准备
+实验环境：
+        系统RHEL7.2 添加一块虚拟硬盘（准备一个测试分区）
+正常使用一块磁盘过程如下：
+
+添加磁盘à分区à格式化à挂载
+
+
+
+让新添加的硬盘显示有两种方式：
+1、  重启电脑
+
+2、  for i in {1..32};do echo "- --" > /sys/class/scsi_host/host$i/scan;done;   --其中红色部分的根据自己电脑上的显示来写
+
+
+
+[root@panda ~]# fdisk /dev/sdb                                        #指定分区的设备
+复制代码
+Welcome to fdisk (util-linux 2.23.2).
+
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+Command (m for help): n                                                        #创建一个新的分区
+Partition type:
+  p  primary (2 primary, 0 extended, 2 free)                  #创建主分区
+   e  extended                                                            #创建扩展分区
+Select (default p):
+Using default response p
+Partition number (3,4, default3):                              #指定分区号
+First sector(25593856-41943039, default 25593856): #指定分区的开始柱面
+Using default value 25593856
+Last sector, +sectors or+size{K,M,G} (25593856-41943039, default 41943039): +1G    #指定分区大小
+Partition 3 of type Linux andof size 1 GiB is set
+Command (m for help): p                                               #打印分区表
+Disk /dev/sda: 21.5 GB,21474836480 bytes, 41943040 sectors
+Units = sectors of 1 * 512 =512 bytes
+Sector size (logical/physical):512 bytes / 512 bytes
+I/O size (minimum/optimal): 512bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x00083333
+   Device Boot      Start         End      Blocks  Id  System
+/dev/sdb1        25593856    27691007    1048576   83  Linux
+Command (m for help): w                                               #保存
+The partition table has beenaltered!
+Calling ioctl() to re-readpartition table.
+WARNING: Re-reading thepartition table failed with error 16: Device or resource busy.
+The kernel still uses the oldtable. The new table will be used at
+the next reboot or after yourun partprobe(8) or kpartx(8)
+Syncing disks.
+
+
+
+Ø  格式化分区，并进行挂载
+
+[root@panda ~]# mkfs.xfs /dev/sdb1
+复制代码
+meta-data=/dev/sdb1              isize=256    agcount=4, agsize=32000 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=128000, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=853, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=
+[root@panda ~]# mkdir /sdb1    --创建挂载点
+[root@panda ~]# mount /dev/sdb1 /sdb1   ---挂载
+[root@panda ~]# df -h |tail -1
+复制代码
+/dev/sdb1       497M   26M  472M   6% /sdb1
+[root@panda ~]# df –hT   ---确定文件系统类型
+复制代码
+Filesystem     Type      Size  Used Avail Use% Mounted on
+/dev/sda3      xfs       197G  3.0G  194G   2% /
+devtmpfs       devtmpfs  467M     0  467M   0% /dev
+tmpfs          tmpfs     481M   84K  481M   1% /dev/shm
+tmpfs          tmpfs     481M  7.0M  474M   2% /run
+tmpfs          tmpfs     481M     0  481M   0% /sys/fs/cgroup
+/dev/sr0       iso9660   3.8G  3.8G     0 100% /media
+/dev/sda1      xfs       297M  128M  169M  44% /boot
+tmpfs          tmpfs      97M   16K   97M   1% /run/user/42
+tmpfs          tmpfs      97M     0   97M   0% /run/user/0
+/dev/sdb1      xfs       497M   26M  472M   6% /sdb1
+
+Ø  准备备份测试文件
+
+[root@panda ~]# cd /sdb1/
+[root@panda sdb1]# cp /etc/passwd ./
+[root@panda sdb1]# mkdir test
+[root@panda sdb1]# ls
+复制代码
+passwd  test
+[root@panda sdb1]# touch test/a
+[root@panda sdb1]# ls
+复制代码
+passwd  test
+[root@panda sdb1]# tree /sdb1/
+复制代码
+/sdb1/
+|-- passwd
+`-- test
+    `-- a
+
+1 directory, 2 files
+
+4.2 备份
+
+
+4.2.1 备份整个分区
+
+[root@panda sdb1]# xfsdump -f /opt/dump_sdb1 /sdb1
+复制代码
+xfsdump –f 备份存放位置 要备份路径
+注意：备份的设备这里不能写成/sdb1/
+[root@panda sdb1]# xfsdump -f /opt/dump_sdb1 /sdb1
+复制代码
+xfsdump: using file dump (drive_simple) strategy
+xfsdump: version 3.1.4 (dump format 3.0) - type ^C for status and control
+
+============================= dump label dialog ==============================
+
+please enter label for this dump session (timeout in 300 sec)
+-> dump_sdb1   指定备份会话标签
+session label entered: "dump_sdb1"
+
+--------------------------------- end dialog ---------------------------------
+
+xfsdump: level 0 dump of panda:/sdb1
+xfsdump: dump date: Thu Dec  1 22:35:09 2016
+xfsdump: session id: 9c12c949-a34d-4d4d-8fec-0c659c4605e1
+xfsdump: session label: "dump_sdb1"
+xfsdump: ino map phase 1: constructing initial dump list
+xfsdump: ino map phase 2: skipping (no pruning necessary)
+xfsdump: ino map phase 3: skipping (only one dump stream)
+xfsdump: ino map construction complete
+xfsdump: estimated dump size: 25856 bytes
+xfsdump: /var/lib/xfsdump/inventory created
+
+============================= media label dialog =============================
+
+please enter label for media in drive 0 (timeout in 300 sec)
+-> media0   指定设备标签
+media label entered: "media0"
+
+--------------------------------- end dialog ---------------------------------
+
+xfsdump: creating dump session media file 0 (media 0, file 0)
+xfsdump: dumping ino map
+xfsdump: dumping directories
+xfsdump: dumping non-directory files
+xfsdump: ending media file
+xfsdump: media file size 24544 bytes
+xfsdump: dump size (non-dir files) : 2592 bytes
+xfsdump: dump complete: 34 seconds elapsed
+xfsdump: Dump Summary:
+xfsdump:   stream 0 /opt/dump_sdb1 OK (success)
+xfsdump: Dump Status: SUCCESS
+
+测试：删除备份的内容
+
+
+
+4.2.2 指定备份内容(免交互操作)
+
+[root@panda sdb1]# xfsdump -f /opt/dump_passwd -s passwd /sdb1 -L dump_passwd -M media1
+复制代码
+xfsdump: using file dump (drive_simple) strategy
+xfsdump: version 3.1.4 (dump format 3.0) - type ^C for status and control
+xfsdump: level 0 dump of panda:/sdb1
+xfsdump: dump date: Thu Dec  1 22:49:25 2016
+xfsdump: session id: 341e529d-cc07-47f1-bd69-fce254dd541a
+xfsdump: session label: "dump_passwd"
+xfsdump: ino map phase 1: constructing initial dump list
+xfsdump: ino map phase 2: skipping (no pruning necessary)
+xfsdump: ino map phase 3: skipping (only one dump stream)
+xfsdump: ino map construction complete
+xfsdump: estimated dump size: 25216 bytes
+xfsdump: creating dump session media file 0 (media 0, file 0)
+xfsdump: dumping ino map
+xfsdump: dumping directories
+xfsdump: dumping non-directory files
+xfsdump: ending media file
+xfsdump: media file size 23928 bytes
+xfsdump: dump size (non-dir files) : 2592 bytes
+xfsdump: dump complete: 0 seconds elapsed
+xfsdump: Dump Summary:
+xfsdump:   stream 0 /opt/dump_passwd OK (success)
+xfsdump: Dump Status: SUCCESS
+
+4.2.3 深层目录的内容指定备份
+
+
+说明：针对指定的文件进行备份，-s指定时，路径写的是相对路径
+[root@panda opt]# xfsdump -f /opt/dump_grub -s grub2/grub.cfg /boot -L dump_yy -M media22
+复制代码
+xfsdump: using file dump (drive_simple) strategy
+xfsdump: version 3.1.4 (dump format 3.0) - type ^C for status and control
+xfsdump: level 0 dump of panda:/boot
+xfsdump: dump date: Fri Dec  2 19:50:10 2016
+xfsdump: session id: 0cc06016-56ed-4c7c-a8d3-93df79e38a89
+xfsdump: session label: "dump_yy"
+xfsdump: ino map phase 1: constructing initial dump list
+xfsdump: ino map phase 2: skipping (no pruning necessary)
+xfsdump: ino map phase 3: skipping (only one dump stream)
+xfsdump: ino map construction complete
+xfsdump: estimated dump size: 29632 bytes
+xfsdump: creating dump session media file 0 (media 0, file 0)
+xfsdump: dumping ino map
+xfsdump: dumping directories
+xfsdump: dumping non-directory files
+xfsdump: ending media file
+xfsdump: media file size 27960 bytes
+xfsdump: dump size (non-dir files) : 4640 bytes
+xfsdump: dump complete: 0 seconds elapsed
+xfsdump: Dump Summary:
+xfsdump:   stream 0 /opt/dump_grub OK (success)
+xfsdump: Dump Status: SUCCESS
+
+4.2.4 查看备份信息与内容
+
+[root@panda opt]# xfsdump –I（字母大写i）
+复制代码
+file system 0:
+        fs id:                7dc72f00-1ee3-4ae4-844b-7e8357b4f17b
+        session 0:
+                mount point:        panda:/sdb1
+                device:                panda:/dev/sdb1
+                time:                Thu Dec  1 22:35:09 2016
+                session label:        "dump_sdb1"
+                session id:        9c12c949-a34d-4d4d-8fec-0c659c4605e1
+                level:                0
+                resumed:        NO
+                subtree:        NO
+                streams:        1
+                stream 0:
+                        pathname:        /opt/dump_sdb1
+                        start:                ino 131 offset 0
+                        end:                ino 134 offset 0
+                        interrupted:        NO
+                        media files:        1
+                        media file 0:
+                                mfile index:        0
+                                mfile type:        data
+                                mfile size:        24544
+                                mfile start:        ino 131 offset 0
+                                mfile end:        ino 134 offset 0
+                                media label:        "media0"
+                                media id:        e6ddf28f-1b77-4025-8bcf-c5d047fe6269
+xfsdump: Dump Status: SUCCESS
+[root@panda]# xfsrestore -f /opt/test1 -t   --查看备份内容，其中显示内容只显示文件不显示目录
+复制代码
+fsrestore: using file dump (drive_simple) strategy
+xfsrestore: version 3.1.4 (dump format 3.0) - type ^C for status and control
+xfsrestore: searching media for dump
+xfsrestore: examining media file 0
+xfsrestore: dump description:
+xfsrestore: hostname: panda
+xfsrestore: mount point: /boot
+xfsrestore: volume: /dev/sda1
+xfsrestore: session time: Wed Oct 10 02:05:03 2018
+xfsrestore: level: 0
+xfsrestore: session label: "test_s"
+xfsrestore: media label: "test_m"
+xfsrestore: file system id: b00399dc-6868-4295-837a-a3ad42e6f901
+xfsrestore: session id: c757f130-acf8-4667-b0ea-bc440c8aaed9
+xfsrestore: media id: b1a4259b-d6b8-4537-ad8c-7955a6107106
+xfsrestore: using online session inventory
+xfsrestore: searching media for directory dump
+xfsrestore: reading directories
+xfsrestore: 2 directories and 12 entries processed
+xfsrestore: directory post-processing
+xfsrestore: reading non-directory files
+test_1701/a
+xfsrestore: table of contents display complete: 0 seconds elapsed
+xfsrestore: Restore Summary:
+xfsrestore:   stream 0 /opt/test1 OK (success)
+xfsrestore: Restore Status: SUCCESS
+
+4.2.3 文件系统恢复
+
+
+语法：xfsrestore –f 指定恢复文件的位置要恢复的目录
+
+
+[root@panda opt]# xfsrestore -f /opt/dump_sdb1 /sdb1
+复制代码
+xfsrestore: using file dump (drive_simple) strategy
+xfsrestore: version 3.1.4 (dump format 3.0) - type ^C for status and control
+xfsrestore: searching media for dump
+xfsrestore: examining media file 0
+xfsrestore: dump description:
+xfsrestore: hostname: panda
+xfsrestore: mount point: /sdb1
+xfsrestore: volume: /dev/sdb1
+xfsrestore: session time: Thu Dec  1 22:35:09 2016
+xfsrestore: level: 0
+xfsrestore: session label: "dump_sdb1"
+xfsrestore: media label: "media0"
+xfsrestore: file system id: 7dc72f00-1ee3-4ae4-844b-7e8357b4f17b
+xfsrestore: session id: 9c12c949-a34d-4d4d-8fec-0c659c4605e1
+xfsrestore: media id: e6ddf28f-1b77-4025-8bcf-c5d047fe6269
+xfsrestore: using online session inventory
+xfsrestore: searching media for directory dump
+xfsrestore: reading directories
+xfsrestore: 2 directories and 3 entries processed
+xfsrestore: directory post-processing
+xfsrestore: restoring non-directory files
+xfsrestore: restore complete: 0 seconds elapsed
+xfsrestore: Restore Summary:
+xfsrestore:   stream 0 /opt/dump_sdb1 OK (success)
+xfsrestore: Restore Status: SUCCESS
+
+查看恢复情况
+
+
+判断是否完全恢复成功
+
+
+恢复单个文件如下：
+
+[root@panda opt]# xfsrestore -f /opt/dump_sdb1 -s passwd /sdb1
+复制代码
+xfsrestore: using file dump (drive_simple) strategy
+xfsrestore: version 3.1.4 (dump format 3.0) - type ^C for status and control
+xfsrestore: searching media for dump
+xfsrestore: examining media file 0
+xfsrestore: dump description:
+xfsrestore: hostname: panda
+xfsrestore: mount point: /sdb1
+xfsrestore: volume: /dev/sdb1
+xfsrestore: session time: Thu Dec  1 22:35:09 2016
+xfsrestore: level: 0
+xfsrestore: session label: "dump_sdb1"
+xfsrestore: media label: "media0"
+xfsrestore: file system id: 7dc72f00-1ee3-4ae4-844b-7e8357b4f17b
+xfsrestore: session id: 9c12c949-a34d-4d4d-8fec-0c659c4605e1
+xfsrestore: media id: e6ddf28f-1b77-4025-8bcf-c5d047fe6269
+xfsrestore: using online session inventory
+xfsrestore: searching media for directory dump
+xfsrestore: reading directories
+xfsrestore: 2 directories and 3 entries processed
+xfsrestore: directory post-processing
+xfsrestore: restoring non-directory files
+xfsrestore: restore complete: 0 seconds elapsed
+xfsrestore: Restore Summary:
+xfsrestore:   stream 0 /opt/dump_sdb1 OK (success)
+xfsrestore: Restore Status: SUCCESS
+
+
+
+使用 xfsdump 时，请注意下面下面的几个限制：
+1、xfsdump 不支持没有挂载的文件系统备份！所以只能备份已挂载的！
+2、xfsdump 必须使用 root 的权限才能操作 (涉及文件系统的关系)
+3、xfsdump 只能备份 XFS 文件系统
+4、xfsdump 备份下来的数据 (档案或储存媒体) 只能让 xfsrestore 解析
+5、xfsdump 是透过文件系统的 UUID 来分辨各个备份档的，因此不能备份两个具有相同 UUID 的文件系统
+
+4.3 增量备份
+
+4.3.1 概念
+
+       增量备份是指在一次全备份或上一次增量备份后，以后每次的备份只需备份与前一次相比增加或者被修改的文件。这就意味着，第一次增量备份的对象是进行全备后所产生的增加和修改的文件；第二次增量备份的对象是进行第一次增量备份后所产生的增加和修改的文件，以此类推。
+
+4.3.2 优缺点
+优点：没有重复的备份数据，因此备份的数据量不大，备份所需的时间很短。
+缺点：数据恢复相对比较麻烦，它需要上一次全备份和所有增量备份的内容才能够恢复成功，并且它们必须沿着从全备份到依次增量备份的时间顺序逐个反推恢复，因此这就极大地延长了恢复时间
+
+4.3.3 实验演示
+准备一个备份目录进行备份
+
+[root@panda sdb1]# tree  /sdb1
+复制代码
+/sdb1
+|-- b
+`-- test
+    `-- a
+
+对上面的内容进行第一次全备
+
+[root@panda sdb1]# xfsdump -f /opt/test-full /sdb1 -L test-full -M media0
+复制代码
+
+增加内容，然后进行增量备
+
+[root@panda sdb1]# tree /sdb1
+复制代码
+/sdb1
+|-- b
+|-- c.txt
+|-- d.txt
+`-- test
+    |-- a
+1 directories, 4 files
+[root@panda sdb1]# xfsdump -l 1 -f /opt/test-bak1 /sdb1 -L test-bak1 -M media0
+复制代码
+再次增加内容，然后进行增量备
+
+[root@panda sdb1]# tree /sdb1
+复制代码
+/sdb1
+|-- b
+|-- c.txt
+|-- d.txt
+`-- test
+    |-- a
+    |-- liumang
+    `-- miao
+2 directories, 5 files
+[root@panda sdb1]# xfsdump -l 1 -f /opt/test-bak2 /sdb1 -L test-bak2 -M media0
+复制代码
+现在进行恢复，要想恢复全部全部数据，包括新添加的文件，如何恢复？
+步骤：
+        1、先恢复全量备份
+        2、 恢复最后一次增量备份（因为我们这里用的两次增量备份都是是级的，所以只需要恢复最后一个增量就可以了。如果你做的是第一次是1级备，第二次是2级备，那么你在恢复的时候就需要先恢复全备，然后是1级备，最后是2级备）

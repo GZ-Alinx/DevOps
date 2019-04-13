@@ -1,0 +1,78 @@
+1、认识Linux
+     2、POSIX 、GUN 、GPL公共许可证
+     3、Linux的内核版本
+     4、Linux系统的组成
+     5、Linux的发行版本
+
+
+LINUX的发展历程：
+1、1960年，麻省理工学院（MIT）发展CTSS,30,300
+2、1965年，Bell实验室、MIT、GE通用；MULITICS,4年后失败
+3、1969年，贝尔成员Ken Thompson,DEC的PDP-7
+4、1973年，贝尔Dennis Ritchie等优化，用C编写，全名Unix
+5、1977年，伯克利大学开发和发布的，修改发表第一代BSD，影响很大
+6、1984年，Richard M.Stallman,创立GNU与FSF
+7、1988年，整合图形接口
+8、芬兰Linus Benedict Torvalds, 1990年赫尔辛基大学，386环境
+9、1991年10月，Linux0.02版发布，大量haker大量参与
+10、1994年3月，Linux1.0，17万行代码，已经可以做到跨平台，可移植
+11、1996年6月，Linux2.0，40万行代码，并且支持多处理器支持
+12、1997年夏天，大片《泰坦尼克号》160台机器中150台用的LINUX系统
+13、1998年，迅猛发展，小红帽高级研发实验室成立，开始商业动作
+14、1998年，mozilla、google集成到Linux中;oracle、informix不支持
+15、1998年，IBM亲密接触，微软视Linux为对手
+16、1999年，IBM、Compaq（康柏）、Novell和Linux建立了投资伙伴关系
+17、1999年，Oracle宣布投资，SGI移植XFS文件系统
+18、2000年4月，拓林思公司宣布推出中国首家Linux认识考试
+19、2000年7月，中科院和新华社合作发展红旗Linux
+20、2002年，宣布支持64位的计算机
+21、2003年1月，NEC宣布手机中使用Linux系统，进军手机
+
+1.3  POSIX、GUN、GPL公共许可证
+
+   1.posix
+       POSix(protable operating system interface, 可移植的操作系统)它是基于UNIX的，这一标准在期望获得源代码级的软件可移植性
+
+  2.GUN计划
+
+     gun计划，由Richard stallman在1983年9月27日发起，目的是创建以偶套完全自由的操作系统
+
+    3.GPL
+     GPL:为了保证GUN软件可以自由地“使用、复制、修改和发布”，所有GUN软件都包含一份在禁止其他人添加任何限制的情况下，授权所有权利给任何人的协议条款，这个条款就被称之为GNU通用公共许可证（GUN General Public License，GPL）
+
+1.4 Linux内核版本
+Linus Torvalds,1990年赫尔辛基大学
+        1991年10月，Linux 0.02
+        1994年3月，Linux 1.0
+        1996年6月，Linux 2.0
+        2001年1月，Linux 2.4内核
+        2003年7月，Linux 2.6内核
+        2013年8月，Linux 3.10
+内核版本说明：
+        X.Y.Z-N
+      X ： 主版本号
+      Y ： 次版本号（偶数-->表示稳定；奇数-->表示测试版本）
+       Z：  未版本号（表示内核的当前修订状态）
+       N： 开发者的修补级别
+[root@panda ~]# uname -r
+3.10.0-327.el7.x86_64
+el: enterprise linux
+rc: 候选版本 release candidate  rc5 rc5
+smp: 对称多处理，说白了就是支持多处理器  symmetrical  multi-processing
+
+
+1.5 Linuxx系统的组成
+内核、SHELL、文件系统、应用程序
+
+
+1.6 Linux的发行版本
+
+
+红帽Linux（一般用在数据中心；推崇：虚拟化、云计算；但是不免费）
+CentOS Linux（也称为社区系统、基于RHEL，也支持云计算；主要免费）
+Suse Linux （主要定位于企业级；也提供免费版的Open Suse；并且提供多种开发环境）
+Fedora Linux（走的方向是桌面化、做开发的也可以用；并且现在红帽的发展和它也走的很近，对一些不稳定的功能会先放在这个系统上面测试，等稳定以后再移植到RHEL上面）
+Debian Linux 
+Ubuntu Linux 
+
+

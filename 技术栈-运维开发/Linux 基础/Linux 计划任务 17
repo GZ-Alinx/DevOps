@@ -1,0 +1,70 @@
+定时任务 / 计划任务/日志管理
+
+计划任务分为临时与永久性的。
+
+1.定时任务
+at / crontab   一次性与周期性
+
+
+atd服务需要启动。。默认已经启动
+
+  at 加时间  ctrl + d 结束编辑           atq 查询任务 at -l 也行    #查看任务状态
+
+am 上午   tm 下午        #时间格式
+[root@localhost ~]# at 20:44     #命令格式
+at> mkdir /root/xuegod1705     #执行的内容
+at> <EOT>
+
+                      ctrl + d                  #结束
+
+只执行一次  在var下面可以查看详细执行的操作
+/var/spool/at    日志管理中可以查看
+                    删除任务  atrm + 任务编号   #删除
+[root@localhost at]# atq
+5    Mon Jun 26 21:20:00 2017 a root
+6    Mon Jun 26 20:57:00 2017 a root
+[root@localhost at]# atrm 5
+
+
+2.周期性计划任务
+
+分为两类：系统执行-个人执行
+
+首选保障服务是否启动
+crond 计划任务服务名
+
+systemctl status crond     #查看状态
+
+systenctk enable crond   #开机启动
+
+分时日月周
+
+
+
+
+
+crontab -r  删除
+crontab -e 编辑
+
+查看别的用户  crontab -u root -l  查看root用户的任务
+
+也是在、/var/spool/cron 里面可以看得到
+可以把计划任务放这里也可以执行/etc/crontab
+
+
+
+日志管理
+
+systemd-journald 和 rsyslog   由这个服务来处理
+
+
+/var/log/message   大多数的日志文件都是放在此文件夹中
+
+last 查看最近登录的用户
+
+lostlog  后门账号
+
+
+ll -h btmp 文件为错误记录文件，，如果太大有危险，暴力破解
+
+

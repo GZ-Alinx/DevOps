@@ -1,0 +1,10 @@
+内容追加
+
+
+cat  >> /etc/profile << EOF
+需要加入的内容
+EOF
+
+cat  > /etc/profile << EOF
+需要加入的内容
+EOF

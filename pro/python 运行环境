@@ -5,13 +5,31 @@ Python运行环境安装：
 
 官方地址:  https://selenium-python.readthedocs.io/installation.html#drivers
 
-firefox 下载地址： https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
 
 
+
+firefox环境：
+
+驱动下载： https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
 
 wget https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
-tar -zxf geckodriver-v0.24.0-linux64.tar.gz && mv geckodriver /usr/bin
-pip3  install selenium
-pip3  install requests
+tar -zxf geckodriver-v0.24.0-linux64.tar.gz && mv geckodriver /usr/local/bin
+pip3  install selenium requests   #提示版本问题就执行下面的指定站点安装即可
+pip3 install sqlmap -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com
 
 简单的爬虫环境!
+
+
+
+火狐浏览器安装：
+wget https://download-ssl.firefox.com.cn/releases/firefox/66.0/zh-CN/Firefox-latest-x86_64.tar.bz2
+tar -xvjf Firefox-latest-x86_64.tar.bz2
+mv firefox /usr/local/bin/
+
+
+
+谷歌环境：
+
+驱动下载： https://chromedriver.storage.googleapis.com/index.html?path=73.0.3683.68/
+
+

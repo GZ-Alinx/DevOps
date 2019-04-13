@@ -1,0 +1,662 @@
+1-22-shell脚本的基础
+
+本节所讲内容：
+
+l     shell 基本语法
+
+l     变量
+
+第1章 SHELL？
+1.1 什么是shell?
+Shell是一个命令解释器，它在操作系统的最外层，负责直接与用户进行对话，把用户的输入解释给操作系统，并处理各种各样的操作系统的输出结果，输出到屏幕反馈给用户。这种对话方式可是交互也可以是非交互式的
+graphic
+
+1.2 什么是shell脚本？
+graphic
+也就是说我们把原来linux命令或语句放在一个文件中，然后通过这个程序文件去执行时，我们就说这个程序为shell脚本或shell程序；我们可以在脚本中输入一系统的命令以及相关的语法语句组合，比如变量，流程控制语句等，把他们有机结合起来就形成了一个功能强大的shell脚本
+
+1.1 shell编程语言
+编程语言：
+低级语言
+        机器语言：二进制语言
+
+        汇编语言：符号语言，使用助记符来代替操作码，也就是用符号代替机器语言的二进制码；汇编程序把汇编语言翻译成机器语言的过程我们称为汇编
+
+     它们都是面向机器的语言
+
+2）高级语言
+
+它是比较接近自然语言或者说人类语言的一种编程，用人们能够容易理解的方式进行编写程序
+
+       静态语言：编译型语言  c  c++  java
+
+l     动态语言：解释型语言  php  shell  python   perl
+
+    编译器：（解释器）  将人类理解的语言翻译成机器理解的语言
+
+简单来说，最简单的SHELL就是一个由命令列表构成的可执行的文件。
+
+1.2 SHELL语言
+1.2.1 命令解释器
+     BASE SHELL脚本的第一行以 #!  我们通常称它为sha-bang，这种表示法在技术上称为幻数模式。它表示文件是可执行的shell脚本。后面的路径名称是命令解释器，也就是应用于执行脚本的程序。
+       #!/bin/bash 作用：告诉脚本使用的是哪种命令解释器。如不指shell，以当前shell作为执行的shell。
+
+       在shell中以#开始头表示整个行就被当作一个注释。执行时被忽略。
+
+       shell程序一般以.sh结尾，当然主要是看是否为执行，然后看里面有没有#！
+
+脚本的执行方式：
+
+Shell脚本的执行通常有以下几种执行方式：
+
+bash script-name或sh script-name (可以没有执行权限)
+path/script-name 或 ./script-name(当前路径下执行脚本要有执行权限)
+source script-name (可以没有执行权限)
+sh < script-name 或 cat script-name | sh(同样适用于bash)
+[root@panda scripts]# ./test.sh
+
+[root@panda scripts]#sh test.sh
+
+[root@panda scripts]#bash test.sh
+
+[root@panda scripts]# chmod +x test.sh
+
+[root@panda scripts]# /scripts/test.sh
+
+[root@panda scripts]# ./test.sh
+
+总结
+
+脚本的执行顺序是从上到下，从左到右执行的
+脚本里内容，可以理解为：好多单个命令集合，复杂一点脚本就是加上它自己的一些语法
+创建shell程序的步骤：
+
+第一步：创建一个包含命令和控制结构的shell文件。
+
+第二步：修改这个文件的权限使它可以执行。使用chmod u+x
+
+第三步：执行
+
+第2章 shell变量及运用
+2.1 shell变量
+变量是shell 传递数据的一种方法。变量是用来代表每个值的符号名。我们可以把变量当成一个容器，脚本可以在内存中存储数据，然后通过变量。就可以在脚本执行中进行修改和访问存储的数据
+注意：
+
+变量名称通常是大写字母，它可以由数字、字母（大小写）和下划线_组成。但是大家要注意变量名称不能以数字开头
+等号 = 用于为变量分配值，在使用过程中等号两边不能有空格
+变量存储的数据类型是整数值和字符串值
+在对变量赋于字符串值时，建议大家用引号将其括起来。因为如果字符串中存在空格隔符号。BASE会把空格字符解释为单词分隔管符
+要对变量进行调用，可以在变量名称前加美元符号$
+BASE SHELL的扩展功能：我们最常见的就是扩展变量值和命令替换和算术扩展
+
+$name是${name}的简化版本，但是在某些情况下，还必须使用花括号引起的方式来消除歧义并避免意外的结果
+命令的替换就是将命令的调用替换为执行命令后的结果的输出，它的使用方式：我们将命令括在反引号中 `旧形式` 来调用命令结果，（新形式）是使用$()语法
+在命令替换中，使用新语法$(),它允许进行嵌套命令替换
+进行算术扩展时使用$[]进行，同时它也允许算术替换
+Shell 有两类变量：局部变量和全局变量。
+
+局部变量：是shell 程序内部定义的，其使用范围仅限于定义它的程序，对其它程序不可见。
+              用户自定义的脚本中的变量，它会随着脚本的执行结束而结束
+
+              在用户的配置文件当中定义的环境变量，这个变量是会一直跟着用户存在，直到这个用户退出
+
+（2）全局变量：是环境变量，其值不随shell 脚本的执行结束而消失。
+
+【例3】$PATH
+
+[root@panda scripts]# echo $PATH
+
+/usr/lib64/qt-3.3/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+
+作用：运行某个命令的时候，本地查找不到某个命令或文件，会到这个声明的目录中去查找。
+
+（3）用户定义变量
+
+由字母或下划线打头，不允许数字开头,后面由字母、数字或下划线组成，并且大小写字母意义不同。变量名长度没有限制。
+
+使用变量值时，要在变量名前加上前缀“$”。
+
+/mnt|⇒ VAR1=123
+
+/mnt|⇒ echo VAR1
+
+VAR1
+/mnt|⇒ echo $VAR1
+
+123
+/mnt|⇒ COUNT=nihao
+
+/mnt|⇒ first_name=xuegod
+
+/mnt|⇒ _ID_NUM=123
+
+/mnt|⇒ 错误的写法如下
+/mnt|⇒ 3COUNT=nnnnnn
+
+zsh: 3COUNT=nnnnnn: command not found...
+zsh: command not found: 3COUNT=nnnnnn
+/mnt|⇒ firname=xuegod 1705
+
+zsh: 1705: command not found...
+zsh: command not found: 1705
+/mnt|⇒ firname="xuegod 1705"
+
+/mnt|⇒ firname='xuegod 1705'
+
+/mnt|⇒ DATE=`date -F`
+
+date: invalid option -- 'F'
+Try 'date --help' for more information.
+/mnt|⇒ DATE=`date +%F`
+
+/mnt|⇒ echo $DATE
+
+2017-07-01
+/mnt|⇒ echo ${DATE}-mysql.log
+
+2017-07-01-mysql.log
+/mnt|⇒ echo $DATE-mysql.log
+
+2017-07-01-mysql.log
+/mnt|⇒ echo $DATEmysql.log
+
+.log
+2.2 主要赋值类型
+（1）变量赋值 ：赋值号“=”两边应没有空格。
+【例4】用“=”对变量赋值
+
+/mnt|⇒ A = aaa
+
+zsh: A: command not found...
+zsh: command not found: A
+/mnt|⇒ A =aaa
+
+zsh: aaa not found
+/mnt|⇒ A= aaa
+
+zsh: aaa: command not found...
+zsh: command not found: aaa
+（2）将一个命令的执行结果赋给变量
+
+两种命令替换方式  一种是反引号：``  一种是$() ，其中反引号是不允许嵌套使用。后面的这个可以
+
+/mnt|⇒ echo $(date)
+
+Sat Jul 1 21:27:21 CST 2017
+/mnt|⇒ echo `date`
+
+Sat Jul 1 21:27:32 CST 2017
+/mnt|⇒ DATE=$(ls /opt)
+
+/mnt|⇒ echo $DATE
+
+rh
+/mnt|⇒ ls /opt
+
+rh
+命令的嵌套使用
+
+/mnt|⇒ OUTFILE=$(tar cvf /tmp/b.tar $(find /root -name "*.txt"))
+
+tar: Removing leading `/' from member names
+/mnt|⇒ echo $OUTFILE
+
+/root/.cache/tracker/db-version.txt
+/root/.cache/tracker/db-locale.txt
+/root/.cache/tracker/miner-applications-locale.txt
+/root/.cache/tracker/last-crawl.txt
+/root/.cache/tracker/first-index.txt
+/root/.local/share/autojump/autojump.txt
+/root/a.txt
+/root/.oh-my-zsh/LICENSE.txt
+/root/.oh-my-zsh/plugins/emoji/emoji-data.txt
+/root/.oh-my-zsh/plugins/golang/templates/package.txt
+/root/.oh-my-zsh/plugins/golang/templates/search.txt
+/root/.oh-my-zsh/plugins/zsh-navigation-tools/.config/znt/README.txt
+/mnt|⇒ find /root -name "*.txt"
+
+/mnt|⇒ tar cvf /tmp/b.tar $(find /root -name "*.txt")
+
+/mnt|⇒ OUTFILE=$(tar cvf /tmp/b.tar $(find /root -name "*.txt"))
+
+/mnt|⇒ echo $OUTFILE
+
+（3）可以利用变量和其它字符组成一个新的字符串
+
+[root@panda scripts]# MYDIR=/home/mk
+
+[root@panda scripts]# echo $MYDIRzhangsan
+
+[root@panda scripts]# /home/mk/zhangsan
+
+[root@panda scripts]# echo $MYDIR/zhangsan
+
+/home/mk/zhangsan
+
+[root@panda scripts]# echo ${MYDIR}/zhangsan
+
+/home/mk/zhangsan
+
+[root@panda scripts]# DAY=mon
+
+[root@panda scripts]# echo today is $DAYday
+
+today is
+
+[root@panda scripts]# echo today is ${DAY}day
+
+today is monday
+
+  2.3 给变量赋值多个单词
+[root@panda scripts]# name="mike ron"
+[root@panda scripts]# echo $name
+
+mike ron
+
+[root@panda scripts]# name='shen mk'
+
+[root@panda scripts]# echo $name
+
+shen mk
+
+【例6】赋值时“”和’’的区别
+
+graphic
+
+总结：
+
+单引号：之间的内容原封不动地指定给了变量。
+双引号：特殊符号的含义保留。
+ 2.4 把命令当作变量进行定义
+
+[root@panda scripts]# wen=`date +%F`    #利用反引号进行定义
+[root@panda scripts]# echo $wen
+
+2016-11-02
+
+[root@panda scripts]# wen=$(date)      #利用小括号加$进行定义
+
+[root@panda scripts]# echo $wen
+
+2016年 11月 02日 星期三 19:44:20 CST
+
+第3章 对变量的管理
+set 命令，例：
+[root@panda scripts]# DAY=mon
+
+[root@panda scripts]# set|grep DAY
+
+DAY=mon
+
+3.2 删除变量
+[root@panda scripts]# unset DAY
+[root@panda scripts]# echo $DAY
+
+第4章 位置变量和特殊变量
+Shell解释执行用户的命令时，将命令行的第一个字作为命令名，而其它字作为参数。由出现在命令行上的位置确定的参数称为位置参数。
+使用$N 来表示
+
+$0  获取当前执行shell脚本的文件文件名，包括脚本路径
+
+$n  获取当前脚本的第n个参数 n=1,2.....n 当n大于9时 用{n}表示。
+
+      【例8】传递参数
+
+[root@panda scripts]# cat 8.sh
+
+#!/bin/bash
+
+# author:awk
+
+echo "----------------------"
+
+echo "Shell 传递参数实例！";
+
+echo "执行的文件名：$0";
+
+echo "第一个参数为：$1";
+
+echo "第二个参数为：$2";
+
+echo "第三个参数为：$3";
+
+echo "----------------------"
+
+[root@panda scripts]# sh 8.sh 1 2 3
+
+----------------------
+
+Shell 传递参数实例！
+
+执行的文件名：example02.sh
+
+第一个参数为：1
+
+第二个参数为：2
+
+第三个参数为：3
+
+----------------------
+
+4.2 特殊变量
+有些变量是一开始执行Script脚本时就会设定，且不能被修改，但我们不叫它只读的系统变量，而叫它特殊变量。这些变量当一执行程序时就有了，以下是一些特殊变量：
+$*
+以一个单字符串显示所有向脚本传递的参数；
+如"$*"用【"】括起来的情况、以"$1 $2 … $n"的形式输出所有参数
+$#
+传递到脚本的参数个数
+$@
+与$*相同，但是使用时加引号，并在引号中返回每个参数
+如"$@"用「"」括起来的情况、以"$1" "$2" … "$n" 的形式输出所有参数
+$$
+这个程序的PID
+$?
+显示最后命令的退出状态；0表示没有错误，其他任何值表明有错误
+$!
+上一个后台进程的ID
+【例9】
+
+[root@panda shell]# cat 9.sh
+
+echo $1 $2 $3 $4 $5 $6 $7 $8 $9
+
+echo "脚本名字"
+
+echo $0
+
+echo "脚本参数个数"
+
+echo "the number of values is $#"
+
+echo "脚本参数列表"
+
+echo  $*
+
+echo "脚本参数列表"
+
+echo  $@
+
+echo "上一次执行结果的状态码"
+
+echo  $?
+
+echo "这个程序的PID号"
+
+echo $$
+
+执行结果:
+
+[root@panda scripts]# sh 9.sh `seq 9`
+
+1 2 3 4 5 6 7 8 9
+
+脚本名字
+
+example03.sh
+
+脚本参数个数
+
+the number of values is 9
+
+脚本参数列表
+
+1 2 3 4 5 6 7 8 9
+
+脚本参数列表
+
+1 2 3 4 5 6 7 8 9
+
+上一次执行结果的状态码
+
+0
+
+这个程序的PID号
+
+12869
+
+注意：$* 与 $@ 区别
+
+相同点：都是引用所有参数。
+
+不同点：只有在双引号中体现出来。假设在脚本运行时写了三个参数 1、2、3，，则 " * " 等价于 "1 2 3"（传递了一个参数），而 "@" 等价于 "1" "2" "3"（传递了三个参数）
+
+【例 10】
+
+[root@panda scripts]# cat 10.sh
+
+#!/bin/bash
+
+# author:awk
+
+
+
+echo "--- \$* 演示 ---"
+
+for i in "$*"; do
+
+    echo $i
+
+done
+
+
+
+echo "-- \$@ 演示 ---"
+
+for i in "$@"; do
+
+    echo $i
+
+done
+
+执行结果如下：
+
+[root@panda scripts]# sh 10.sh 1 2 3 4 5
+
+--- $* 演示 ---
+
+1 2 3 4 5
+
+-- $@ 演示 ---
+
+1
+
+2
+
+3
+
+4
+
+5
+
+第6章 变量的数值计算
+用于执行简单的整数运算
+格式:$((算数运算符))
+
+（（表达式1,表达式2…））
+
+特点：
+
+       1、在双括号结构中，所有表达式可以像c语言一样，如：a++,b--等。a++  等价于 a=a+1
+
+       2、在双括号结构中，所有变量可以不加入：“$”符号前缀。
+
+       3、双括号可以进行逻辑运算，四则运算
+
+       4、双括号结构 扩展了for，while,if条件测试运算
+
+       5、支持多个表达式运算，各个表达式之间用“，”分开
+
+常用的算数运算符
+
+运算符
+   意义
+++   --
+递增及递减，可前置也可以后置
++  -  ! ~
+一元运算的正负号 逻辑与取反
++  -  *  /   %
+加减乘除与余数
+<   <=   >   >=
+比较大小符号
+==   !=
+相等 不相等
+>>  <<
+向左位移 向右位移
+& ^   |
+位的与 位的异或 位的或
+&&  ||
+逻辑与 逻辑或
+？ :
+条件判断
+【例13】三种简单的赋值运算
+
+[root@panda shell]# ((a=1+2**3-4%3))   #2**3为2的3次方
+
+[root@panda shell]# echo $a
+
+8
+
+[root@panda shell]# b=$((1+2**3-4%3))
+
+[root@panda shell]# echo $b
+
+8
+
+[root@panda shell]# echo $((1+2**3-4%3))
+
+#省去了定义一个变量
+
+8
+
+【例14】递增\递减的应用
+
+[root@panda shell]# echo $((a+=1))
+
+9
+
+[root@panda shell]# echo $((a++))
+
+ #等同于a+=1
+
+10
+
+[root@panda shell]# echo $((a--))
+
+11
+
+[root@panda shell]# echo $a
+
+ #a++或a--为先赋值 再a加1或a减1
+
+10
+
+[root@panda shell]# echo $((--a))
+
+9
+
+[root@panda shell]# echo $a
+
+#--a或++a为先a加1或a减1 再进行a的赋值
+
+9
+
+【例15】 比较大小
+
+[root@panda shell]# echo $((1>2))
+
+0
+
+[root@panda shell]# echo $((1<=2))
+
+ #真为1 假为0
+
+1
+
+【例16】1到100所有整数和
+
+[root@panda shell]# echo $((100*(1+100)/2))
+
+5050
+
+[root@panda ~]# echo $[100*$[1+100]/2]
+
+5050
+
+【例17】 写一个简单四则运算的脚本
+
+[root@panda shell]# cat 17.sh
+
+a=6
+
+b=2
+
+echo "a-b=$(($a-$b))"
+
+echo "a+b=$(($a+$b))"
+
+echo "a*b=$(($a*$b))"
+
+echo "a/b=$(($a/$b))"
+
+echo "a**b=$(($a**$b))"
+
+echo "a%b=$(($a%$b))"
+
+执行结果:
+
+[root@panda shell]# sh 17.sh
+
+a-b=4
+
+a+b=8
+
+a*b=12
+
+a/b=3
+
+a**b=36
+
+a%b=0
+
+升级后的脚本
+
+[root@panda shell]# cat 17-1.sh
+
+a=$1
+
+b=$2
+
+echo "a-b=$(($a-$b))"
+
+echo "a+b=$(($a+$b))"
+
+echo "a*b=$((a*b))"
+
+echo "a/b=$(($a/b))"
+
+echo "a**b=$[$a**$b]"
+
+echo "a%b=$[$a%$b]"
+
+或者
+
+[root@panda shell]# cat 17-2.sh
+
+read -p "enter a:" a
+
+read -p "enter b:" b
+
+echo "a-b=$(($a-$b))"
+
+echo "a+b=$(($a+$b))"
+
+echo "a*b=$(($a*$b))"
+
+echo "a/b=$(($a/$b))"
+
+echo "a**b=$(($a**$b))"
+
+echo "a%b=$(($a%$b))"
+
+
+

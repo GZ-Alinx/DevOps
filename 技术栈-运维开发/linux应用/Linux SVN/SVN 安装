@@ -1,0 +1,534 @@
+SVN版本控制服务
+       SVN是Subversion的简称，是一个开放源代码的版本控制系统，相较于CVS，它采用了分支管理系统，它的设计目标就是取代CVS。互联网上很多版本控制服务已从CVS迁移到Subversion。也是就是CVS的接班人！
+       CVS是一个C/S系统，是一个常用的代码版本控制软件。主要在开源软件管理中使用。与它相类似的代码版本控制软件有subversion。多个开发人员通过一个中心版本控制系统来记录文件版本，从而达到保证文件同步的目的。CVS版本控制系统是一种GNU软件包，主要用于在多人开发环境下的源码的维护。但是由于之前CVS编码的问题，现在大多数软件开发公司都使用SVN替代了
+CVS。
+官方网站：http://subversion.apache.org/        Windows客户端 TortoiseSVN：http://tortoisesvn.net/
+常见的版本控制软件
+       CVS，逐渐被SVN取代，是CVX重写版和改写版
+       SVN，Subversion
+       Git，Git是一个开源的分布式版本控制系统，用以有效、高速的处理从很小到非常大的项目版本管理。Git 是 Linus Torvalds 为了帮助管理 Linux 内核开发而开发的一个开放源码的版本控制软件
+
+GitLab版本管理
+      GitLab是利用 Ruby on Rails 一个开源的版本管理系统，实现一个自托管的Git项目仓库，可通过Web界面进行访问公开的或者私人项目。它拥有与Github类似的功能，能够浏览源代码，管理缺陷和注释。可以管理团队对仓库的访问，它非常易于浏览提交过的版本并提供一个文件历史库。团队成员可以利用内置的简单聊天程序(Wall)进行交流。它还提供一个代码片段收集功能可以轻松实现代码复用，便于日后有需要的时候进行查找
+
+
+
+
+SVN存储数据的方式
+       BDB，Berkeley DB，一种事务安全型表类型
+       FSFS，"FSFS" 采用文件系统的方式, 替代原来的基于Berkeley DB的实现.
+因为BDB方式在服务器中断时，有可能锁住数据，所以还是FSFS方式更安全一点。
+SVN的运行方式及端口
+ 独立服务器         3690端口           访问方式SVN://    C/S模式
+借助apache运行             80端口        访问方式 http://
+工作流程
+集中式代码管理的核心是服务器，所有开发者在开始新一天的工作之前必须从服务器获取代码，然后开发，最后解决冲突，提交。所有的版本信息都放在服务器上。如果脱离了服务器，开发者基本上可以说是无法工作的。下面举例说明：开始新一天的工作：
+1、从服务器下载项目组最新代码。
+2、进入自己的分支，进行工作，每隔一个小时向服务器自己的分支提交一次代码
+（很多人都有这个习惯。因为有时候自己对代码改来改去，最后又想还原到前一个小时的版本，或者看看前一个小时自己修改了哪些代码，就需要这样做了）。
+3、下班时间快到了，把自己的分支合并到服务器主分支上，一天的工作完成，并反映给服务器。
+这就是经典的svn工作流程.
+SVN+Apache运行原理
+       SVN搭配Apache的时候，Apache需要使用mod_dav_svn这个模块，他的运行机制如下：
+
+       在一台服务器上建立一个源代码库，库里可以存放许多不同项目的源程序。有源代码库管理员统一管理这些源程序。
+每个用户在使用源代码库之前，首先要把源代码库里的项目文件下载到本地，然后开发人员可以在本地修改，然后用svn命令进行提交，由源代码库统一管理修改。
+       mod_dav_svn    可以让版本库通过http协议实现网站展现
+构建SVN版本控制服务器
+SVN+HTTP Server （XueGod63）========== Client Server（XueGod64）
+软件安装
+       [root@XueGod63 ~]# yum install -y subversion httpd mod_dav_svn                  //包括HTTP所需模块一起装
+       [root@XueGod63 ~]# cat /etc/services | grep --color svn                              //查看已注册
+svn             3690/tcp                        # Subversion
+svn             3690/udp                        # Subversion
+创建版本库目录
+       [root@XueGod63 ~]# mkdir /webdept                            //存放版本库的主目录
+  [root@XueGod63 ~]# svnadmin create /webdept/www.xuegod.cn
+[root@XueGod63 ~]# svnadmin create /webdept/www.godxue.cn
+            //创建两个版本库
+       svnadmin命令是由subversion这个软件包提供的
+[root@XueGod63 ~]# ls /webdept/www.xuegod.cn/                        //随便查看一个版本库
+
+conf  db  format  hooks  locks  README.txt
+****************************************************************************************************************
+dav目录：是提供apache与mod_dav_svn使用的目录，让他们存储内部数据，刚开始新建时此目录没有
+db目录：就是所有版本控制的数据存放文件
+hooks目录：放置hook脚本文件的目录
+locks目录：用来放置subversion监控锁定数据的目录，用来追踪存取文件库的客户端
+format文件：是一个文本文件，里面只放了一个整数。表示当前文件库配置的版本号
+conf目录：是这个仓库的配置文件（仓库的用户访问账号、权限等），也是我们要关注的配置文件
+[root@XueGod63 ~]# ls /webdept/www.xuegod.cn/conf/
+authz  passwd  svnserve.conf
+authz                         #认证权限相关
+passwd                                #用户名和密码
+svnserve.conf                  #服务器配置文件
+针对不同版本库修改配置文件
+[root@XueGod63 ~]# vim /webdept/www.xuegod.cn/conf/svnserve.conf       //修改xuegod.cn的配置文件
+[general]
+anon-access = read             #原先注释掉了，匿名用户可以读，使用none的话就是匿名用户不可以访问
+auth-access = write              #这几行都要取消注释，认证用户可以写，可以是read，write，none
+password-db = passwd                  #密码库文件，默认使用的是同一目录下的passwd文件作为用户密码库
+authz-db = authz                #认证权限文件
+realm =www.xuegod.cn#登陆提示信息
+注意：此配置文件的所有内容必须顶格，否则会报错
+配置用户和密码及认证权限
+       [root@XueGod63 ~]# vim /webdept/www.xuegod.cn/conf/passwd                  //设置用户名和密码
+[users]
+Make =123456
+CAT =123456
+top =123456
+#末尾添加上面三行
+#对于部分版本，前面的[users]是有#号的，如果有#号，一定要取消，否则只能使用匿名用户登录，客户端登录不会
+出现登录窗口或密码提示，除非在配置文件将anon设置为none，否则将返回一个错误
+#这里的密码都是明文，没有加密
+[root@XueGod63 ~]# vim /webdept/www.xuegod.cn/conf/authz        //设置用户和组的权限
+[groups]                         #此行默认存在了
+Check = Make,CAT                      #定义组，在[groups]下面添加
+                               #用户组格式 用户组名 = 用户1，用户2
+                               #一个组可以包含多个用户，英文逗号间隔，用户名必须是在passwd中存在的
+[/]                         #/表示我当前所在版本库目录，这里代表www.xuegod.cn
+top = rw
+@Check = r                         #@Check表示这个组的权限，就是上面定义的组的成员
+*=                           #除了上面的有赋予权限成员之外，其他的成员都没有权限
+
+SVN目录格式：
+                        [/目录名]
+                        @用户组名 =权限
+                        用户名 =权限
+                        *=
+服务SVN启动及创建测试代码
+       [root@XueGod63 ~]# svnserve -d -r /webdept/           //启动了所有版本库，如果只需要某一个版本库，在-r
+后面添加/webdept/www.xuegod.cn/的版本库即可   -d=daemon -r=root of directory of save指定根目录
+ [root@XueGod63 ~]# ps -aux | grep svn                       //查询到下面这行内容就可以了
+root   48612  0.0  0.1183112  1076?   Ss   11:03   0:00 svnserve -d -r /webdept/
+[root@XueGod63 ~]# netstat -antup | grep svn                   //服务正常
+tcp        0      00.0.0.0:3690                0.0.0.0:*                   LISTEN      48612/svnserve
+
+使用svn导入测试代码
+       导入测试代码格式：   svn [选项] 源码  svn://server ip/项目名
+常见的选项：
+       import：将未版本化的文件纳入版本控制并提交
+     checkout：从版本库中检出一个修订版
+  update：更新工作拷贝
+  add，delete，copy，move：增、删、复制、移动文件或目录
+status：检查状态差异
+diff：检查文件行级详细差异
+revert：恢复
+resolve：解决冲突
+switch：切换工作拷贝对应的版本库分支
+log：查看历史记录
+list：显示文件目录
+ cat：查看某个文件内容
+[root@XueGod63 ~]# mkdir localsvn
+[root@XueGod63 ~]# cd localsvn;touch 1.html 2.html ; cd
+[root@XueGod63 ~]# svn import /root/localsvn/ file:///webdept/www.xuegod.cn/ -m "first edit"
+ //本地导入代码，使用file，仅仅能在服务器本地导入， -m=messages，类似注释，首次加入代码使用import
+Adding         /root/localsvn/1.html
+Adding         /root/localsvn/2.html
+Committed revision 1.
+
+
+代码取出
+[root@XueGod63 ~]# svn checkout svn://192.168.0.63/www.xuegod.cn/ downsource
+//代码取出到downsource,会在当前目录新建这个目录
+Authentication realm:<svn://192.168.0.63:3690>www.xuegod.cn
+Password for 'root':        #root是默认的，直接回车
+Authentication realm:<svn://192.168.0.63:3690>www.xuegod.cn
+Username: Make              #Make有r权限，使用r获取
+Password for 'Make':        #密码
+
+-----------------------------------------------------------------------
+ATTENTION!  Your password for authentication realm:
+
+   <svn://192.168.0.63:3690>www.xuegod.cn
+
+can only be stored to disk unencrypted!  You are advised to configure
+your system so tcatt Subversion can store passwords encrypted, if
+possible.  See the documentation for details.
+
+You can avoid future appearances of this warning by setting the value
+of the 'store-plaintext-passwords' option to either 'yes' or 'no' in
+'/root/.subversion/servers'.
+-----------------------------------------------------------------------
+Store password unencrypted (yes/no)? no     #不保存
+A    downsource/1.html
+A    downsource/2.html
+A    downsource/3.html
+A    downsource/4.html
+Checked out revision 2.
+代码添加
+[root@XueGod63 ~]# cd downsource/                                   //进入你取下代码的目录
+[root@XueGod63 downsource]# touch 5.html              //新建代码
+[root@XueGod63 downsource]# svn add 5.html                  //添加到SVN服务中
+[root@XueGod63 downsource]# svn commit -m "second edit"             //添加到服务器上
+root      44135  0.0  0.1183112  1076?        Ss   13:40   0:00 svnserve -d -r /webdept/Authentication realm:<svn://192.168.0.63:3690>www.xuegod.cn
+Password for 'Make':            #Make没有权限，回车换user
+Authentication realm:<svn://192.168.0.63:3690>www.xuegod.cn
+Username: user                  # top用户有权限
+Password for 'top':
+
+-----------------------------------------------------------------------
+ATTENTION!  Your password for authentication realm:
+
+   <svn://192.168.0.63:3690>www.xuegod.cn
+
+can only be stored to disk unencrypted!  You are advised to configure
+your system so tcatt Subversion can store passwords encrypted, if
+possible.  See the documentation for details.
+
+You can avoid future appearances of this warning by setting the value
+of the 'store-plaintext-passwords' option to either 'yes' or 'no' in
+'/root/.subversion/servers'.
+-----------------------------------------------------------------------
+Store password unencrypted (yes/no)? no
+Adding         5.html
+Transmitting file data .
+Committed revision 3.
+拓展：commit，SVN的提交是将在工作空间做的修改进行提交，包括文件内容的修改，文件或目录的添加，删除，命名，移动等操作。开发项目时，你会在工作拷贝中修改项目的代码，你总要把修改之后做过的改动又存回到项目仓库中去。这个过程称为“提交”。提交是将你对工作拷贝所作的所有改动发送并存储到中央项目仓库中。
+       add 功能：向文件拷贝所在的文件夹中添加新的文件，并作出标识，是新添加的，下一步提交时将一并提交到Subversion版本库中去。简单的说就是将一新文件加入svn，你添加再提交后该文件就进入subversion版本中去了；
+       checkout：check out导出获得文件后，导出的文件仍处于SVN版本控制中，与版本库保持关联，比如你可以进行Svn Update或者Svn Commit操作，checkout是第一次用，后面的用法就是更新
+SVN+Apache
+SVN+Apache的需要subversion的两个动态库支持，同时我们需要密码的验证支持！
+
+查看apache对svn模块的支持
+       [root@XueGod63 ~]# vim /etc/httpd/conf.d/subversion.conf        //有下面两个库，就证明安装成功
+LoadModule dav_svn_module     modules/mod_dav_svn.so
+LoadModule authz_svn_module   modules/mod_authz_svn.so
+       [root@XueGod63 ~]# ls /etc/httpd/modules/mod_dav_svn.so /etc/httpd/modules/mod_authz_svn.so
+/etc/httpd/modules/mod_authz_svn.so  /etc/httpd/modules/mod_dav_svn.so
+#两个模块对应的物理路径
+配置apache支持svn
+       [root@XueGod63 ~]# vim /etc/httpd/conf.d/subversion.conf               //末尾添加这些行
+<Location /webdept>
+   DAV svn
+   SVNParentPath /webdept                                       #svn根目录
+      AuthType Basic                                                        #Basic认证方式
+      AuthName "www.xuegod.cn website Dept"         #认证显示信息，提示信息
+      AuthUserFile /webdept/svn/passwd                      #用户密码文件
+      AuthzSVNAccessFile  /webdept/svn/authz            #访问控制权限文件
+      Require valid-user                                                    #要求正式用户，不能匿名
+</Location>
+创建用户passwd文件
+       [root@XueGod63 ~]# mkdir /webdept/svn
+[root@XueGod63 ~]# htpasswd -c /webdept/svn/passwd webuser            //第一次用c，创建，第二次就不用
+      [root@XueGod63 ~]# htpasswd /webdept/svn/passwd userweb                 //不能用-c，否则会覆盖webuser
+       [root@XueGod63 ~]# htpasswd  /webdept/svn/passwd userweb
+       [root@XueGod63 ~]# cat /webdept/svn/passwd
+webuser:1jSjUd6sxbKPA
+userweb:otYOxfBbuhBrg
+userhh:nsjh6I/G/iUTg
+创建权限authz文件
+[root@XueGod63 ~]# vim /webdept/svn/authz                                                //创建权限控制文件
+[groups]
+all = webuser,userweb
+[/]                                      #“/”表示所有仓库的跟目录下
+webuser = rw
+[www.xuegod.cn:/]                 #第一个仓库，webuser和userweb可以读写
+@all = rw
+[www.godxue.cn:/]                #第二个仓库目录，userweb和userhh可以读写
+userweb = rw
+userhh = rw
+****************************************************************************************************************
+webuser用户可以读取www.xuegod.cn，userhh不可读取
+userweb可以读取www.godxue.cn，webuser不可以
+启动服务测试
+       [root@XueGod63 ~]# service httpd restart
+访问http://192.168.0.63/webdept/www.xuegod.cn             webuser和userweb可以读取，userhh不可以
+使用webuser和userweb用户效果
+
+使用userhh登陆
+
+访问http://192.168.0.63/webdept/www.godxue.cn   userweb和userhh可以，webuser不可以
+使用userweb和userhh测试（没用内容，登陆即可）
+补充：登陆欢迎信息
+
+测试结果：
+
+使用webuser测试结果(这里可以访问的原因是我们设置了/对于webuser是rw的权限
+
+Linux客户端下操作
+上传：
+[root@xuegod64 ~]# mkdir /website
+[root@ xuegod64 ~]# svn import /website/ svn://192.168.0.63/www.xuegod.cn -m "first use import"
+ 取回
+[root@ xuegod64 ~]# svn checkout svn://192.168.0.63/www.xuegod.cn source
+ 修改数据后的操作
+ [root@ xuegod64 source]# svn add 100.thml
+[root@XueGod63 source]# svn delete 2.html
+[root@XueGod63 source]# svn status
+[root@ xuegod64 source]# svn commit -m “first commit”
+"操作之后，添加，删除，一定要提交"
+ [root@XueGod63 source]# chmod -R 777 /webdept/                      //若是报错，修改权限
+Windows客户端下操作
+       Windows下使用TortoiseSVN工具来配置，官方网站：http://tortoisesvn.net/downloads.html
+       选择适应版本，32位或者64位
+软件安装配置
+       从官方下载，直接安装，然后建立本地的源码存储目录，自己新建，如这里我们建立SVN这个目录，然后进入这个目录，右键：
+
+配置：
+
+输入用户名和密码：
+
+
+新建代码上传
+
+在SVN目录右键这个源码文件
+
+然后再次右键这个文件,选择SVN Commit
+
+输入注释，OK
+
+接下来点击OK即可，有可能需要一个有写入权限的用户，需要注意
+
+较好的SVN服务器构建建议
+       •   所有的项目放在一个版本库中
+       •   每个项目创建自己的目录，其下各自创建trunk，branches和tags三个目录
+       •   trunk目录存放开发主线
+       •   branches目录存放分支拷贝
+       •   tags目录存放标签拷贝
+       •  开发和bug修正均每日提交到主干上
+       •  将测试的版本拷贝到测试分支。如/branches/1.0
+       •  并行工作，测试组对测试分支进行测试，开发组在主干上继续工作
+       •  如果一个bug在任何一个位置被发现，错误在主干上修正，然合并到分支上
+       •  测试结束，/branches/1.0拷贝到/tags/1.0.0，发布给客户
+       •  发布后的bug修正继续提交到主干上，并从主干合并到/branches/1.0
+       •  当积累了足够的bug修正，拷贝/branches/1.0到/tags/1.0.1，发布版本1.0.1
+       •  主干的2.0开发完成，一个新的2.0分支被创建，测试、打标签和最终发布
+       •  经过许多年，版本库结束了许多版本发布，进入了“维护”模式，许多标签代表了最终的发布版本
+       •   使用分支进行特性开发
+       •  特性开发是使用分支进行组件独立开发，最终合并的方式
+       •  开发周期一般为折衷模式。如果工作独立性较强，修改量较大，应该使用特性分支
+       •  应每周一次从主干合并更新到分支，以防止与主干差异性过大
+SVN根目录的访问
+       SVNParentPath是支持多库类型，访问只能跟版本库的绝对路径，如：http://ip/svn/svn1
+        如果希望只想单一库，那么配置如下
+[root@XueGod63 ~]# vim /etc/httpd/conf.d/subversion.conf
+<Location /webdept>
+   DAV svn
+   SVNPath /webdept/www.xuegod.cn
+      AuthType Basic
+      AuthName "Authorization Realm"
+      AuthUserFile /webdept/svn/passwd
+      AuthzSVNAccessFile /webdept/svn/authz
+      Require valid-user
+</Location>
+http://192.168.0.63/webdept                 输入webuser
+
+但是另外一个版本库就无用了！
+SVN旧版本文件
+       本地库右键：TortoiseSVN-Update to revision
+
+
+确定
+
+GIT服务
+Git是一款免费、开源的分布式版本控制系统，用于敏捷高效地处理任何或小或大的项目!
+       Git是一个开源的分布式版本控制系统，用以有效、高速的处理从很小到非常大的项目版本管理。Git 是 Linus Torvalds 为了帮助管理 Linux 内核开发而开发的一个开放源码的版本控制软件。
+工作原理
+在 Git 中的绝大多数操作都只需要访问本地文件和资源，不用连网。但如果用 CVCS 的话，差不多所有操作都需要连接网络。因为 Git 在本地磁盘上就保存着所有当前项目的历史更新，所以处理起来速度飞快。
+举个例子，如果要浏览项目的历史更新摘要，Git 不用跑到外面的服务器上去取数据回来，而直接从本地数据库读取后展示给你看。所以任何时候你都可以马上翻阅，无需等待。如果想要看当前版本的文件和一个月前的版本之间有何差异，Git 会取出一个月前的快照和当前文件作一次差异运算，而不用请求远程服务器来做这件事，或是把老版本的文件拉到本地来作比较。
+用 CVS 的话，没有网络或者断开 VPN 你就无法做任何事情。但用 Git 的话，就算你在飞机或者火车上，都可以非常愉快地频繁提交更新，等到了有网络的时候再上传到远程仓库。同样，在回家的路上，不用连接 VPN 你也可以继续工作。换作其他版本控制系统，这么做几乎不可能，抑或非常麻烦。比如 Perforce，如果不连到服务器，几乎什么都做不了（默认无法发出命令 p4 edit file 开始编辑文件，因为 Perforce 需要联网通知系统声明该文件正在被谁修订。但实际上手工修改文件权限可以绕过这个限制，只是完成后还是无法提交更新。）；如果是 Subversion 或 CVS，虽然可以编辑文件，但无法提交更新，因为数据库在网络上。看上去好像这些都不是什么大问题，但实际体验过之后，你就会惊喜地发现，这其实是会带来很大不同的。
+对于任何一个文件，在 Git 内都只有三种状态：已提交（committed），已修改（modified）和已暂存（staged）。已提交表示该文件已经被安全地保存在本地数据库中了；已修改表示修改了某个文件，但还没有提交保存；已暂存表示把已修改的文件放在下次提交时要保存的清单中。
+由此我们看到 Git 管理项目时，文件流转的三个工作区域：Git 的工作目录，暂存区域，以及本地仓库。
+
+每个项目都有一个 Git 目录（如果 git clone 出来的话，就是其中 .git 的目录；如果 git clone --bare 的话，新建的目录本身就是 Git 目录。），它是 Git 用来保存元数据和对象数据库的地方。该目录非常重要，每次克隆镜像仓库的时候，实际拷贝的就是这个目录里面的数据。
+从项目中取出某个版本的所有文件和目录，用以开始后续工作的叫做工作目录。这些文件实际上都是从 Git 目录中的压缩对象数据库中提取出来的，接下来就可以在工作目录中对这些文件进行编辑。
+所谓的暂存区域只不过是个简单的文件，一般都放在 Git 目录中。有时候人们会把这个文件叫做索引文件，不过标准说法还是叫暂存区域。
+基本的 Git 工作流程如下：
+1.在工作目录中修改某些文件。
+2.对修改后的文件进行快照，然后保存到暂存区域。
+3.提交更新，将保存在暂存区域的文件快照永久转储到 Git 目录中。
+所以，我们可以从文件所处的位置来判断状态：如果是 Git 目录中保存着的特定版本文件，就属于已提交状态；如果作了修改并已放入暂存区域，就属于已暂存状态；如果自上次取出后，作了修改但还没有放到暂存区域，就是已修改状态。
+GIT优点
+•更顺畅的工作流程，开发过程中，完全可以离线操作
+•快速，Git分布式架构使得本地仓库包含所有的历史版本信息，你可以在不同的版本之间快速切换
+•弹性的本地分支，在svn下，你建一个分支需要把源代码复制到另外一个文件夹，而在Git下，创建分支的代价是非常小的，只需一条命令
+•仓库目录结构简洁，用Git复制一个项目，只会在项目根目录创建一个.git的目录，而其他目录很干净
+•内容按元数据方式存储，所有的版本信息都位于.git目录下
+•完整性好，更易于协作开发
+•用户群大，现在已经有成千上万个开源项目采用Git来做项目管理，github上更是有无数个代码仓库
+Git使用方法
+git init here      // 创建本地仓库(repository)，将会在文件夹下创建一个 .git 文件夹，.git 文件夹里存储了所有的版本信息、标记等内容
+git remote add origin git@github.com:winter1991/helloworld.git        //把本地仓库和远程仓库关联起来。如果不执行这个命令的话，每次 push 的时候都需要指定远程服务器的地址
+git add        // 从本地仓库增删，结果将会保存到本机的缓存里面
+git commit -m "注释"     //提交，把本机缓存中的内容提交到本机的 HEAD 里面
+git push origin master   //把本地的 commit push 到远程服务器上， origin 也就是之前 git remote add origin 那个命令里面的 origin，origin 替代了服务器仓库地址：git push git@github.com:winter1991/helloworld.git master
+git pull origin master  //从远程服务器 pull 新的改动
+git status             //查看状态
+git add -A            //提交全部修改
+git config --global user.name "xxx"     //配置用户名，上传本地 repository 到服务器上的时候，在 Github 上会显示这里配置的上传者信息
+git config --global user.email "xxx"     //配置邮箱
+git config --list                                     //查看配置列表
+git rm xxx                                                //从本地仓库中删除指定文件
+git rm -r xxx                                              //从本地仓库中删除指定文件夹
+git commit -m "注释"                             //把本机缓存中的内容提交到本机的 HEAD 里面
+git push origin master                          //把本地的 commit push 到远程仓库中
+使用 .gitignore 文件忽略指定的内容：
+
+自己搭建GIT服务器
+XueGod63 Git Server===========XueGod64 Git Client
+软件安装
+       [root@XueGod63 ~]# yum install -y git      //需要ssh的支持，某些版本服务器需要安装git-core才是服务器
+服务端用户创建空仓库创建
+ [root@XueGod63 ~]# useradd -m git
+[root@XueGod63 ~]# echo git:123456 | chpasswd               //密码123456
+[root@XueGod63 ~]# mkdir /project                        //存放仓库的目录名project
+[root@XueGod63 ~]# chmod 755 -R /project/
+[root@XueGod63 ~]# chown git:git -R /project/
+[root@XueGod63 ~]# su git
+[git@XueGod63 root]$ cd /project/
+[git@XueGod63 project]$ mkdir project.git
+[git@XueGod63 project]$ cd project.git
+[git@XueGod63 project.git]$ git --bare init
+客户端初始化测试
+ [root@XueGod64 ~]# mkdir git
+ [root@XueGod64 ~]# cd git
+ [root@XueGod64 git]# git clone git@192.168.1.63:/project/project.git
+Initialized empty Git repository in /root/git/project/.git/
+git@192.168.1.63's password:
+warning: You appear to have cloned an empty repository.
+[root@XueGod64 git]# ll
+total 4
+drwxr-xr-x 3 root root 4096 Dec  411:26 project
+[root@XueGod64 git]# cd project/
+[root@XueGod64 project]# echo "NO.1" > 1.html
+[root@XueGod64 project]# git add .  //添加到暂缓区
+[root@XueGod64 project]# git commit -m "NO.1"  //提交到本地仓库
+会输出很多欢迎信息，用于协同操作提示作用。
+[root@XueGod64 project]# git remote add origin git@192.168.1.63:/projext/project.git   //确认本地和远程的状态是否正常
+[root@XueGod64 project]# git push origin master                     //本地推送到远程服务器
+##上面就是一个标准的代码提交的过程
+个性化用户信息
+[root@XueGod64 project]# git config --global user.name "cat.xue"
+[root@XueGod64 project]# git config --global user.email “cat@xuegod.com”
+继续修改提交
+[root@XueGod64 project]# vim 1.html                            //随便写点内容
+[root@XueGod64 project]# git add 1.html
+[root@XueGod64 project]# git commit -m "NO.2"
+[root@XueGod64 project]# vim 1.html                            //随便写点内容
+[root@XueGod64 project]# git add 1.html
+[root@XueGod64 project]# git commit -m "NO.3"
+[root@XueGod64 project]# git push
+
+
+Windows使用方法
+http://tortoisegit.org/download/                               //Windows客户端下载地址
+https://git-for-windows.github.io/                             //msysgit客户端下载地址
+Windows安装Tortoisegit之前，需要安装支撑软件msysgit（windows下面类似于Linux下面命令行的一个工具），这样tortoisegit才能正常运转！
+首先安装msysgit，一切默认即可！安装完成之后，看看msysgit的工具
+
+
+
+输入yes之后输入密码
+
+克隆完成以后，发现克隆出来的文件是否和之前编辑的文件内容相同
+工作流程：
+
+
+开始编辑程序（增加、修改、删除等）
+
+扫描完成的开发文件
+
+添加到暂缓区
+
+添加个性化交互提示信息：
+
+
+签名
+
+提交到本地仓库
+
+提交到服务器仓库
+
+使用TortoiseGit
+安装tortoisgit，默认安装都可以满足要求
+新建git2目录，进入git2目录
+把远程代码克隆到本地目录
+
+
+测试代码添加
+
+增加到缓存区
+
+提交到本地仓库
+
+输入注释信息：
+
+提交到远程服务器仓库
+
+关于git使用帮助：
+http://www.yiibai.com/git/
+
+使用github
+       GIT服务器并不需要我们搭建，我们使用github就可以满足我们的需求
+https://github.com/
+
+注册账号
+首先在官网注册一个账号
+本地密钥生成
+       [root@XueGod63 ~]# ssh-keygen
+
+
+[root@XueGod63 ~]# cat .ssh/id_rsa.pub
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA5Qcw+jahZiMORTcI2kf4raFn0uiZLQPqccByDIJVqFGfgG65ygJD2I31NrCFFGmA0JIdlzKm2nhJKA+SVFaSHeIz9C6vDOG7pemclxo+Z4h7a0VsKh16JUVmyJ+ZrE1O2bvn+/CM+Oi/x0J3rez79e9eK+V+0JmQyNuZQsGvzyHbqpQMS9K/aJTbA9k4hC7vJBEKBcz3cXi/OV6hgad+CJGD0QIpt2alLa+BTH5ga5kh61wIzIcEJbqTJkFsBL0KE8531ejCkIBKedLNkCFwe69QfCP1kDWuEOUk7KCao2Uftl4QzbknEC6iMv2C7rxLWNzl9PGZsfKXpQFPfYVfwQ== root@XueGod63
+导入密钥到官方
+
+
+
+
+[root@XueGod63 ~]# ssh -T git@github.com    ##测试登陆
+The authenticity of host 'github.com (192.30.253.112)' can't be established.
+RSA key fingerprint is 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'github.com,192.30.253.112' (RSA) to the list of known hosts.
+Hi njadmin! You've successfully authenticated, but GitHub does not provide shell access.
+创建仓库
+https://github.com/                                  //回到主页
+
+
+验证邮箱之后
+
+
+[root@XueGod63 ~]# mkdir git
+[root@XueGod63 ~]# cd git
+echo "# Test" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin git@github.com:smxjphb/Test.git
+git push -u origin master
+上面操作完成
+Counting objects: 3, done.
+Writing objects: 100% (3/3), 215 bytes, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To git@github.com:smxjphb/Test.git
+ * [new branch]      master -> master
+Branch master set up to track remote branch master from origin.
+
+
+
+       [root@XueGod63 git]# git config --global user.name "cat.xuegod"
+[root@XueGod63 git]# git config --global user.email cat@xuegod.cn
+[root@XueGod63 git]# echo aaaaaa > 1.html
+[root@XueGod63 git]# git add 1.html
+[root@XueGod63 git]# git commit -m "HTML Add"
+[master f1ee69e] HTML Add
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+ create mode 100644 1.html
+[root@XueGod63 git]# git status
+# On branch master
+# Your branch is ahead of 'origin/master' by 1 commit.
+#
+nothing to commit (working directory clean)
+[root@XueGod63 git]# git push -u origin master
+
+       [root@XueGod63 git]# git log                             //查询本地git仓库 有多少次commit修改
+       [root@XueGod63 git]# git pull --rebase             //同步远程仓库的最新状态到本地仓库 同时Linux本地目录也一起同步了
+       [root@XueGod63 git]# git reset --hard f1ee69e                  //版本回退（commit一部分即可）
+##Hard 后面接版本号，版本号是用 git log 查出来的commit 号，取前六位即可
+
+
+
+
+
+

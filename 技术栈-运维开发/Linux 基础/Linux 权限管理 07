@@ -1,0 +1,290 @@
+1-7-1 文件权限管理
+
+
+本节所讲内容：
+      ① 文件的基本权限：r w x （UGO+ACL）
+      ② 文件的高级权限：suid sgid sticky
+
+第1章 文件的基本权限
+1.1 权限的作用
+通过对文件设定权限可以达到以下三种访问限制权限：
+● 只允许用户自己访问；
+● 允许一个预先指定的用户组中的用户访问；
+● 允许系统中的任何用户访问。
+
+1.2 查看文件权限
+
+
+
+我们可以通过ls命令来查看一个文件的具体信息，加参数 –l 可以查看这个文件的权限信息
+
+
+文件权限基本解释：
+
+-
+rwx
+r-x
+r-x
+user1
+group
+time
+FILENAME
+文件类型
+拥有者的权限
+所属组的权限
+其他人的权限
+拥有者
+属组
+最后修改时间
+对象
+
+
+其中：文件类型,可以为p、d、l、s、c、b和 –
+   ● p表示命名管道文件
+   ● d表示目录文件
+   ● l表示符号连接文件
+   ● -表示普通文件
+   ● s表示socket套接口文件，比如我们启用mysql时，会产生一个mysql.sock文件
+   ● c表示字符设备文件
+   ● b表示块设备文件
+
+
+1.3 文件拥有者
+
+所有者（属主）-用户组（属组）-其他用户
+所有者： 就是创建文件的用户，这个用户拥有对它所创建的文件的一切权限，所有者可以允许其所在的用户组可以访问所有者的文件。
+用户组： 用户组是具有相同特征用户的逻辑集合，有时我们需要让多个用户具有相同的权限，比如查看、修改某一个文件的权限，一种方法是分别对多个用户进行文件访问授权，如果有10个用户的话，就需要授权10次，显然这种方法不太合理；另一种方法是建立一个组，让这个组具有查看、修改此文件的权限，然后将所有需要访问此文件的用户放入这个组中，那么所有用户就具有了和组一样的权限。这就是用户组。
+其它用户：系统内的其他所有者用户就是other用户类
+
+
+1.4 举例说明
+
+1.4.1 常见几种文件权限组成
+   ● -rwx------：文件所有者对文件具有读取、写入和执行的权限。
+   ● -rwxr--r--： 文件所有者具有读、写与执行的权限，用户组里用户及其他用户则具有读取的权限
+   ● -rw-rw-r-x：文件所有者与同组用户对文件具有读写的权限，而其他用户仅具有读取和执行的权限。
+   ● drwx--x--x： 目录所有者具有读写与进入目录的权限,其他用户近能进入该目录，却无法读取任何数据。
+   ● drwx------： 除了目录所有者具有完整的权限之外，其他用户对该目录完全没有任何权限。
+
+
+1.4.2 举例如下：
+
+每个用户都拥有自己的专属目录，默认放置在/home目录下
+
+
+这些专属目录的默认权限为【rwx------】表示目录所有者本身具有所有权限，其他用户无法进入该目录，如下图所示
+
+
+
+1.4.2 更改文件的属主和属组
+
+用到的命令：chown   chgrp  如果对目录操作  -R
+==》chown
+语法：
+   ● chown user:group 对象
+   ● chown user 对象
+   ● chown :group 对象
+   ● -R ：递归(目录下的所有内容全部更改，否则只修改目录)
+
+[root@panda home]# chown harry test.txt     ----只改文件的属主
+[root@panda home]# chown :market test.txt   ---只改文件的属组
+[root@panda home]# chown xuegod-2:xuegod-4 test.txt    ---改文件的属主、属组
+[root@panda home]# chown -R harry:market /backup
+复制代码
+==》chgrp
+[root@panda home]# chgrp alice-2 test.txt   ----n=改文件的属组
+复制代码
+
+1.5 修改权限
+
+1.5.1使用符号
+
+
+修改权限的用到的命令：chmod
+作用：修改文件、目录权限
+用法：（中间的+、-、=表示添加还是删除该用户的对应权限）
+
+        u-w
+user
+拥有者
+g+x
+group
+组
+o=r
+other
+其他人
+a+x
+all
+所有人
+
+
+[root@panda mnt]# chmod u-w a.txt       -----属主删除写权限
+[root@panda san]# chmod g+x b.txt        ----属组添加执行权限
+[root@panda san]#chmod a=rwx file1      ----所有人等于读写执行
+[root@panda san]#chmod a=- file1         ----所有人没有权限
+[root@panda san]#chmod ug=rw,o=r file1   ----属主属组等于读写，其他人只读
+复制代码
+查看修改的权限可以用ls –l  或  stat
+
+
+1.5.2 使用数字
+
+rwx
+r--
+-w-
+--x
+
+100
+010
+001
+二进制
+4
+2
+1
+十进制
+组合
+值
+u=rw
+4+2=6  u=6
+g=rx
+4+1=5   g=5
+rw-r--r--
+rw-=6     r--=4    r--=4      rw-r—r--=644
+
+
+扩展示例如下
+建一个目录TEST，要求如下：
+   1、root用户和test用户可以读写执行
+    2、其他用户没有任何权限
+
+
+
+1.6 权限对文件和目录的影响
+有三种权限可以应用：读取，写入与执行，这些权限对访问文件和目录的影响如下：
+
+权限
+对文件的影响
+对目录的影响
+r(读取)
+可以读取文件的内容
+可以列出目录的内容（文件名）
+w(写入)
+可以更改文件的内容
+可以创建或删除目录中的任意文件
+x(执行)
+可以作为命令执行文件
+可以访问目录的内容（取决于目录中文件的权限）
+
+1、 对文件的影响
+
+[root@panda ~]#
+[root@panda ~]# mkdir /dir1
+[root@panda ~]# touch /dir1/file1
+[root@panda ~]# chmod 777 /dir1/file1
+[root@panda ~]# ll /dir1/file1
+-rwxrwxrwx. 1 root root 0 Sep 11 01:59 /dir1/file1
+[root@panda ~]# ll -d /dir1/
+drwxr-xr-x. 2 root root 18 Sep 11 01:59 /dir1/
+[root@panda ~]# su - harry
+Last login: Mon Sep 11 01:44:26 CST 2017 on pts/0
+[harry@panda ~]$ cat /dir1/file1
+[harry@panda ~]$ rm -f /dir1/file1
+rm: cannot remove ‘/dir1/file1’: Permission denied
+复制代码
+1、 对目录的影响
+[root@panda ~]#
+[root@panda ~]# ll -d /dir1
+drwxr-xr-x. 2 root root 18 Sep 11 01:59 /dir1
+[root@panda ~]# chmod 777 /dir1/
+[root@panda ~]# ll -d /dir1
+drwxrwxrwx. 2 root root 18 Sep 11 01:59 /dir1
+[root@panda ~]# ll /dir1/file1
+-rwxrwxrwx. 1 root root 0 Sep 11 01:59 /dir1/file1
+[root@panda ~]# chmod 000 /dir1/file1
+[root@panda ~]# ll /dir1/file1
+----------. 1 root root 0 Sep 11 01:59 /dir1/file1
+[root@panda ~]# su - harry
+Last login: Mon Sep 11 02:00:46 CST 2017 on pts/0
+[harry@panda ~]$ cat /dir1/file1
+cat: /dir1/file1: Permission denied
+[harry@panda ~]$ rm -f /dir1/file1
+[harry@panda ~]$ touch /dir1/file2
+[harry@panda ~]$ ls /dir1/
+file2
+复制代码
+
+
+
+1.7 补码
+
+
+为什么我们创建的文件的权限是644呢？
+我们创建文件的默认权限是怎么来的？
+如何改变这个默认权限呢？
+
+umask命令允许你设定文件创建时的缺省模式，对应每一类用户(文件属主、同组用户、其他用户)存在一个相应的umask值中的数字
+        对于文件来说，这一数字的最大值分别是6；系统不允许你在创建一个文本文件时就赋予它执行权限，必须在创建后用chmod命令增加这一权限（为了安全考虑）
+        对于目录来说，则允许设置执行权限，这样针对目录来说，umask中各个数字最大可以到7
+umask设置了用户创建文件的默认权限，它与chmod的效果刚好相反.；umask设置的是权限“补码”，而chmod设置的是文件权限码。我们只要记住umask是从权限中拿走相应的位即可 。如：umask值为022，则默认目录权限为755，默认文件权限为644
+该命令的一般形式为：umask nnn 其中nnn为umask值000 – 777
+umask设置了用户创建文件的默认权限，它与chmod的效果刚好相反.；umask设置的是权限“补码”，而chmod设置的是文件权限码。我们只要记住umask是从权限中拿走相应的位即可 。如：umask值为022，则默认目录权限为755，默认文件权限为644
+        我们一般在/etc/profile、$ [HOME]/.bash_profile或$[HOME]/.profile中设置umask值。
+
+
+计算方法：
+文件默认权限＝666-umask值   666-022=644
+目录默认权限＝777-umask 值  777-022=755
+Umask表示的是要减掉的权限
+永久生效，编辑用户的配置文件vim .bash_profile
+
+
+
+第2章 特殊权限
+
+其实文件与目录设置不止这些，还有所谓的特殊权限。由于特殊权限会拥有一些“特权”.
+因而用户若无特殊需求，不应该启用这些权限，避免安全方面出现严重漏洞，造成入侵，甚至摧毁系统!!!
+特殊权限：
+     ● SUID（set uid设置用户ID）：限定：只能设置在二进制可执行程序上面。对目录设置无效
+           功能：程序运行时的权限从执行者变更成程序所有者
+     ● SGID：限定：既可以给二进制可执行程序设置，也可以对目录设置
+          功能：在设置了SGID权限的目录下建立文件时，新创建的文件的所属组会                  继承上级目录的所属组
+     ● Stickybit：粘滞位权限是针对目录的，对文件无效，也叫防删除位
+     ● s对应的数值为
+SUID
+SGID
+Stickybit
+u=4、u+s
+g=2、g+s
+o=1、o+t
+
+2.1  粘滞位
+SBIT（Sticky）：只针对目录有效,对文件无效,作用是防止别人删除掉对方的资料，防止用户自己的文件被别的用户误删除
+[root@panda ~]# mkdir /tencent
+[root@panda ~]# chmod 1777 /tencent/
+[root@panda ~]# su - test
+Last login: Tue Oct 11 20:12:57 CST 2016 on pts/2
+[test@panda ~]$ cd /tencent/
+[test@panda tencent]$ touch aa
+[test@panda tencent]$ touch bb
+[test@panda tencent]$ exit
+logout
+复制代码
+切换用户
+[root@panda ~]# su - xiaobai
+Last login: Tue Oct 11 20:11:14 CST 2016 on pts/2
+[xiaobai@panda ~]$ cd /tencent/
+[xiaobai@panda tencent]$ touch cc
+[xiaobai@panda tencent]$ touch dd
+[xiaobai@panda tencent]$ ll
+total 0
+-rw-rw-r--. 1 test    test    0 Oct 11 20:14 aa
+-rw-rw-r--. 1 test    test    0 Oct 11 20:14 bb
+-rw-rw-r--. 1 xiaobai xiaobai 0 Oct 11 20:14 cc
+-rw-rw-r--. 1 xiaobai xiaobai 0 Oct 11 20:14 dd
+[xiaobai@panda tencent]$ rm -f aa
+rm: cannot remove ‘aa’: Operation not permitted    --提示没有权限
+[xiaobai@panda tencent]$ exit
+logout
+复制代码
+
+这就是sticky位的功能

@@ -6,8 +6,8 @@ docker run -d  \
            --privileged=true \
            -p 8443:443 -p 8081:80 -p 2200:22 \
            --name gitlab \        --restart always \
-           -v /home/hzq/gitlab/config:/etc/gitlab \        -v /home/hzq/gitlab/logs:/var/log/gitlab \
-           -v /home/hzq/gitlab/data:/var/opt/gitlab \
+           -v /opt/gitlab/config:/etc/gitlab \        -v /home/hzq/gitlab/logs:/var/log/gitlab \
+           -v /opt/gitlab/data:/var/opt/gitlab \
            gitlab/gitlab-ce:latest
 
 

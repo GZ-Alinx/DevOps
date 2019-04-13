@@ -1,0 +1,180 @@
+1-9-1 文件的归档与压缩
+
+本节所讲内容：
+● 文件归档命令
+● 创建tar包-解压-查询tar包内容
+
+
+第1章 文件的归档和压缩
+
+1.1 归档的好处
+● 方便使用、查询、阅读
+● 易于管理 (批量删除文件)
+
+
+1.2 为什么要压缩
+
+
+如图:主机A要跟主机B传输一个大小为10G的文件估计传送100s.
+如果直接传输会大量的占用流量带宽.导致公司的内网访问速度缓慢.
+传输前压缩à传输后解压
+我把10G的文件压缩成5G,传送时间是50s.
+
+1.3 文件压缩的好处
+
+节约硬盘的资源.
+加快文件传输的速率.
+
+
+第2章 Linux文件中的文件归档
+
+2.1 文件的归档
+
+用到的命令：tar
+作用：打包、压缩文件；tar 文件是把几个文件和（或）目录集合在一个文件夹里。是创建备份和归档的最佳工具；通过tar命令，用户可以将一堆文件集中为一个文件（存档），该存档文件可以通过使用gzip、bzip2或xz等压缩工具进行行压缩后传输
+
+语法：tar [参数] 包的名称 目标文件/目录
+参数：
+● -c        create创建文件
+● -x        解压还原文件
+● -v        显示执行详细过程
+● -f        指定备份文件
+● -t        列出备份文件内容
+● -P（大写）        在使用绝对路径时，不移除文件名称前的根号，
+● -C （大写） 指定解压位置
+注意： 在起包的名称的时候，后缀要根据你要压缩的类型添加相应的后缀，tar 选项前不需要使用‘-’在LINUX中，你如何来区别文件的类型？
+通过后缀
+比如  a.sh   原来a.sh是一个脚本。是可以用来执行的。前提是有要执行权限。
+      a.tar   这是一个归档文件，是用TAR工具进行归档的。那么我要看这个文件，就要用TAR
+[root@panda72 mnt]# tar cvf /tmp/etc.tar /etc nginx-1.12.0.tar.gz
+复制代码
+
+注意：
+在使用绝对路径名归档文件时，将默认从文件名中删除该路径中前面的 / 符号。这将有助于避免可能造成重要文件被覆盖的错误。
+
+2、在对文件进行归档时，必须保证TAR命令的用户有能够读取这些文件的权限；对无相应权限用户，归档时将忽略用户没有读权限的文件，并且将忽略用户没有读和执行权限的目录
+
+3、默认情况下，我们在从归档文件中提取文件的时候，系统会将归档中文件的权限做一遍UMASK操作，比如原来存储文件权限为664，UMASK值是022，那么你从归档中提取了这个文件后，权限就会变成642.。这是LINUX的一种安全保护措施，可以防止提取到的普通文件默认收到执行权限。并且这种权限变化在普通用户使用时有效。所以你如果想要保留这个权限，可以在提取时加参数p选项
+
+指定解压位置
+[root@panda72 mnt]# tar xf nginx-1.12.0.tar -C /tmp
+[root@panda72 mnt]# wget http://www.xxxx.com/tar.zip -O /tmp/a.txt
+复制代码
+
+2.2 file命令
+linux对于文件的扩展名没有像windows要求的那么严格，所以在使用linux的过程中经常会遇到有些文件根本就没有扩展名，哪么我们应该如何去判断没有扩展名的文件，到底是文件还是目录呢？
+1、 看颜色
+2、 通过命令
+作用：确定文件类型
+语法：file  文件名
+
+
+
+2.3 文件大小
+
+对比文件的大小
+[root@server0 ~]# ll /etc/|head -1
+total 1484
+[root@server0 ~]# ll -h /etc/|head -1
+total 1.5M
+[root@server0 ~]# du -sh /etc/
+35M        /etc/
+复制代码
+du –sh 和ls –dk 查看的大小不一样是因为它们统计的方式不一样，一个是以块的方式一个是以实际字节大小
+
+第3章 Linux文件压缩
+我们创建压缩的TAR存档，TAR命令它支持三种不同的压缩方式。gzip压缩速度最快；bzip2压缩生成的文件比gzip小，但使用不如gzip广；xz压缩工具相对较新，但是会提供最佳的压缩率
+压缩工具：gzip  bzip2  zip
+
+
+3.1 压缩格式
+
+见的压缩格式：.gz    .bz2  .xz   .zip
+压缩命令：gzip  bzip2  xz
+语法格式：
+======================
+压缩
+gzip   文件    a.txt.gz
+bzip2  文件   一种块排序文件压缩软件   b.txt.bz2
+xz     文件    c.txt.xz
+特点：只能对文件进行压缩，且压缩后源文件消失（其中bzip2,xz命令可以加上-k参数保留源文件）
+
+[root@panda72 mnt]# gzip /etc
+gzip: /etc is a directory -- ignored
+复制代码
+解压：
+gzip  -d   文件
+bzip2 -d   文件   -k 保留源文件
+xz  -d   文件    或   unxz  文件    -k 保留源文件
+
+
+3.2 与TAR结合使用
+
+tar需要添加的压缩命令参数：
+        z：用于gzip压缩（name.tar.gz或name.tgz）
+        j：用于bzip2压缩（name.tar.bz2）
+        J：用于xz压缩（name.tar.xz）
+
+
+
+3.3 zip软件包解压缩命令
+
+zip是压缩程序，unzip是解压程序。
+参数：
+● -r  压缩目录
+● -d指定路径
+
+
+
+总结一下
+tar cf a.tar a.txt /dir1 ---->归档,注意备份的名字后缀
+tar xf a.tar    ------>解压归档
+归档并压缩
+tar czf a.tar.gz /etc  ---->表示调用gzip压缩工具
+tar jzf a.tar.bz2 /etc  ---->表示调用bzip2压缩工具
+tar Jzf a.tar.xz /etc  ---->表示调用xz压缩工具
+解压包
+tar cxf a.tar.gz /etc  ---->表示解压gzip压缩类型的文件
+tar jxf a.tar.bz2 /etc  ---->表示解压bzip2压缩类型的文件
+tar Jxf a.tar.xz /etc  ---->表示解压xz压缩类型的文件
+tar xf a.tar.xz(bz2\gz)
+tar xf a.tar.gz –C /mnt   ---->重定向解压位置
+还有一种类型的压缩包zip
+unzip file.zip
+还有一种类型的压缩包file.rar ? 怎么解？
+指定提取的文件
+[root@panda72 mnt]# tar xf etc.tar /etc/fonts/conf.d/60-open-sans.conf
+[root@panda72 mnt]# tar xf etc.tar resolv.conf   ---->不要直接写名字
+tar: resolv.conf: Not found in archive
+tar: Exiting with failure status due to previous errors
+复制代码
+传输比较：
+1、归档前：
+
+[root@panda72 ~]# time rsync -va /etc 192.168.1.100:/tmp
+real        0m12.261s
+复制代码
+2、归档后：
+[root@panda72 mnt]# time rsync -va etc.tar 192.168.1.100:/tmp
+root@192.168.1.100's password:
+sending incremental file list
+etc.tar
+
+sent 85780784 bytes  received 31 bytes  11437442.00 bytes/sec
+total size is 85770240  speedup is 1.00
+
+real        0m7.619s
+user        0m0.755s
+sys        0m2.473s
+[root@panda72 mnt]# time rsync -va etc.tar.xz 192.168.1.100:/tmp
+root@192.168.1.100's password:
+sending incremental file list
+etc.tar.xz
+
+sent 6302930 bytes  received 31 bytes  1400658.00 bytes/sec
+total size is 6302084  speedup is 1.00
+
+real        0m3.956s
+user        0m0.078s
+sys        0m0.180s
+复制代码

@@ -1,0 +1,51 @@
+
+
+作用：    safe-rm 防止误删除操作
+
+
+
+Linux下防止rm -rf /命令误删除
+
+
+做服务器运维的人众所周知， rm -rf / 命令在Linux下执行后，就是一场灾难。
+好吧，先看一个事例，了解下这个命令的恐怖>>>一个命令rm -rf / . 整个公司都没了
+为了防止这种误删除操作，找了很多办法，有建议回收站机制、也有说给重要目录设置权限等等方法、还有替换rm删除命令的方法；总结了一下，还是觉得替换rm命令比较简单直接，这里就记录一下替换 rm 命令的方法。
+原理：
+首先我们需要用到的软件（其实就是一个命令）： safe-rm ，它具有 rm 命令的所有功能，不过 safe-rm 命令可以设置路径黑名单，也就是说在黑名单中的目录或文件将不会被删除；我们把 rm 命令替换为 safe-rm ，之后执行 rm 命令也就相当于执行 safe-rm 命令，也就不会误删除黑名单中的目录或文件了。
+safe-rm命令下载：网盘下载 官网下载
+
+1、下载到Linux服务器后并解压缩，复制safe-rm-0.12下的 safe-rm 命令到/usr/local/bin目录
+
+tar -zxf safe-rm-0.12.tar.gz -C /opt/
+cp /opt/safe-rm-0.12/safe-rm /usr/local/bin/
+
+注：我是解压缩到//opt/safe-rm-0.12目录下的。
+现在已经可以直接用safe-rm命令进行删除操作了，用法和参数和 rm 是一样的，不过还没有替换为 rm
+2、替换 safe-rm 为系统默认的 rm 命令
+做一个 rm 命令的符号链接，之后执行 rm 命令就相当于执行 safe-rm
+
+ln -s /usr/local/bin/safe-rm /usr/local/bin/rm
+
+设置环境变量，要保证/usr/local/bin在其他变量路径前面
+先查看当前变量的顺序，可以看到/usr/local/bin没有在其他路径的最前面：
+
+[root@localhost /]# echo $PATH
+/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+
+修改编辑配置文件/etc/profile，添加下面一行
+
+PATH=/usr/local/bin:$PATH
+
+保存后，重启整个服务器，使配置生效；重启后，用 rm 命令删除，就相当执行的 safe-rm 命令了。
+3、设置路径黑名单
+创建/etc/safe-rm.conf文件，将重要文件或者目录的完整路径输入进去保存就可以了，每条以回车分隔。
+
+[root@localhost /]# cat /etc/safe-rm.conf
+/opt/test
+/
+
+我这里加了2个路径，一个根目录，一个/opt/test目录。
+好了，到这里就完成了，执行 rm -rf / 和 rm -rf /opt/test 将不会删除其目录，会提示跳过删除（最好先找个测试目录进行实验，别弄不好成灾难了....）。
+
+总结：其实，只要用点心，仔细一些，误操作的几率还是比较少的；有句话说的好，刀可以杀猪，也可以杀人，关键在于拿刀的人...
+

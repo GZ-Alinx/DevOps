@@ -1,5 +1,5 @@
 
-创建用户和授权
+1. 创建用户和授权
 
 在mysql8.0创建用户和授权和之前不太一样了，其实严格上来讲，也不能说是不一样,只能说是更严格,mysql8.0需要先创建用户和设置密码,然后才能授权.
 
@@ -17,7 +17,7 @@ ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that 
 your MySQL server version for the right syntax to use near 'identified by '123456'' at line 1
 
 
-MySQL8.0 的远程链接
+2. MySQL8.0 的远程链接
     MySQL 安装完成后只支持 localhost 访问，我们必须设置一下才可以远程访问，另外还有一些 MySQL 8.0 连接时的一些问题.
 
 
@@ -36,10 +36,11 @@ flush privileges;
 
 查看 root 用户的 host
 use mysql;
-select host, user, authentication_string, plugin from user;
+select host, user from mysql.user;
 会发现 root 用户的 host 已经变成 %，说明我们的修改已经成功，可以远程访问了。
 
 
+3. 加密方式不同 密码不对
 
 远程访问数据库的可视化工具比较多如：Navicat、SQLyog、MySQL workbench 等，我这里使用 Navicat
 

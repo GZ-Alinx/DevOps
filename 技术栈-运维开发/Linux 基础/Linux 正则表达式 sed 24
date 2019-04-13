@@ -1,0 +1,541 @@
+
+
+1-23-expect、正则表达式和sed的使用
+
+本节所讲内容：
+
+实战：expect实现无交互登录
+正则表达式
+sed
+第1章 expect使用
+
+       TCL(Tool command language)是一种类似shell脚本的语言，你可以使用它来完成许多操作。expect是从它发展出来的。如果你想要写一个能够自动处理输入输出的脚本（如向用户提问并且验证密码）又不想面对C或者Perl，那么expect是你的最好的选择
+       expect是在tcl基础上创建起来的，它还提供了一些tcl所没有的命令，它可以用来做一些linux下无法做到交互的一些命令操作
+
+1.1 安装expect
+[root@xuegod67 mnt]# yum -y install expect
+Loaded plugins: product-id, refresh-packagekit, security, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+base                                                           | 3.9 kB     00:00 ...
+Setting up Install Process
+Resolving Dependencies
+--> Running transaction check
+---> Package expect.x86_64 0:5.44.1.15-5.el6_4 will be installed
+--> Processing Dependency: libtcl8.5.so()(64bit) for package: expect-5.44.1.15-5.el6_4.x86_64
+--> Running transaction check
+---> Package tcl.x86_64 1:8.5.7-6.el6 will be installed
+--> Finished Dependency Resolution
+……………
+……………
+Installed:
+  expect.x86_64 0:5.44.1.15-5.el6_4
+Dependency Installed:
+  tcl.x86_64 1:8.5.7-6.el6
+1.2 使用expect
+使用expect创建脚本的方法
+1）定义脚本执行的shell
+
+       #!/usr/bin/expect
+
+       这里定义的是expect可执行文件的链接路径（或真实路径），功能类似于bash等shell功能
+
+2）set timeout 30
+
+       设置超时时间，单位是秒，如果设为timeout -1 意为永不超时
+
+3）spawn
+
+       spawn 是进入expect环境后才能执行的内部命令，如果没有装expect或者直接在默认的SHELL下执行是找不到spawn命令的。不能直接在默认的shell环境中进行执行主要功能，它主要的功能是给ssh运行进程加个壳，用来传递交互指令。
+
+4）expect
+
+       这里的expect同样是expect的内部命令
+
+       主要功能：判断输出结果是否包含某项字符串，没有则立即返回，否则就等待一段时间后返回，等待时间通过timeout进行设置
+
+5）send
+
+       执行交互动作，将交互要执行的动作进行输入给交互指令
+
+       命令字符串结尾要加上"\r"，如果出现异常等待的状态可以进行核查
+
+6）exp_continue
+
+       继续执行接下来的交互操作
+
+7）interact
+
+       执行完后保持交互状态，把控制权交给控制台；如果不加这一项，交互完成会自动退出
+
+8）$argv
+
+       expect 脚本可以接受从bash传递过来的参数，可以使用 [lindex $argv n]获得，n从0开始，分别表示第一个，第二个，第三个……参数
+
+范例1：免密码通过SSH登录服务器
+
+[root@panda72 ~]# cat ssh.exp
+
+#!/usr/bin/expect
+#set ip
+set ipaddress "192.168.20.101"
+#set user
+set name "root"
+#set passwd
+set passwd "123456"
+#set timeout
+set timeout 30
+#ssh process
+spawn ssh $name@$ipaddress
+#进行判断
+expect {
+"yes/no" { send "yes\r";exp_continue }
+"password" { send "$passwd\r" }
+}
+#interact
+expect "#"
+send "useradd xuegod-1705\r"
+send "pwd\r"
+expect eof
+[root@panda72 ~]# chmod +x ssh.exp
+
+[root@panda72 ~]# ./ssh.exp
+
+
+
+expect中的login.sh脚本#!/bin/bash
+
+for i in `awk '{print $1}' /mnt/ip-passwd.txt`
+do
+j=`grep $i /mnt/ip-passwd.txt |awk '{print $2}'`
+expect /mnt/ssh2.exp $i $j
+done
+
+
+范例2：实现通过SSH自动登录对服务器进行批量管理
+
+
+
+
+
+第2章 正则表达式的使用
+重要的文本处理工具：vim sed awk grep
+2.1 概念
+       正则表达式是对字符串操作的一种逻辑公式，就是用事先定义好的一些特定字符、及这些特定字符的组合，组成一个“规则字符串”，这个“规则字符串”用来表达对字符串的一种过滤逻辑。规定一些特殊语法表示字符类、数量限定符和位置关系，然后用这些特殊语法和普通字符一起表示一个模式，这就是正则表达式
+正则表达式使用单个字符串来描述、匹配一系列符合某个句法规则的字符串；
+
+是指一个用来描述或者匹配一系列符合某个句法规则的字符的那个字符串。
+用某种模式去匹配一类字符串。
+shell元字符（也叫通配符）:由shell来解析，如rm –rf *.txt，元字符* shell把它解析为任意多个字符
+正则表达式元字符：由各种执行模式匹配操作的程序来解析，比如：vi、grep、sed、awk、python、mysql
+例如：
+
+http://man.linuxde.net/docs/shell_regex.html
+
+[root@panda72 mnt]# egrep '[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}' ip.txt
+
+172.16.10.1
+10.10.1.1
+5.6.7.8
+192.168.45.244
+[root@panda72 mnt]# egrep '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' ip.txt
+
+172.16.10.1
+10.10.1.1
+5.6.7.8
+192.168.45.244
+第3章 sed
+strem editor  流编辑器
+3.1 概念
+       sed编辑器是一行一行的处理文件内容的。正在处理的内容存放在模式空间(缓冲区)内，处理完成后按照选项的规定进行输出或文件的修改。
+       sed 是一种在线编辑器，它一次处理一行内容。处理时，把当前处理的行存储在临时缓冲区中，称为“模式空间”（pattern space），接着用sed命令处理缓冲区中的内容，处理完成后，把缓冲区的内容送往屏幕。接着处理下一行，这样不断重复，直到文件末尾。文件内容并没有改变，除非你使用重定向存储输出。Sed主要用来自动编辑一个或多个文件；简化对文件的反复操作；
+
+       sed也是支持正则表达式的，如果要使用扩展正则加参数-r
+
+3.2 如何使用
+语法格式：
+sed  [options] ‘[command]’ filename
+
+范例1：将paswd文件中的root替换为awk
+
+[root@panda ~]# sed 's/root/awk/' passwd > newfilename
+
+graphic
+
+注意：s/../../是分隔符，分割符 "/" 可以用别的符号代替 , 比如 “,”   “|”   “_“等 .
+
+[root@panda mnt]# head -10 /etc/passwd > a.txt
+
+[root@panda mnt]# sed 's_/bin/bash_/sbin/nologin_' a.txt
+
+显然 , 此时用 "_" 作分割符比 "/" 好得多
+
+另外：[root@panda opt]# sed '#root#cAWK' a.txt 直接进行匹配处理，在特殊符号前加斜线声明一下。如果是查找替换则不用
+
+范例2：用 & 表示前面匹配的字符串
+
+graphic
+
+sed 默认只替换搜索字符串的第一次出现 , 利用 /g 可以替换搜索字符串所有
+
+范例3：同时替换多项内容：-e
+
+[root@panda mnt]# sed -e '1d' -e '2s/sbin/*****/' a.txt
+
+bin:x:1:1:bin:/bin:/*****/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+[root@panda mnt]# head -5 /etc/passwd > a.txt
+
+[root@panda mnt]# sed 's/root/\&/g;s/daemon/\@/g' a.txt
+
+&:x:0:0:&:/&:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+@:x:2:2:@:/sbin:/sbin/nologin
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+[root@panda mnt]# sed -e '3s/nologin/bash/  -e ‘4s/adm/\$\$/g' a.txt
+
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+daemon:x:2:2:daemon:/sbin:/sbin/bash
+$$:x:3:4:$$:/var/$$:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+3.3 参数列表可以参考下面
+options:
+       -n    抑制自动(默认的) 输出 ***  读取下一个输入行
+
+       -e    执行多个sed指令
+
+       -f     运行脚本
+
+       -i     编辑文件内容 ***
+
+       -i.bak      编辑的同时创造.bak的备份
+
+       -r     使用扩展的正则表达式
+
+command:
+
+       a\    在当前行下面插入文件
+
+       i\     在当前行上面插入文件
+
+       c\    把选定的行改为新的指定的文本
+
+       p     打印 ***
+
+       d     删除 ***
+
+       r/R   读取文件/一行
+
+       w     另存
+
+       s      查找
+
+       y      替换
+
+       h 拷贝模板块的内容到内存中的缓冲区。
+
+       H 追加模板块的内容到内存中的缓冲区。
+
+       g 获得内存缓冲区的内容，并替代当前模板块中的文本。
+
+       G 获得内存缓冲区的内容，并追加到当前模板块文本的后面
+
+       D     删除\n之前的内容
+
+       P     打印\n之前的内容
+
+范例4：显示文件第三行
+
+graphic
+
+graphic
+
+打印日志的5月3号的前5 行
+
+graphic
+
+# sed -n '/^Jun 8/ p' /var/log/messages | sed -n 1,5p
+范例5：显示文件前三行
+
+[root@panda mnt]# head -3 passwd
+
+roooot:x:0:0:root:/root:/bin/bash
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+[root@panda mnt]# sed -n '1,3p' passwd
+
+roooot:x:0:0:root:/root:/bin/bash
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+只显示第1行和第3行内容
+
+graphic
+
+[root@panda mnt]# nl a.txt|sed -n -e '1p;3p'
+
+     1       root:x:0:0:root:/root:/bin/bash
+     3       daemon:x:2:2:daemon:/sbin:/sbin/nologin
+范例6：显示文件除前三行之外的全部内容
+
+[root@panda ~]# sed -n '1,3!p' passwd
+
+范例7：显示文件第三行和之后的三行
+
+[root@panda mnt]# nl passwd |sed -n '5,+4p'
+
+     5       adm:x:3:4:adm:/var/adm:/sbin/nologin
+     6       lp:x:4:7:lp:/var/spoool/lpd:/sbin/nologin
+     7       Sync:x:5:0:sync:/sbin:/bin/sync
+     8       shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+     9       Halt:x:7:0:halt:/sbin:/sbin/halt
+范例8：在文件头插入“###”
+
+[root@panda ~]# sed '1i###&&&&&' b.txt
+
+graphic
+
+范例9：在文件尾插入"@@@"
+
+[root@panda ~]# sed '$a@@@' passwd
+
+范例10：在文件的第二行后插入两行内容
+
+[root@panda ~]# sed '2a hello \' b.txt
+
+roo;root;root
+ww;www;wwwww
+hello
+[root@panda ~]# sed '2a hello \
+
+> nihao a' b.txt
+
+roo;root;root
+ww;www;wwwww
+hello
+nihao a
+范例11：把文件第三行替换成“$$$”
+
+[root@panda ~]# cat b.txt
+
+roo;root;root
+ww;www;wwwww
+xxxxxxxxxx
+[root@panda ~]# sed '3c$$$$' b.txt
+
+roo;root;root
+ww;www;wwwww
+$$$$
+[root@panda ~]# sed '3c%%%%%%%' b.txt
+
+roo;root;root
+ww;www;wwwww
+%%%%%%%
+[root@panda opt]# sed '/^SELINUX=/cSELINUX=disabled' /etc/selinux/config  ---针对查找到的内容进行替换
+
+[root@panda72 mnt]# sed '/^SELINUX=/cSELINUX=disabled' /etc/selinux/config ^C
+
+[root@panda72 mnt]# sed 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config ^C
+
+范例12：sed 的-i选项可以直接修改文件中的内容
+
+[root@xuegod60 ~]# sed -i 's/root/rm/' passwd
+
+范例13：复制粘贴
+
+将2到4行贴到尾
+
+[root@panda mnt]# sed '2,4H;$G' a.txt > d.txt
+
+[root@panda mnt]# cat d.txt
+
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/sbin/nologin
+******
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spoool/lpd:/sbin/nologin
+bin:x:1:1:bin:/bin:/sbin/nologin
+******
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+将1到3行贴到第6行后面
+
+[root@panda ~]# sed '1,3H;6G' a.txt
+
+a
+b
+c
+d
+e
+f
+a
+b
+c
+g
+将第5行内容替换为第2行的内容，有下面两种写法
+
+[root@panda ~]# cat mima
+
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+Sync:x:5:0:sync:/sbin:/bin/sync
+sunc:x:5:0:sunc:/sbin:/bin/sync
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+Halt:x:7:0:halt:/sbin:/sbin/halt
+[root@panda ~]# sed '2h;/shutdown/g' mima
+
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+Sync:x:5:0:sync:/sbin:/bin/sync
+sunc:x:5:0:sunc:/sbin:/bin/sync
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+Halt:x:7:0:halt:/sbin:/sbin/halt
+[root@panda ~]# sed '2h;5g' mima
+
+adm:x:3:4:adm:/var/adm:/sbin/nologin
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+Sync:x:5:0:sync:/sbin:/bin/sync
+sunc:x:5:0:sunc:/sbin:/bin/sync
+lp:x:4:7:lp:/var/spool/lpd:/sbin/nologin
+Halt:x:7:0:halt:/sbin:/sbin/halt
+范例14：删除空行
+
+[root@panda~]# sed '/^$/d' passwd  > c.txt
+
+[root@panda72 mnt]# sed -n '/^$/p' /etc/ssh/sshd_config |wc -l
+
+范例15：将匹配的行记录到新的文件中
+
+把fstab中包含xfs的记录（行）写入新的文件中
+
+[root@panda ~]# sed '/xfs/w newfstab' /etc/fstab
+
+[root@panda ~]# cat newfstab
+
+UUID=d58f48eb-26cd-45a4-87f6-d6018dbe443b /                       xfs     defaults        0 0
+UUID=b00399dc-6868-4295-837a-a3ad42e6f901 /boot                   xfs     defaults        0 0
+范例16：备份，把原文件备分后，再进行修改原文件
+
+[root@panda ~]# sed -i.bak '1c***********' b.txt
+
+[root@panda ~]# cat b.txt
+
+***********
+wwwwwwwwwwwwwww
+GGGGGGGGG
+[root@panda ~]# cat b.txt.bak
+
+rootrootrootroot
+wwwwwwwwwwwwwww
+GGGGGGGGG
+范例17：读入文件
+
+[root@panda opt]# sed '3r/etc/hosts' c.txt
+
+[root@panda opt]# sed '/root/r/etc/hosts' c.txt
+
+==========================================================================
+
+删除文件中空行和#号开头的行
+
+cp /etc/ssh/sshd_config /opt/test.txt
+
+[root@panda opt]# cat apache.conf |wc -l
+
+153
+[root@panda opt]# grep '^$' apache.conf |wc -l
+
+26
+[root@panda opt]# grep '^#' apache.conf |wc -l
+
+110
+[root@panda opt]# grep -v '^#\|^$' apache.conf |wc –l   ---或者的使用
+
+17
+[root@panda opt]# sed '/^#\|^$/d' apache.conf |wc -l
+
+17
+脚本替换
+
+[root@panda opt]# for i in {1..100};do echo "$i ${i}0 ${i}00" >> a.txt;done
+
+[root@panda opt]# sed -n '/10/p' a.txt   ----这个是 / /匹配模式
+
+1 10 100
+10 100 1000
+11 110 1100
+21 210 2100
+31 310 3100
+41 410 4100
+51 510 5100
+61 610 6100
+71 710 7100
+81 810 8100
+91 910 9100
+100 1000 10000
+[root@panda opt]# sed -n '/10/s/10/A/p' a.txt   查找10并对找到的10进行替换
+
+A0 1000 10000
+1 A 100
+A 100 1000
+11 1A 1100
+21 2A 2100
+31 3A 3100
+41 4A 4100
+51 5A 5100
+61 6A 6100
+71 7A 7100
+81 8A 8100
+91 9A 9100
+A0 1000 10000
+[root@panda opt]# sed '4,6d' a.txt  --删除第4到6行
+
+4 40 400
+5 50 500
+6 60 600
+7 70 700
+8 80 800
+9 90 900
+10 100 1000
+11 110 1100
+12 120 1200
+13 130 1300
+14 140 1400
+15 150 1500
+[root@panda opt]# sed '1~3d' a.txt  ---第1行开始每3行删除一行
+
+2 20 200
+3 30 300
+5 50 500
+6 60 600
+8 80 800
+9 90 900
+11 110 1100
+12 120 1200
+14 140 1400
+15 150 1500
+第4章 其它
+4.1. SFTP从AIX传输文件到WIN2008脚本
+#!/usr/bin/expect
+#远程主机信息配置
+set sftp_host  11.11111.111.1
+set sftp_port   22
+set sftp_user  aaa
+set sftp_password  xxx
+set sftp_remote_dir  /
+#本地信息配置
+set local_dir  /brcb_edp/TMPDATA/awk/shengji
+set timeout  -1
+#sftp put file to remote server
+spawn sftp -o port=$sftp_port  $sftp_user@$sftp_host
+expect "*assword*"
+send "$sftp_password\r"
+send "lcd $local_dir\r"    切换本地目录
+expect "sftp>"
+send "cd $sftp_remotet_dir\r"    切换远程服务器目录
+expect "sftp>"
+send "put HD_COBS2014.txt\r"   put上传:把本地内容上传到远程服务器  get                                  下载:从远程服务器下载东西到本地
+expect "sftp>"
+send "quit\r"
+expect eof

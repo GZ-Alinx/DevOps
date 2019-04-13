@@ -1,0 +1,770 @@
+2-5-搭建DNS服务器实现域名解析
+学习一个服务的过程：
+1、  此服务器的概述：名字，功能，特点，端口号
+2、  安装
+3、  配置文件的位置
+4、  服务启动关闭脚本，查看端口
+5、  此服务的使用方法
+6、  修改配置文件，实战举例
+7、  排错（从下到上，从内到外）
+本节所讲内容：
+•        DNS服务器常见概念
+•        DNS服务器安装及相关配置文件
+•        实战：为公司内网搭建一个DNS服务器
+•        实战：设置DNS递归查询和迭代查询
+•        实现：搭建DNS主从服务器
+DNS服务端：xuegod63.cn   IP：10.10.10.63
+DNS客户端：xuegod64.cn   IP：10.10.10.64
+DNS服务概述：
+DNS（Domain Name System）域名系统，在TCP/IP 网络中有非常重要的地位，能够提供域名与IP地址的解析服务。
+
+DNS 是一个分布式数据库，命名系统采用层次的逻辑结构，如同一棵倒置的树，这个逻辑的树形结构称为域名空间，由于DNS 划分了域名空间，所以各机构可以使用自己的域名空间创建DNS信息。
+注：DNS 域名空间中，树的最大深度不得超过127 层，树中每个节点最长可以存储63 个字符。
+1、域和域名
+DNS 树的每个节点代表一个域，通过这些节点，对整个域名空间进行划分，成为一个层次结构。
+域名空间的每个域的名字，通过域名进行表示。
+域名：通常由一个完全合格域名（FQDN）标识。FQDN能准确表示出其相对于DNS 域树根的位置，也就是节点到DNS 树根的完整表述方式，从节点到树根采用反向书写，并将每个节点用“.”分隔，对于DNS 域google 来说，其完全正式域名（FQDN）
+为google.com。
+例如，google为com域的子域，其表示方法为google.com，而www为google域中的子域，可以使用www.google.com表示。
+
+注意：通常，FQDN 有严格的命名限制，长度不能超过256 字节，只允许使用字符a-z,0-9,A-Z
+和减号（-）。点号（.）只允许在域名标志之间（例如“google.com”）或者FQDN 的结尾使用。
+域名不区分大小。
+由最顶层到下层，可以分成：根域、顶级域、二级域、子域。
+Internet 域名空间的最顶层是根域（root），其记录着Internet 的重要DNS 信息，由Internet域名注册授权机构管理，该机构把域名空间各部分的管理责任分配给连接到Internet 的各个组织。
+“.”全球有13个根(root)服务器
+DNS 根域下面是顶级域，也由Internet 域名注册授权机构管理。共有3 种类型的顶级域。
+组织域：采用3 个字符的代号，表示DNS 域中所包含的组织的主要功能或活动。比如com 为商业机构组织，edu 为教育机构组织，gov 为政府机构组织，mil 为军事机构组织，net 为网络机构组
+织，org 为非营利机构组织，int 为国际机构组织。
+地址域：采用两个字符的国家或地区代号。如cn 为中国，kr 为韩国，us 为美国。
+反向域：这是个特殊域，名字为in-addr.arpa，用于将IP 地址映射到名字（反向查询）。
+对于顶级域的下级域，Internet 域名注册授权机构授权给Internet 的各种组织。当一个组织获得了对域名空间某一部分的授权后，该组织就负责命名所分配的域及其子域，包括域中的计算机和其他设备，并管理分配的域中主机名与IP 地址的映射信息。
+
+2、区(Zone)
+区是DNS 名称空间的一部分，其包含了一组存储在DNS 服务器上的资源记录。
+使用区的概念，DNS 服务器回答关于自己区中主机的查询，每个区都有自己的授权服务器。
+
+3、主域名服务器与辅助域名服务器
+当区的辅助服务器启动时，它与该区的主控服务器进行连接并启动一次区传输，区辅助服务器定期与区主控服务器通信，查看区数据是否改变。如果改变了，它就启动一次数据更新传输。
+每个区必须有主服务器，另外每个区至少要有一台辅助服务器，否则如果该区的主服务器崩溃了，就无法解析该区的名称。
+
+辅助服务器的优点：
+1）容错能力
+配置辅助服务器后，在该区主服务器崩溃的情况下，客户机仍能解析该区的名称。一般把区的主
+服务器和区的辅助服务器安装在不同子网上，这样如果到一个子网的连接中断，DNS 客户机还能
+直接查询另一个子网上的名称服务器。
+
+2）减少广域链路的通信量
+如果某个区在远程有大量客户机，用户就可以在远程添加该区的辅助服务器，并把远程的客户机
+配置成先查询这些服务器，这样就能防止远程客户机通过慢速链路通信来进行DNS 查询。
+
+3）减轻主服务器的负载
+辅助服务器能回答该区的查询，从而减少该区主服务器必须回答的查询数。
+
+4、DNS相关概念
+（1）DNS 服务器
+运行DNS 服务器程序的计算机，储存DNS 数据库信息。DNS 服务器会尝试解析客户机的查询请求。
+在解答查询时，如果DNS 服务器能提供所请求的信息，就直接回应解析结果，如果该DNS 服务器
+没有相应的域名信息，则为客户机提供另一个能帮助解析查询的服务器地址，如果以上两种方法
+均失败，则回应客户机没有所请求的信息或请求的信息不存在。
+
+（2）DNS 缓存
+DNS 服务器在解析客户机请求时，如果本地没有该DNS 信息，则可以会询问其他DNS 服务器，当
+其他域名服务器返回查询结果时，该DNS 服务器会将结果记录在本地的缓存中，成为DNS 缓存。
+当下一次客户机提交相同请求时，DNS 服务器能够直接使用缓存中的DNS 信息进行解析。
+
+2）DNS查询方式：递归查询和迭代查询
+看一个DNS查询过程：
+通过8个步骤的解析过程就使得客户端可以顺利访问www.163.com 这个域名，但实际应用中，通常这个过程是非常迅速的
+<1> 客户机提交域名解析请求，并将该请求发送给本地的域名服务器。
+<2> 当本地的域名服务器收到请求后，就先查询本地的缓存。如果有查询的DNS 信息记录，则直
+接返回查询的结果。如果没有该记录，本地域名服务器就把请求发给根域名服务器。
+<3> 根域名服务器再返回给本地域名服务器一个所查询域的顶级域名服务器的地址。
+<4> 本地服务器再向返回的域名服务器发送请求。
+<5> 接收到该查询请求的域名服务器查询其缓存和记录，如果有相关信息则返回客户机查询结
+果，否则通知客户机下级的域名服务器的地址。
+<6> 本地域名服务器将查询请求发送给返回的DNS 服务器。
+<7> 域名服务器返回本地服务器查询结果（如果该域名服务器不包含查询的DNS 信息，查询过程
+将重复<6>、<7>步骤，直到返回解析信息或解析失败的回应）。
+<8> 本地域名服务器将返回的结果保存到缓存，并且将结果返回给客户机。
+
+5、两种查询方式：
+（1）递归查询
+递归查询是一种DNS 服务器的查询模式，在该模式下DNS 服务器接收到客户机请求，必须使用一
+个准确的查询结果回复客户机。如果DNS 服务器本地没有存储查询DNS 信息，那么该服务器会询
+问其他服务器，并将返回的查询结果提交给客户机。
+（2）迭代查询
+DNS 服务器另外一种查询方式为迭代查询，当客户机发送查询请求时，DNS 服务器并不直接回复查询结果，而是告诉客户机另一台DNS 服务器地址，客户机再向这台DNS 服务器提交请求，依次循环直到返回查询的结果为止。
+6、正向解析与反向解析
+1）正向解析
+
+正向解析是指域名到IP 地址的解析过程。
+2）反向解析
+反向解析是从IP 地址到域名的解析过程。反向解析的作用为服务器的身份验证。
+
+http://dns.aizhan.com/
+
+7、DNS资源记录
+1）SOA资源记录
+每个区在区的开始处都包含了一个起始授权记录（Start of Authority Record）,简称SOA 记录。
+SOA 定义了域的全局参数，进行整个域的管理设置。一个区域文件只允许存在唯一的SOA 记录。
+2）NS资源记录
+NS（NameServer）记录是域名服务器记录，用来指定该域名由哪个DNS服务器来进行解析。每个区在区根处至少包含一个NS 记录。
+3）A资源记录
+地址（A）资源记录把FQDN 映射到IP 地址。因为有此记录，所以DNS服务器能解析FQDN域名对应的IP 地址。FQDN：(FullyQualified Domain Name)完全合格域名/全称域名
+4）PTR资源记录
+相对于A 资源记录，指针（PTR）记录把IP地址映射到FQDN。 用于反向查询，通过IP地址，找到域名。
+5）CNAME资源记录
+别名记录（CNAME）资源记录创建特定FQDN 的别名。用户可以使用CNAME 记录来隐藏用户网络的实现细节，使连接的客户机无法知道真正的域名。
+
+例：ping百度时，解析到了百度的别名服务器。百度有个cname=www.a.shifen.com.的别名
+6）MX资源记录
+邮件交换（MX）资源记录，为DNS 域名指定邮件交换服务器。
+邮件交换服务器是为DNS 域名处理或转发邮件的主机。处理邮件指把邮件投递到目的地或转交另一不同类型的邮件传送者。转发邮件指把邮件发送到最终目的服务器，用简单邮件传输协议SMTP 把邮件发送给离最终目的地最近的邮件交换服务器，或使邮件经过一定时间的排队。
+以上是相关概念。
+模式：C/S 模式
+2、端口
+[root@xuegod64 ~]#vim /etc/services
+复制代码
+端口：
+tcp/53  udp/53    #用于客户端查询
+tcp/953 udp/953   #用于DNS主从同步
+安装DNS：
+BIND 简介
+BIND 全称为Berkeley Internet Name Domain(伯克利因特网名称域系统)。BIND 主要有三个版
+本：BIND4、BIND8、BIND9。
+BIND8 融合了许多提高效率、稳定性和安全性的技术，而BIND9 增加了一些超前的理念：IPv6支持、密钥加密、多处理器支持、线程安全操作、增量区传送等等。
+安装程序：
+yum install bind bind-chroot bind-utils   -y
+复制代码
+bind-9.7.3-8.P3.el6.x86_64.rpm   #该包为DNS服务的主程序包。
+bind-chroot-9.7.3-8.P3.el6.x86_64.rpm   # 提高安全性。
+#bind-chroot是bind的一个功能,使bind可以在一个chroot 的模式下运行.也就是说,bind运行时的/(根)目录,并不是系统真正的/(根)目录,只是系统中的一个子目录而已.这样做的目的是为了提高安全性.因为在chroot的模式下,bind可以访问的范围仅限于这个子目录的范围里,无法进一步提升,进入到系统的其他目录中.
+bind-utils-9.7.3-8.P3.el6.x86_64.rpm  #该包为客户端工具，默认安装，用于搜索域名指令。
+DNS服务器相关配置文件：
+[root@xuegod63Packages]# ls /etc/named.conf
+/etc/named.conf
+复制代码
+named.conf 是BIND 的核心配置文件，它包含了BIND 的基本配置，但其并不包括区域数据。
+启动服务查看端口
+
+3、启动服务
+[root@xuegod63 Packages]# ls  /var/named/chroot/
+[root@xuegod63Packages]# /etc/init.d/named restart
+Stoppingnamed:                                           [  OK  ]
+Startingnamed:                                           [  OK  ]
+[root@xuegod63 Packages]# netstat -antup | grep53
+tcp        0     0 127.0.0.1:53               0.0.0.0:*                   LISTEN      11135/named
+tcp        0     0 ::1:53                     :::*                        LISTEN      11135/named
+udp        0     0 127.0.0.1:53                0.0.0.0:*                               11135/named
+复制代码
+
+//要先启动named服务，否则/var/named/chroot/目录下的文件不会被挂载上。这个和RHEL5是不一样的。
+开记named服务后，会自动挂载，调用chroot功能切换根：
+mount查看文件挂载：
+[root@xuegod63 Packages]# mount
+。。。
+/etc/named on /var/named/chroot/etc/named type none (rw,bind)
+/var/named on /var/named/chroot/var/named type none (rw,bind)
+/etc/named.conf on /var/named/chroot/etc/named.conf type none (rw,bind)
+/etc/named.rfc1912.zones on /var/named/chroot/etc/named.rfc1912.zones type none (rw,bind)
+/usr/lib64/bind on /var/named/chroot/usr/lib64/bind type none (rw,bind)
+/etc/named.iscdlv.key on /var/named/chroot/etc/named.iscdlv.key type none (rw,bind)
+/etc/named.root.key on /var/named/chroot/etc/named.root.key type none (rw,bind)
+复制代码
+
+这样更安全一些。
+此服务的使用方法
+在客户端配置好DNS服务器地址。
+[root@xuegod63 ~]# cat /etc/resolv.conf
+# Generated by NetworkManager
+nameserver 202.106.46.151
+[root@xuegod63 Packages]# vim /etc/sysconfig/network-scripts/ifcfg-eth0
+DNS1=202.106.46.151
+复制代码
+
+修改配置文件，实战举例
+例1：配置DNS服务器解析： xuegod.cn
+例1：配置DNS服务器解析： xuegod.cn
+[root@xuegod63 ~]# vim /var/named/chroot/etc/named.conf   #启动服务后，尽量使用这个路径。
+[root@xuegod63 ~]# cd /var/named/chroot/
+[root@xuegod63 chroot]# ls
+dev  etc  usr  var
+复制代码
+
+整体分3段
+options :对全局生效
+
+zone [zəun]： 针对某个区域生效
+重点说一下type参数：
+type 字段指定区域的类型，对于区域的管理至关重要，一共分为以下几种：
+Master：主DNS服务器：拥有区域数据文件，并对此区域提供管理数据
+Slave[slev]：辅助DNS 服务器：拥有主DNS 服务器的区域数据文件的副本，辅助DNS 服务器会从主DNS 服务器同步所有区域数据。
+Stub [stʌb]：stub区域和slave 类似，但其只复制主DNS服务器上的NS 记录而不像辅助DNS 服务器会复制所有区域数据。
+Forward：一个forward zone 是每个域的配置转发的主要部分。一个zone 语句中的type forward可以包括一个forward 和/或forwarders 子句，它会在区域名称给定的域中查询。如果没有forwarders 语句或者forwarders 是空表，那么这个域就不会有转发，消除了options 语句中有关转发的配置。
+Hint欣特：根域名服务器的初始化组指定使用线索区域hint zone，当服务器启动时，它使用根线索
+来查找根域名服务器，并找到最近的根域名服务器列表。
+配置正向解析区域
+授权DNS 服务器管理xuegod.cn 区域，并把该区域的区域文件命名为xuegod.cn
+3、修改配置文件：
+[root@localhost etc]# vim /var/named/chroot/etc/named.conf
+复制代码
+
+例1：
+
+[root@xuegod63 ~]# cat /var/named/chroot/etc/named.conf
+//
+// named.conf
+//
+// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
+// server as a caching only nameserver (as a localhost DNS resolver only).
+//
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+
+options {
+         listen-on port 53 { any; };            # 监听所有地址
+         listen-on-v6 port 53 { any; };
+         directory         "/var/named";
+         dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+         allow-query     { any; };            #允许所有地址来查询
+         recursion yes;                       #默认支持递归查询
+
+         dnssec-enable yes;
+         dnssec-validation yes;
+         dnssec-lookaside auto;  # 新版本没有此参数
+         /* Path to ISC DLV key */
+         bindkeys-file "/etc/named.iscdlv.key";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "." IN {
+         type hint;
+         file "named.ca";
+};
+
+zone "xuegod.cn" IN {          #配置一个区域
+        type master;            #配置主DNS服务器，记住以分号结束
+        file "xuegod.cn.zone";   #定义区域文件名
+};                                #有分号结束
+include "/etc/named.rfc1912.zones";
+复制代码
+
+3、创建zone文件：
+[root@localhost chroot]# cd /var/named/chroot/var/named/
+[root@xuegod63 named]# cp -a named.localhost xuegod.cn.zone 要加-a或-rp 注意权限。
+复制代码
+配置文件参数说明：
+$TTL 1D ;设置有效地址解析记录的默认缓存时间，默认为1天也就是1D。
+xuegod.cn.     IN SOA    dns.xuegod.cn. admin. xuegod.cn.
+#原来的@表示当前的域xuegod.cn.，为方便大家记忆，我们这里，直接写成xuegod.cn.
+#设置SOA记录为：ns.xuegod.cn.
+#在此配置文件中写域名时，都把根. 也要写上。
+#域管理邮箱admin.xuegod.cn.  由于@有其他含义，所以用“.”代替@。
+0 ；更新序列号，用于标示数据库的变换，可以在10位以内，如果存在辅助DNS区域,建议每次更新完数据库，手动加1.
+1D ；刷新时间，从域名服务器更新该地址数据库文件的间隔时间，默认为1天
+1H ；重试延时，从域名服务器更新地址数据库失败以后，等待多长时间，默认为为1小时
+1W ; 到期，失效时间，超过该时间仍无法更新地址数据库，则不再尝试，默认为一周
+
+3H ；设置无效地址解析记录（该数据库中不存在的地址）默认缓存时间。设置无效记录，最少缓存时间为3小时
+NS @ ;域名服务器记录，用于设置当前域的DNS服务器的域名地址，
+A 127.0.0.1 ; 设置域名服务器的A记录，地址为ipv4的地址127.0.0.1，可以设置成192.168.100.102
+AAAA ::1 ; 设置域名服务器的A记录，地址为ipv6的地址。
+资源记录参数详解：
+1）CNAME资源记录
+别名（CNAME）资源记录用于为某个主机指定一个别名
+CNAME 资源记录语法格式：
+别名 CNAME主机名
+www1.xuegod.cn.  CNAME  www.xuegod.cn.
+2）MX 资源记录
+MX（邮件交换器）资源记录提供邮件传递信息。该记录会指定区域内的邮件服务器名称。
+MX 资源记录语法格式：
+3）PTR资源记录
+指针（PTR）资源记录。该记录与A 记录相反，用于查询IP 地址与主机名的对应关系。
+PTR 资源记录语法格式：
+3.10根区域设置及对应区域文件
+根区域是一个较为特殊的区域，记录列出了全球根域名服务器的信息，域名通常用“.”表示，
+重启DNS服务器： #一定要退出当前目录再重启服务
+[root@xuegod63 named]# service named restart
+Stopping named: .umount: /var/named/chroot/var/named: device is busy.
+        (In some cases useful info about processes that use
+         the device is found by lsof(8) or fuser(1))
+                                                           [  OK  ]
+Starting named:                                            [  OK  ]
+[root@xuegod63 named]# cd
+[root@xuegod63 ~]# service named restart
+Stopping named: .                                          [  OK  ]
+Starting named:                                            [  OK  ]
+复制代码
+
+4、修改DNS地址
+[root@xuegod74 ~]# vim /etc/resolv.conf
+
+nameserver 10.10.10.63
+
+[root@localhost named]# vim /etc/sysconfig/network-scripts/ifcfg-eth0
+
+DEVICE="eth0"
+HWADDR="00:0C:29:A7:3D:8D"
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+IPADDR=192.168.3.248
+NETMASK=255.255.255.0
+GATEWAY=192.168.3.1
+DNS1=10.10.10.63
+[root@xuegod63 ~]# service network restart
+复制代码
+
+5、测试：
+[root@xuegod63 ~]# ping www.xuegod.cn
+PING www.xuegod.cn (10.10.10.63) 56(84) bytes of data.
+64 bytes from xuegod63.cn (10.10.10.63): icmp_seq=1 ttl=64 time=0.196 ms
+64 bytes from xuegod63.cn (10.10.10.63): icmp_seq=2 ttl=64 time=0.160 ms
+
+named.iscdlv.key
+复制代码
+
+二、使用DNS支持迭代查询.
+1、
+[root@localhost etc]# vim /var/named/chroot/etc/named.conf
+
+options {
+        listen-on port 53 { any ; };
+        listen-on-v6 port 53 { any; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { any; };
+        recursion yes;     //默认是支持递归查询的
+
+        #dnssec-enable yes;
+        #dnssec-validation yes;
+        #dnssec-lookaside auto;
+复制代码
+
+//但是要把这三条内容注释了，其它内容不用改，这样客户端才能通过这个DNS进行递归查询。把dns加密通讯功能关闭，才可以和根服务器时行迭代查询。
+测试：
+[root@xuegod64 ~]# vim /etc/sysconfig/network-scripts/ifcfg-eth0
+DNS1=10.10.10.63
+[root@xuegod64 ~]#
+[root@xuegod64 ~]# service network restart
+复制代码
+
+2、在另一台主机上进行测试：
+[root@localhost network-scripts]# ping www.baidu.com
+PING www.a.shifen.com (61.135.169.105) 56(84) bytes of data.
+64 bytes from 61.135.169.105: icmp_seq=1 ttl=55 time=318 ms
+64 bytes from 61.135.169.105: icmp_seq=3 ttl=55 time=147 ms
+复制代码
+
+三、搭建DNS转发服务器
+家庭路由器就是一个典型的转发服务器
+1、
+[root@localhost etc]# vim /var/named/chroot/etc/named.conf
+复制代码
+
+改：
+把上面添加的
+zone "xuegod.cn"IN{
+          type master;
+          file "xuegod.cn.zone";
+};
+这三行内容注释或者删除，再添加两行内容：
+forward  only ;   //仅执行转发操作 ，only:仅转发;first：先查找本地zone，再转发
+            forwarders  { 8.8.8.8; };    //指定转发查询请求的DNS服务器列表
+复制代码
+
+即：
+options {
+        listen-on port 53 { any; };
+        listen-on-v6 port 53 { any; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { any; };
+        recursion yes;    //允许递归查询
+
+        #dnssec-enable yes;  //注释这三行
+        #dnssec-validation yes;
+        #dnssec-lookaside auto;
+
+         forward  only ;   //仅执行转发操作 ，only:仅转发;first：先查找本地zone，再转发
+            forwarders  { 8.8.8.8; };    //指定转发查询请求的DNS服务器列表
+
+        bindkeys-file "/etc/named.iscdlv.key";
+};
+
+也可以直接在zone修改转发
+zone "xuegod.cn" IN {
+       type forward;
+       forwarders { 211.136.192.6; };
+       forward only;
+};
+复制代码
+
+四、搭建DNS主从服务器
+1、搭建一个主DNS服务器A。配置内容如下：
+[root@localhost etc]# vim named.conf
+//
+// named.conf
+//
+// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
+// server as a caching only nameserver (as a localhost DNS resolver only).
+//
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+
+options {
+        listen-on port 53 { any ; };
+        listen-on-v6 port 53 { any; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { any; };
+        recursion yes;
+
+        #dnssec-enable yes;
+        #dnssec-validation yes;
+        #dnssec-lookaside auto;
+
+        /* Path to ISC DLV key */
+        bindkeys-file "/etc/named.iscdlv.key";
+};
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+}
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+
+zone "xuegod.cn" IN {
+        type master;
+        file "xuegod.cn.zone";
+        allow-transfer { 10.10.10..0/24; };  #指定允许哪个网段的从DNS服务器，可以同步主DNS服务器zone文件，不写默认为所有。
+};
+include "/etc/named.rfc1912.zones";
+配置完成要重启服务service named restart
+复制代码
+
+2、从DNS服务器的配置
+##主从时间一定要保持一致
+安装程序：
+yum install bind bind-chroot bind-utils   -y
+复制代码
+bind-9.7.3-8.P3.el6.x86_64.rpm   #该包为DNS服务的主程序包。
+bind-chroot-9.7.3-8.P3.el6.x86_64.rpm   # 提高安全性。
+#bind-chroot是bind的一个功能,使bind可以在一个chroot 的模式下运行.也就是说,bind运行时的/(根)目录,并不是系统真正的/(根)目录,只是系统中的一个子目录而已.这样做的目的是为了提高安全性.因为在chroot的模式下,bind可以访问的范围仅限于这个子目录的范围里,无法进一步提升,进入到系统的其他目录中.
+bind-utils-9.7.3-8.P3.el6.x86_64.rpm  #该包为客户端工具，默认安装，用于搜索域名指令
+[root@xuegod64 Packages]# service named restart
+Stopping named:                                            [  OK  ]
+Starting named:                                            [  OK  ]
+
+[root@localhost etc]# vim named.conf
+
+options {
+        listen-on port 53 { any; };
+        listen-on-v6 port 53 { any; };
+        directory       "/var/named";
+        dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+        allow-query     { any; };
+        #recursion no;
+        recursion yes;
+
+        #dnssec-enable yes;
+        #dnssec-validation yes;
+        #dnssec-lookaside auto;
+
+        # forward  only ;
+
+        # forwarders  { 192.168.3.248; };
+        bindkeys-file "/etc/named.iscdlv.key";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "." IN {
+        type hint;
+        file "named.ca";
+};
+zone "xuegod.cn." IN {
+        type slave;
+        file "slaves/xuegod.cn.zone.file";
+        masters { 10.10.10.63; };
+};
+include "/etc/named.rfc1912.zones";
+复制代码
+
+注：这样从DNS服务器就可以从主DNS服务器上获取DNS解析记录信息了。写时注意slave slaves  master 单词的书写，有的加s有的不加
+重启从DNS服务器会在：/var/named/chroot/var/named/slaves文件夹下自动创建一个文件xuegod.cn.zone.file 这个文件是从DNS服务器从主DNS服务器上获取的数据
+这样随便一个DNS就可以获取主DNS服务器的解析记录，不安全，文章的后面会讲如何进行主从认证。
+注：主DNS记录中应该有两NS记录，一条是主DNS的NS记录，一条是从DNS服务器的域名记录。
+测试：
+[root@xuegod64 etc]# service named restart
+Stopping named: .                                          [  OK  ]
+Starting named:                                            [  OK  ]
+[root@xuegod64 etc]# ls /var/named/chroot/var/named/slaves/   #看到这个文件，说明成功了
+xuegod.cn.zone.file
+复制代码
+
+五、DNS主从密钥认证
+主服务器重启时，会主动给从服务器发送信息，让从服务器更新自己的记录，通讯端口采用TCP 的53端口。
+注：TSIG (主从DNS的时间必须一样)
+1、  同步时间：
+[root@localhost named]# vim /etc/ntp.conf  //查看ntp服务器
+[root@localhost named]# ntpdate 1.cn.pool.ntp.org #同步时间
+复制代码
+
+
+2、  生成密钥，进行主从认证。
+在主DNS服务器上操作。
+[root@xuegod63 chroot]# rpm -qf `which dnssec-keygen `
+bind-9.7.3-8.P3.el6.x86_64
+复制代码
+
+（1）、dnssec-keygen -a hmac-md5 -b 128 -n HOST 名字
+[root@xuegod63 etc]# cd /var/named/chroot/
+[root@xuegod63 etc]#  dnssec-keygen -a hmac-md5 -b 128 -n HOST abc  #生成一对 对称钥匙
+复制代码
+
+-a hmac-md5：采用hmac-md5加密算法。
+    -b128：生成的密钥长度为128位。
+-n 密钥类型。我们选择主机类型：HOST 。
+-n<nametype>: ZONE | HOST | ENTITY | USER | OTHER
+       (DNSKEY generation defaults to ZONE)
+   abc #为生成密钥的名字
+生成时速度有点慢，因为生成密钥需要一些随机事件，因此我们可以通过移动鼠标或执行来产生一些随机事件。
+[root@xuegod63 etc]# find /
+复制代码
+
+等待大约2分钟，查看生成的密钥对：
+[root@xuegod63 chroot]# ls
+dev  etc  Kabc.+157+36589.key  Kabc.+157+36589.private  usr  var
+
+[root@xuegod63 chroot]# cat Kabc.+157+54214.private
+Private-key-format: v1.2
+Algorithm: 157 (HMAC_MD5)
+Key: nVk1s0B6XVB4BFfkr+vdfQ==   #这是密钥
+[root@xuegod63 chroot]# cat Kabc.+157+54214.key
+abc. IN KEY 512 3 157 nVk1s0B6XVB4BFfkr+vdfQ==
+复制代码
+
+（2）、修改主DNS配置：
+[root@xuegod63 chroot]# vim /var/named/chroot/etc/named.conf
+//
+// named.conf
+//
+// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
+// server as a caching only nameserver (as a localhost DNS resolver only).
+//
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+
+options {
+         listen-on port 53 { any; };
+         listen-on-v6 port 53 { any; };
+         directory        "/var/named";
+         dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+         allow-query     { any; };
+         recursion yes;
+
+         dnssec-enable yes;   #取原来注释
+         dnssec-validation yes; #取原来注释
+         dnssec-lookaside auto; #取原来注释
+
+         /* Path to ISC DLV key */
+         bindkeys-file "/etc/named.iscdlv.key";
+};
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+zone "." IN {
+         type hint;
+         file "named.ca";
+};
+
+key abckey {           #先定义密钥的名字
+        algorithm hmac-md5;
+        secret "nVk1s0B6XVB4BFfkr+vdfQ==";
+
+};
+zone "xuegod.cn." IN {
+         type master;
+         file "xuegod.cn.zone";
+         allow-transfer { key abckey; };      #采用密钥进行同步
+};
+include "/etc/named.rfc1912.zones";
+复制代码
+
+重启服务
+（3）、从DNS 服务器：10.10.10.64：
+#先定义密钥
+#采用密钥进行同步
+[root@xuegod64 chroot]# vim /var/named/chroot/etc/named.conf
+//
+// named.conf
+//
+// Provided by Red Hat bind package to configure the ISC BIND named(8) DNS
+// server as a caching only nameserver (as a localhost DNS resolver only).
+//
+// See /usr/share/doc/bind*/sample/ for example named configuration files.
+//
+
+options {
+         listen-on port 53 { any; };
+         listen-on-v6 port 53 { any; };
+         directory        "/var/named";
+         dump-file       "/var/named/data/cache_dump.db";
+        statistics-file "/var/named/data/named_stats.txt";
+        memstatistics-file "/var/named/data/named_mem_stats.txt";
+         allow-query     { any; };
+         recursion yes;
+
+         dnssec-enable yes;
+         dnssec-validation yes;
+         dnssec-lookaside auto;
+
+         /* Path to ISC DLV key */
+         bindkeys-file "/etc/named.iscdlv.key";
+};
+
+logging {
+        channel default_debug {
+                file "data/named.run";
+                severity dynamic;
+        };
+};
+
+zone "." IN {
+         type hint;
+         file "named.ca";
+};
+key abckey {    #先定义密钥名
+        algorithm hmac-md5;
+        secret "fN6nW73LycZuTzENAQ4ISw==";
+
+};
+
+zone "xuegod.cn." IN {
+         type slave;
+         file "slaves/xuegod.cn.zone.file";
+         masters { 10.10.10.63 key abckey; };   #采用密钥进行同步
+};
+include "/etc/named.rfc1912.zones";
+复制代码
+
+重启服务进行测试：
+[root@xuegod63 chroot]# cd
+[root@xuegod63 ~]# service named restart
+Stopping named: .                                          [  OK  ]
+Starting named:                                            [  OK  ]
+[root@xuegod63 ~]#
+复制代码
+
+从DNS服务器：
+[root@xuegod64 ~]# rm -rf /var/named/chroot/var/named/slaves/xuegod.cn.zone.file
+[root@xuegod64 ~]# service named restart
+Stopping named: .                                          [  OK  ]
+Starting named:                                            [  OK  ]
+[root@xuegod64 ~]# ls /var/named/chroot/var/named/slaves/
+xuegod.cn.zone.file
+复制代码
+
+测试工具：
+nslookup 测试域名解析
+(1)非交互式模式
+语法： nslookup 域名或IP 地址
+例：
+[root@xuegod63 chroot]# nslookup www.xuegod.cn
+Server:             8.8.8.8
+Address:  8.8.8.8#53
+
+Non-authoritative answer:
+Name:     www.xuegod.cn
+Address: 112.124.185.97
+复制代码
+
+（2）交互模式
+[root@xuegod63 ~]# nslookup
+> www.g.cn
+Server:             10.10.10.63
+Address:  10.10.10.63#53
+
+Non-authoritative answer:
+Name:     www.g.cn
+Address: 203.208.49.178
+Name:     www.g.cn
+Address: 203.208.49.179
+Name:     www.g.cn
+Address: 203.208.49.180
+Name:     www.g.cn
+Address: 203.208.49.176
+Name:     www.g.cn
+Address: 203.208.49.177
+复制代码
+
+dig命令：
+linux下使用dig命令来查询域名信息,当然也可以使用nslookup，但dig比nslookup更方便更强大一些。
+安装：
+[root@xuegod63 ~]# rpm -qf `which dig`
+bind-utils-9.7.3-8.P3.el6.x86_64
+复制代码
+
+
+例：
+使用114.114.114.114DNS服务器解析www.xuegod.cn
+[root@xuegod63 ~]# dig @114.114.114.114 www.xuegod.cn
+
+; <<>> DiG 9.7.3-P3-RedHat-9.7.3-8.P3.el6 <<>> @114.114.114.114 www.xuegod.cn
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 23192
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.xuegod.cn.                    IN    A
+
+;; ANSWER SECTION:
+www.xuegod.cn.            30    IN    A      112.124.185.97
+
+;; Query time: 19 msec
+;; SERVER: 114.114.114.114#53(114.114.114.114)
+;; WHEN: Wed Mar 11 21:02:29 2015
+;; MSG SIZE  rcvd: 47
+复制代码
+
+补充：双线智能DNS：
+智能DNS（Bind-view）：
+智能DNS的原理很简单：在用户解析一个域名的时候，判断一下用户 的IP，然后跟DNS服务器内部的IP表匹配一下，看看用户是电信还是网通用户，然后给用户返回对应的IP地址。目前的域名服务运营商不提供智能DNS服务，所以必须自行架设DNS服务或者使用网上免费的智能DNS服务，如DNSPOD.
+https://www.dnspod.cn/
+
+那我们为什么要使用智能DNS服务器：1、因为不同ISP厂商有竞争，使得我们成为受害者，细心的网友一定会发现，南方的网友访问北方的网站一般都比较慢，北方的网友访问南方的网站也很慢。这些都是厂商之间的竞争导致的。
+http://gupt12.blog.51cto.com/7651206/1263525
+http://linuxfun.me/?p=1023

@@ -1,0 +1,693 @@
+磁盘管理关系后面因磁盘分配与维护非常重要！！！
+
+
+
+1-13-硬盘介绍和磁盘管理
+
+存储基础知识：
+
+LINUX主要的一些知识—>基本分区、逻辑卷LVM、EXT3/4/XFS文件系统、磁盘限额、RAID
+
+本节所讲内容：
+
+硬盘的分类及使用fdisk分区工具
+                     1、认识硬盘的分类及特性
+
+                     2、使用fdisk对磁盘进行操作，分区，格式化(重点)
+
+                     3、开机自动挂载分区
+
+实战使用parted分区工具及扩展swap分区
+                     1、使用parted操作大于等于3T硬盘
+
+                     2、扩展服务器swap内存空间
+
+
+
+硬盘分几种？
+
+从工作原理来说：固态，机械
+
+从硬盘大小来说：2.5 3.5 1.8
+
+从可插拔方式来说：热插拔、非热插拔
+
+从硬盘的主要接口来说：STAT 、SAS、PCIE
+
+存储链接方式来说：本地存储，外部存储
+
+从分区方式来说：
+
+存储大小
+分区软件
+分区表类型
+2TB以下的硬盘
+fdisk/patred/cfdisk
+MSDOS/gpt
+2TB以上的硬盘
+parted/gdisk
+GPT
+如果说你用的msdos（MBR）分区方式：它有一些限制
+
+主分区：只支持4个     ABC ====  分了三块，如果想分10块盘
+
+扩展分：3个主分区+1个扩展分区   D,这个扩展分区是不可用
+
+逻辑分区：是从扩展分区来的    在D盘的基础上。继续划分分区：EFGHIJK
+
+如果你用的是GPT的分区方式，那以它没有限制
+
+注意：从MBR转到GPT分区或者说从GPT转到MBR会导致数据全部丢失
+
+第1章 硬盘的分类
+1.1 认识硬盘的分类
+graphic
+常见硬盘品牌：希捷  西数  日立   hp  dell  IBM
+
+1.2 硬盘的类型
+IDE   SCSI   SAS  STAT（1 -2 -3）SSD
+1.2.1-SCSI硬盘
+graphic
+1.2.2-IDE硬盘
+graphic
+1.2.3-SAS硬盘
+graphic
+日立存储硬盘如下图
+
+graphic
+
+graphic
+
+IBM硬盘如下图
+
+graphic
+
+graphic
+
+graphic
+
+1.2.4-SATA硬盘
+graphic
+1.2.5-SSD硬盘
+graphic
+在内核当中：不同的接口对应不同的命名方式
+
+操作系统
+IDE
+STAT
+SAS
+RHEL5
+/dev/hda
+/dev/sda
+/dev/sda
+RHEL6
+/dev/sda
+/dev/sda
+/dev/sda
+KVM
+/dev/vda
+
+
+
+第2章 硬盘分区介绍
+       硬盘分区就是把一个硬盘驱动器划分为多个逻辑存储单元，我们把这些单元称为分区，通过这些分区，做为这个操作系统的管理员就可以通过使用不同的分区来执行不同的功能操作,例如：
+       限制应用或用户的可用空间
+
+       允许从同一个磁盘进行不同的操作系统多重启动
+
+       将系统文件与用户文件进行分隔
+
+       限制磁盘空间使用
+
+分区方案：MBR和GPT两种
+
+2.1 硬盘分区符认识
+注意：使用分区工具fdisk对磁盘进行操作，分区，格式化(重点)
+正常使用一块磁盘:
+
+购买设备à设备联机à磁盘分区à磁盘格式化(创建文件系统)à磁盘挂载à正常使用
+
+graphic
+
+graphicgraphic
+
+
+
+2.2 使用fdisk管理分区
+在虚拟机新添加硬盘后，两种方法可以发现硬盘：
+重启服务器
+通过命令
+              a: [root@panda ~]# echo "- - -" > /sys/class/scsi_host/host0/scan
+
+              b：[root@panda ~]# for i in {0..32};do echo "- - -" > /sys/class/scsi_host/host$i/scan;done
+
+fdisk：磁盘分区,是Linux发行版本中最常用的分区工具
+
+用法：fdisk [选项] device
+
+常用的选项 ： -l 查看硬盘分区表
+
+案例：在sdb盘上创建一个大小为1G名称为xuegod的文件系统
+
+添加硬盘
+对sdb这块盘划分一个1G的分区出来
+[root@panda mnt]# fdisk /dev/sdb
+
+Welcome to fdisk (util-linux 2.23.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+Device does not contain a recognized partition table
+Building a new DOS disklabel with disk identifier 0x5a171572.
+Command (m for help): m
+Command action
+   a   toggle a bootable flag
+   b   edit bsd disklabel
+   c   toggle the dos compatibility flag
+   d   delete a partition
+   g   create a new empty GPT partition table
+   G   create an IRIX (SGI) partition table
+   l   list known partition types
+   m   print this menu
+   n   add a new partition     创建一个新的分区
+   o   create a new empty DOS partition table
+   p   print the partition table    打印分区信息
+   q   quit without saving changes   结束分区但不保存
+   s   create a new empty Sun disklabel
+   t   change a partition's system id    改变分区的类型
+   u   change display/entry units
+   v   verify the partition table
+   w   write table to disk and exit   结束保存并退出
+   x   extra functionality (experts only)
+Command (m for help): n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p):
+Using default response p
+Partition number (1-4, default 1):
+First sector (2048-41943039, default 2048):    默认忽略不填
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-41943039, default 41943039): +1G
+Partition 1 of type Linux and of size 1 GiB is set
+Command (m for help): p
+Disk /dev/sdb: 21.5 GB, 21474836480 bytes, 41943040 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x5a171572
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048     2099199     1048576   83  Linux
+Command (m for help): w
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+Syncing disks.
+[root@panda mnt]# ls /dev/sdb*
+
+/dev/sdb  /dev/sdb1
+对新分区划行格式化文件系统操作
+[root@panda mnt]# mkfs.xfs /dev/sdb1
+
+meta-data=/dev/sdb1              isize=256    agcount=4, agsize=65536 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=262144, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+创建一个挂载点（一个设备想让他能够使用，必须要进行挂载，要进行挂载必须要有一个挂载点或叫挂载目录（这个挂载点可以用现有已存在的目录，或者自己创建一个目录，mount命令不会自动创建这个目录））
+       [root@panda mnt]# mkdir /xuegod
+
+进行挂载（用mount命令）
+说明：mount是用来对设置进行挂载的，umont用来对挂载的设备进行卸载，语法如下：
+
+mount 设备的绝对路径 挂载点
+[root@panda mnt]# mount /dev/sdb1 /xuegod
+
+2）umount 挂载点   //卸载方式1
+
+3）umount 设备路径  //卸载方式2
+
+注意： 在卸载前，要保证你当前所处的位置不在当前的目录内，或者说你的这个挂载点目录没有被占用，如果无法umount成功，可以通过以下方式查看来判断哪个进程占用你的这个目录
+
+graphic
+
+# df -Th /qq  查看容量
+挂载的限制：
+
+根目录是必须挂载的，而且一定要先于其他mount point被挂载。因为mount是所有目录的根目录，其他目录都是由根目录  / 衍生出来的。
+挂载点必须是已经存在的目录，系统不会自己创建
+挂载点的目录可以任意指定，但必须遵守必要的系统目录架构原则
+所有挂载点在同一时间只能被挂载一次
+所有分区在同一时间只能挂在一次
+若进行卸载，必须将工作目录退出挂载点（及其子目录），也就先umount之后才可以被卸载,一个挂载点可以被多个分区设备挂载
+
+
+6、确认查看
+
+[root@panda mnt]# df -Th /xuegod
+
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/sdb1      xfs  1014M   33M  982M   4% /xuegod
+7、写入配置文件，让它开机自动挂载
+
+通过设备名进行挂载
+
+[root@panda mnt]# echo "/dev/sdb1 /xuegod xfs defaults 0 0" >> /etc/fstab
+
+通过设备的UUID值进行挂载（建议以这种方式进行挂载）
+
+[root@panda mnt]# blkid
+
+/dev/sda1: UUID="b680e7be-d07b-46ef-9245-59a9a61c8b42" TYPE="xfs"
+/dev/sda2: UUID="7Hd6N2-VO9n-fGSL-sIvE-HQLM-rCyH-ePEl6m" TYPE="LVM2_member"
+/dev/sr0: UUID="2015-10-30-11-11-49-00" LABEL="RHEL-7.2 Server.x86_64" TYPE="iso9660" PTTYPE="dos"
+/dev/mapper/rootvg-rootlv: UUID="1261d4e9-ef28-44ba-8474-4c52953802f9" TYPE="xfs"
+/dev/mapper/rootvg-swaplv: UUID="d6387a0a-fa13-4c3c-bd00-dcd5e9a1c08b" TYPE="swap"
+/dev/dm-0: UUID="1261d4e9-ef28-44ba-8474-4c52953802f9" TYPE="xfs"
+/dev/sdb1: UUID="91909e9e-4eed-4d35-81a5-34b6caf36552" TYPE="xfs"
+[root@panda mnt]#echo " UUID=91909e9e-4eed-4d35-81a5-34b6caf36552” /xuegod xfs defaults 0 0" >> /etc/fstab
+
+graphic
+
+graphic
+
+graphic
+
+/dev/sdb1
+/sdb1
+ext4
+defaults
+0
+0
+要挂载的分区设备
+挂载点
+文件系统类型
+挂载选项
+是否备份
+是否检测
+其中第四列：parameters-文件系统的参数
+
+Async/sync
+设置是否为同步方式运行，默认为async
+auto/noauto
+当下载mount -a 的命令时，此文件系统是否被主动挂载。默认为auto
+rw/ro
+是否以以只读或者读写模式挂载
+exec/noexe
+限制此文件系统内是否能够进行"执行"的操作
+user/nouser
+是否允许用户使用mount命令挂载
+suid/nosuid
+是否允许SUID的存在
+Usrquota
+启动文件系统支持磁盘配额模式
+Grpquota
+启动文件系统对群组磁盘配额模式的支持
+Defaults
+同时具有rw,suid,dev,exec,auto,nouser,async等默认参数的设置 samba nfs
+第五列：是否进行备份。通常这个参数的值为0或者1
+
+0
+代表不要做备份
+1
+代表要每天进行操作
+2
+代表不定日期的进行操作
+
+
+第六列：是否检验扇区：开机的过程中，系统默认会以fsck检验我们系统是否为完整
+
+0
+不要检验
+1
+最早检验（一般根目录会选择）
+2
+1级别检验完成之后进行检验
+
+
+第3章 实战使用parted分区工具
+fdisk无法支持 2TB 以上的分区，此时就用到 parted 这个工具。
+GPT分区：
+
+GPT，全局唯一标识分区表(GUID Partition Table)，它使用128位GUID来唯一标识每个磁盘和分区，与MBR存在单一故障点不同，GPT提供分区表信息的冗余，一个在磁盘头部一个在磁盘尾部；它通过CRC校验和来检测GPT头和分区表中的错误与损坏；默认一个硬盘支持128个分区
+
+3.1 Parted 磁盘分区工具
+parted是Linux中磁盘分区管理的高级工具，对GPT分区方案，也可以使用gdisk工具进行
+1.检查安装
+
+[root@xuegod72 ~]# rpm -qf `which parted`
+
+parted-3.1-23.el7.x86_64
+3.2 查看所有的磁盘状态
+[root@xuegod72 ~]# parted -l
+通过parted 工具创建新的分区-在添加新的大于3t的硬盘
+
+[root@xuegod72 ~]# parted -l
+
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sda: 215GB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+Number  Start   End     Size    Type     File system     标志
+ 1      1049kB  316MB   315MB   primary  xfs             启动
+ 2      316MB   3461MB  3146MB  primary  linux-swap(v1)
+ 3      3461MB  215GB   211GB   primary  xfs
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 8590MB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+Number  Start   End     Size    Type     File system  标志
+ 1      1049kB  2149MB  2147MB  primary  xfs
+ 2      2149MB  5370MB  3221MB  primary  ext4
+警告: 无法以读写方式打开 /dev/sr0 (只读文件系统)。/dev/sr0 已按照只读方式打开。
+Model: NECVMWar VMware IDE CDR10 (scsi)
+Disk /dev/sr0: 4043MB
+Sector size (logical/physical): 2048B/2048B
+Partition Table: msdos
+Disk Flags:
+Number  Start   End     Size    Type     File system  标志
+ 2      1130MB  1156MB  25.7MB  primary
+graphic
+
+graphic
+
+[root@xuegod72 ~]# parted /dev/sdc       #对/dev/sdb分区格式化
+
+GNU Parted 3.1
+Using /dev/sdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) mklabel gpt     #将MBR磁盘格式化为GPT
+(parted) mkpart primary 0 100        #  划分一个起始位置为0大小为100M的主分区
+Warning: The resulting partition is not properly aligned for best performance.     #由此产生的分区不合理对齐的最佳性能。
+Ignore/Cancel? Ignore     #同意/取消       分区大点就不会出现这个问题
+(parted) print    #输出分区信息
+Model: VMware, VMware Virtual S (scsi)
+Disk /dev/sdb: 21.5GB
+Sector size (logical/physical): 512B/512B
+Partition Table: gpt
+Disk Flags:
+Number  Start   End    Size   File system  Name     Flags
+ 1      17.4kB  100MB  100MB               primary
+(parted)
+(parted) q
+Information: You may need to update /etc/fstab.
+[root@xuegod72 ~]# mkfs -t xfs /dev/sdc1    #格式化
+
+meta-data=/dev/sdb1              isize=256    agcount=4, agsize=6103 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=0        finobt=0
+data     =                       bsize=4096   blocks=24409, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=0
+log      =internal log           bsize=4096   blocks=853, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@xuegod72 ~]# mkdir /sdc1   #创建挂载点
+
+[root@xuegod72 ~]# mount /dev/sdb1 /sdc1/     #挂载
+
+[root@xuegod72 ~]# df | tail -1   #验证
+
+/dev/sdc1                 94224    5040     89184   6% /sdc1
+参数解释:
+
+Number：这个就是分区的号举例来说，1号代表的是 /dev/sdb1 的意思；
+
+Start：起始的磁柱位置;
+
+End：结束的磁柱位置;
+
+Size: 分区有多少容量；
+
+Type：就是分区的类型，有primary, extended, logical等类型；
+
+File system：就如同 fdisk 的 System ID 之意。
+
+另外一个分区工具：
+
+[root@panda ~]# gdisk /dev/sdc
+
+GPT fdisk (gdisk) version 0.8.6
+Partition table scan:
+  MBR: protective
+  BSD: not present
+  APM: not present
+  GPT: present
+Found valid GPT with protective MBR; using GPT.
+Command (? for help): ?
+b     back up GPT data to a file
+c     change a partition's name
+d     delete a partition
+i      show detailed information on a partition
+l      list known partition types
+n     add a new partition
+o     create a new empty GUID partition table (GPT)
+p     print the partition table
+q     quit without saving changes
+r      recovery and transformation options (experts only)
+s      sort partitions
+t      change a partition's type code
+v     verify disk
+w    write table to disk and exit
+x     extra functionality (experts only)
+?      print this menu
+Command (? for help): p
+Disk /dev/sdc: 6291456000 sectors, 2.9 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): E722D442-E281-4B67-8DBE-BD20C7D6B455
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 6291455966
+Partitions will be aligned on 8-sector boundaries
+Total free space is 6291065341 sectors (2.9 TiB)
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1              34          195312   95.4 MiB    0700  primary
+   2          195313          390625   95.4 MiB    0700  xfs
+Command (? for help): n
+Partition number (3-128, default 3):
+First sector (390626-6291455966, default = 390632) or {+-}size{KMGTP}:
+Last sector (390632-6291455966, default = 6291455966) or {+-}size{KMGTP}: +100M
+Current type is 'Linux filesystem'
+Hex code or GUID (L to show codes, Enter = 8300): l
+0700 Microsoft basic data  0c01 Microsoft reserved    2700 Windows RE
+4200 Windows LDM data      4201 Windows LDM metadata  7501 IBM GPFS
+7f00 ChromeOS kernel       7f01 ChromeOS root         7f02 ChromeOS reserved
+8200 Linux swap            8300 Linux filesystem      8301 Linux reserved
+8e00 Linux LVM             a500 FreeBSD disklabel     a501 FreeBSD boot
+a502 FreeBSD swap          a503 FreeBSD UFS           a504 FreeBSD ZFS
+a505 FreeBSD Vinum/RAID    a580 Midnight BSD data     a581 Midnight BSD boot
+a582 Midnight BSD swap     a583 Midnight BSD UFS      a584 Midnight BSD ZFS
+a585 Midnight BSD Vinum    a800 Apple UFS             a901 NetBSD swap
+a902 NetBSD FFS            a903 NetBSD LFS            a904 NetBSD concatenated
+a905 NetBSD encrypted      a906 NetBSD RAID           ab00 Apple boot
+af00 Apple HFS/HFS+        af01 Apple RAID            af02 Apple RAID offline
+af03 Apple label           af04 AppleTV recovery      af05 Apple Core Storage
+be00 Solaris boot          bf00 Solaris root          bf01 Solaris /usr & Mac Z
+bf02 Solaris swap          bf03 Solaris backup        bf04 Solaris /var
+bf05 Solaris /home         bf06 Solaris alternate se  bf07 Solaris Reserved 1
+bf08 Solaris Reserved 2    bf09 Solaris Reserved 3    bf0a Solaris Reserved 4
+bf0b Solaris Reserved 5    c001 HP-UX data            c002 HP-UX service
+ed00 Sony system partitio  ef00 EFI System            ef01 MBR partition scheme
+ef02 BIOS boot partition   fb00 VMWare VMFS           fb01 VMWare reserved
+fc00 VMWare kcore crash p  fd00 Linux RAID
+Hex code or GUID (L to show codes, Enter = 8300):
+Changed type of partition to 'Linux filesystem'
+Command (? for help): p
+Disk /dev/sdc: 6291456000 sectors, 2.9 TiB
+Logical sector size: 512 bytes
+Disk identifier (GUID): E722D442-E281-4B67-8DBE-BD20C7D6B455
+Partition table holds up to 128 entries
+First usable sector is 34, last usable sector is 6291455966
+Partitions will be aligned on 8-sector boundaries
+Total free space is 6290860541 sectors (2.9 TiB)
+Number  Start (sector)    End (sector)  Size       Code  Name
+   1              34          195312   95.4 MiB    0700  primary
+   2          195313          390625   95.4 MiB    0700  xfs
+   3          390632          595431   100.0 MiB   8300  Linux filesystem
+Command (? for help): w
+Final checks complete. About to write GPT data. THIS WILL OVERWRITE EXISTING
+PARTITIONS!!
+Do you want to proceed? (Y/N): y
+OK; writing new GUID partition table (GPT) to /dev/sdc.
+The operation has completed successfully.
+[root@panda ~]# ls /dev/sdc*
+
+/dev/sdc  /dev/sdc1  /dev/sdc2  /dev/sdc3
+第4章 实战扩展swap分区
+Swap分区在系统的物理内存不够用的时候，把硬盘空间中的一部分空间释放出来，以供当前运行的程序使用。那些被释放的空间可能来自一些很长时间没有什么操作的程序，这些被释放的空间被临时保存到Swap分区中，等到那些程序要运行时，再从Swap分区中恢复保存的数据到内存中
+SWAP 分区在一些情况下可以提升 Linux 操作系统性能，但在某些情况下又会成为系统运行的瓶颈，下面我们就来详细介绍下 Linux 中的 SWAP 交换分区
+
+SWAP 交换分区是用来存放内存溢出来的数据。
+
+       我们可以将内存想像成一个盆子，运行程序时的数据都被作为水放在内存这个盆子当中。
+
+如果你运行太多的应用程序，导致水过多而（内存这个）盆子已经装不下时，就会将多于部分的水装到 SWAP 交换分区当中。
+
+优点：
+
+       内存用完时，提供更多运行空间
+
+mkswap /devices (格式化成swap格式)
+
+swapon /swap (激活/swap，加入到swap分区中)
+
+vim /etc/fstab (开机自启动新添加的swap分区)
+
+—>添加
+
+/devices swap swap defaults 0 0
+如果不想使用需要删除，只需要执行#swapoff /swap
+
+4.1 先分个区
+[root@xuegod72 ~]# fdisk /dev/sdb
+Welcome to fdisk (util-linux 2.23.2).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+Command (m for help): n
+Partition type:
+   p   primary (2 primary, 0 extended, 2 free)
+   e   extended
+Select (default p): p
+Partition number (3,4, default 3):
+First sector (411648-2097151, default 411648):
+Using default value 411648
+Last sector, +sectors or +size{K,M,G} (411648-2097151, default 2097151): +100M
+Partition 3 of type Linux and of size 100 MiB is set
+Command (m for help): p
+Disk /dev/sdb: 1073 MB, 1073741824 bytes, 2097152 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x324a6a7c
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048      206847      102400   83  Linux
+/dev/sdb2          206848      411647      102400   83  Linux
+/dev/sdb3          411648      616447      102400   83  Linux
+Command (m for help): n
+Partition type:
+   p   primary (3 primary, 0 extended, 1 free)
+   e   extended
+Select (default e): e
+Selected partition 4
+First sector (616448-2097151, default 616448):
+Using default value 616448
+Last sector, +sectors or +size{K,M,G} (616448-2097151, default 2097151):
+Using default value 2097151
+Partition 4 of type Extended and of size 723 MiB is set
+Command (m for help): p
+Disk /dev/sdb: 1073 MB, 1073741824 bytes, 2097152 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x324a6a7c
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048      206847      102400   83  Linux
+/dev/sdb2          206848      411647      102400   83  Linux
+/dev/sdb3          411648      616447      102400   83  Linux
+/dev/sdb4          616448     2097151      740352    5  Extended
+Command (m for help): n
+All primary partitions are in use
+Adding logical partition 5
+First sector (618496-2097151, default 618496):
+Using default value 618496
+Last sector, +sectors or +size{K,M,G} (618496-2097151, default 2097151): +100M
+Partition 5 of type Linux and of size 100 MiB is set
+Command (m for help): p
+Disk /dev/sdb: 1073 MB, 1073741824 bytes, 2097152 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk label type: dos
+Disk identifier: 0x324a6a7c
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1            2048      206847      102400   83  Linux
+/dev/sdb2          206848      411647      102400   83  Linux
+/dev/sdb3          411648      616447      102400   83  Linux
+/dev/sdb4          616448     2097151      740352    5  Extended
+/dev/sdb5          618496      823295      102400   83  Linux
+Command (m for help): w
+The partition table has been altered!
+Calling ioctl() to re-read partition table.
+Syncing disks.
+格式化swap
+
+graphic
+
+验证：
+
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         323          78           7         558         398
+Swap:          2999           0        2999
+[root@xuegod72 ~]# swapon /dev/sdb3
+
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         323          79           7         558         399
+Swap:          3099           0        3099
+[root@xuegod72 ~]# swapon /dev/sdb5
+
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         323          78           7         558         399
+Swap:          3199           0        3199
+[root@xuegod72 ~]# swapoff /dev/sdb5
+
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         324          78           7         558         398
+Swap:          3099           0        3099
+开机自动挂载
+
+graphic
+
+4.2 通过文件增加SWAP空间
+
+[root@xuegod72 ~]# dd if=/dev/zero of=swap_file bs=1M count=500
+
+if表示数据从如来   of表示数据到哪去  bs表示一次读入多少数据  count表示写入多少次
+
+/dev/zero:用处之一就是用0去填充一个文件，直到你需要的大小为止；它主要是用于向设备或文件写入NULL
+
+记录了500+0 的读入
+记录了500+0 的写出
+524288000字节(524 MB)已复制，2.30503 秒，227 MB/秒
+[root@xuegod72 ~]# ls
+
+aa.txt           initial-setup-ks.cfg  公共  视频  文档  音乐
+anaconda-ks.cfg  swap_file             模板  图片  下载  桌面
+[root@xuegod72 ~]# du -sh swap_file
+
+500M      swap_file
+[root@xuegod72 ~]# mkswap -f swap_file
+
+正在设置交换空间版本 1，大小 = 511996 KiB
+无标签，UUID=bc596bc0-524d-4571-a2a7-5149618a9388
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         291          68           7         602         491
+Swap:          2999           0        2999
+[root@xuegod72 ~]# chmod 600 swap_file
+
+[root@xuegod72 ~]# swapon swap_file
+
+[root@xuegod72 ~]# free -m
+
+              total        used        free      shared  buff/cache   available
+Mem:            961         291          66           7         602         491
+Swap:          3499           0        3499
+
+
+
+

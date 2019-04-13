@@ -1,0 +1,29 @@
+git安装
+ yum install git
+
+git -version
+
+git add filename
+git commit -m "说明"
+
+做提交之前需要设置：
+
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+
+设置好邮箱和名字后方可继续提交到库；
+
+
+
+设置要对接的库
+
+$ git remote add origin https://gitee.com/laiziguizhou/java
+
+关联后，使用命令git push -u origin master 第一次推送master分支的所有内容；
+
+此后，每次本地提交后，只要有必要，就可以使用命令 git push origin master推送，最新修改；
+
+
+如果需要修改对接的库，可以删掉对接的库，重新对接
+
+$ git remote remove origin

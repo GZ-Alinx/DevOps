@@ -1,0 +1,625 @@
+1-6-RHEL7用户管理
+
+本节所讲内容：
+q  用户和组的相关配置文件
+q  管理用户和组
+q  RHEL7破解root密码
+
+       用户一般来说是指使用计算机的人，计算机对针使用其的每一个人给了一个特定的名称，用户就可以使用这些名称来登录使用计算机，除了人之外，一些系统服务也需要含有部分特权的用户账户运行；因此出于安全考虑，用户管理应运而生，它加以明确限制各个用户账户的权限，root在计算机中用拥有至高特权，所以一般只作管理用，非特权用户可以通过SU或SUDO程序来临时获得特权
+       GNU/Linux 通过用户和用户组实现访问控制----包括对文件访问、设备使用的控制。
+       Linux 默认的访问控制机制相对简单直接，它还有更加高级的机制，包括 ACL和 集中式身份管理系统
+       个人可以拥有很多账户，只不是彼此名称不同，比如root名称已经占用就不能再用了，此外，任意用户可能从属某个用户组，此用户可以加入某些已经存在的组来获得该组的特权
+GNU/Linux 系统中的每一个文件都从属一个用户（属主）和一个用户组（属组）。另外，还有三种类型的访问权限：读（read）、写（write）、运行（execute）。我们可以针对文件的属主、属组、而设置相应的访问权限。再次，我们可以通过 ls | stat命令查询文件属主、属组和权限
+
+
+
+使用stat命令也可以查看文件所有权和权限：
+属主：
+
+[root@panda ~]# stat -c %U /boot/initrd-plymouth.img
+复制代码
+root
+
+属组：
+[root@panda ~]# stat -c %G /boot/initrd-plymouth.img
+
+复制代码
+root
+
+第1章 用户账号:1.1 用户的分类
+Linux用户三种角色
+l 超级用户： root  拥有对系统的最高的管理权限
+l 普通用户：系统用户 UID:1-999(RHEL7)  1-499(RHEL6)
+                       本地用户 UID:1000+          500+
+              UID:即每个用户的身份标示,类似于每个人的身份证号码.
+l 虚拟用户：伪用户  一般不会用来登录系统的，它主要是用于维持某个服务的正常运行
+
+下图是用户和组的关系：
+       一对一：一个用户可以存在一个组中；    一对多：一个用户可以存在多个组中
+       多对一：多个用户可以存在一个组中；    多对多：多个用户可以存在多个组中
+
+
+
+
+1.2 配置文件
+
+
+名  称
+
+帐号信息
+说  明
+用户配置文件
+/etc/passwd
+记录了每个用户的一些基本属性，并且对所有用户可读，每一行记录对应一个用户，每行记录通过冒号进行分隔
+用户组文件
+/etc/group
+用户组的所有信息存放地儿，并且组名不能重复
+用户对应的密码信息
+/etc/shadow
+因为passwd文件对所有用户是可读的，为安全起见把密码从passwd中分离出来放入这个单独的文件，该文件只有root用户拥有读权限，从而保证密码安全性
+
+
+第2章 用户管理1.2.1 用户命令
+命令：useradd
+
+
+useradd -m -g "初始组" -G "附加组" -s "登陆的shell" "用户"
+
+
+
+l  -m：创建用户主目录/home/[用户名]；（注：在自己的主目录内，即使不是root用户也可以读写文件、安装程序等）
+l  -g：设置用户初始组的名称或数字ID；该组必须是存在的；如果没有设置该选项，useradd会根据/etc/login.defs文件中的USERGROUPS_ENAB环境变量进行设置。默认USERGROUPS_ENAB yes 会用和用户名相同的名字创建群组，GID 等于 UID.
+l  -G：用户要加入的附加组列表；使用逗号分隔多个组，不要添加空格；如果不设置，用户仅仅加入初始组。
+l  -s：用户默认登录shell的路径；启动过程结束后，默认启动的登录shell在此处设定；请确保使用的shell已经安装，默认是 Bash。
+l  有时候需要禁止某些用户执行登录动作，例如用来执行系统服务的用户。将shell设置成 /sbin/nologin 就可以禁止用户登录。
+
+
+
+1.2.2 添加登录用户
+例：添加一个名为harry的用户，并使用bash使用登录的shell
+
+
+[root@panda ~]# useradd -s /bin/bash harry
+复制代码
+
+
+说明：此命令会自动创建harry 组，并成为 harry 的默认登录主组。
+用户帐户的全部信息被保存在/etc/passwd文件。这个文件以如下格式保存了每一个系统帐户的所有信息(字段以“:”分割)
+/etc/passwd 每个字段的作用：
+
+
+[root@panda ~]# head -1 /etc/passwd
+复制代码
+root:x:0:0:root:/root:/bin/bash
+
+用户名 : 密码占位符 : UID :用户所属组的GID  : 用户描述 : 用户主目录（bash中"~"代表那个） : 登录后使用的shell
+
+
+
+
+linux中任何一个命令的操作都必须有一个用户的身份；任何一个程序的运行必须要有一个特定的用户；任何一个文件必须要有一个特定的用户；访问一个文件或目录必须受限于一个用户
+
+1.2.3 指定用户UID
+
+
+[root@panda ~]# useradd -u 1100 xuegod-2
+[root@panda ~]# ls /home
+复制代码
+miao  xuegod-1  xuegod-2
+[root@panda ~]# tail -2 /etc/passwd
+复制代码
+xuegod-1:x:1005:1005::/home/xuegod-1:/bin/bash
+xuegod-2:x:1100:1100::/home/xuegod-2:/bin/bash
+
+
+1.2.4 指定用户主目录
+
+[root@panda ~]# useradd -d /mnt/xuegod-3 xuegod-3
+复制代码
+useradd: cannot set SELinux context for home directory /tmp/xuegod-3
+
+
+1.2.5 指定用户的起始组
+
+[root@panda ~]# id xuegod-1
+复制代码
+uid=1005(xuegod-1) gid=1005(xuegod-1) groups=1005(xuegod-1)
+[root@panda ~]# useradd -g xuegod-1 xuegod-4
+[root@panda ~]# id xuegod-4
+复制代码
+uid=1102(xuegod-4) gid=1005(xuegod-1) groups=1005(xuegod-1)
+[root@panda ~]# grep "god-1\|god-4" /etc/passwd
+复制代码
+xuegod-1:x:1005:1005::/home/xuegod-1:/bin/bash
+xuegod-4:x:1102:1005::/home/xuegod-4:/bin/bash
+
+1.2.6 指定用户附加组
+
+我们也叫它为补充组，用户可以是0个或多个补充组的成员
+其中属于补充组的成员，我们可以在/etc/group中最后一个字段中查看，如下
+
+
+[root@panda ~]# cat /etc/group
+复制代码
+root:x:0:
+bin:x:1:
+daemon:x:2:
+sys:x:3:
+adm:x:4:
+tty:x:5:
+disk:x:6:
+lp:x:7:
+mem:x:8:
+kmem:x:9:
+wheel:x:10:miao
+
+补充组成员的身份主要用于帮助确保用户具有对系统中文件及其它资源的访问权限
+
+
+[root@panda ~]# useradd hr
+[root@panda ~]# useradd fd
+[root@panda ~]# id hr
+复制代码
+uid=1001(hr) gid=1001(hr) groups=1001(hr)
+[root@panda ~]# id fd
+复制代码
+uid=1002(fd) gid=1002(fd) groups=1002(fd)
+
+[root@panda ~]# usermod -G wheel hr
+[root@panda ~]# id hr
+复制代码
+uid=1001(hr) gid=1001(hr) groups=1001(hr),10(wheel)
+[root@panda ~]# usermod -G fd hr
+[root@panda ~]# id hr
+复制代码
+uid=1001(hr) gid=1001(hr) groups=1001(hr),1002(fd)
+[root@panda ~]# usermod -aG wheel hr
+[root@panda ~]# id hr
+复制代码
+uid=1001(hr) gid=1001(hr) groups=1001(hr),10(wheel),1002(fd)
+
+
+
+1.2.7 创建用户的另外的命令
+
+
+
+[root@panda ~]# adduser market
+[root@panda ~]# grep market /etc/passwd /etc/group /etc/shadow
+复制代码
+/etc/passwd:market:x:1004:1004::/home/market:/bin/bash
+/etc/group:market:x:1004:
+/etc/shadow:market:!!:17258:0:99999:7:::
+
+
+1.2.8 删除用户
+语法：userdel 【参数】用户名
+参数：
+-r   删除用，同时删除用户家目录和mailspool下的用户目录
+
+[root@panda ~]# ls /home
+[root@panda ~]# userdel –r xuegod-1
+复制代码
+
+
+
+1.2.9 密码的文件
+
+
+[root@panda ~]# tail -4 /etc/passwd
+复制代码
+xuegod-1:x:1005:1005::/home/xuegod-1:/bin/bash
+xuegod-2:x:1100:1100::/home/xuegod-2:/bin/bash
+xuegod-3:x:1101:1101::/tmp/xuegod-3:/bin/bash
+xuegod-4:x:1102:1005::/home/xuegod-4:/bin/bash
+
+[root@panda ~]# tail -4 /etc/shadow
+复制代码
+xuegod-1:!!:17258:0:99999:7:::
+xuegod-2:!!:17258:0:99999:7:::
+xuegod-3:!!:17258:0:99999:7:::
+xuegod-4:!!:17258:0:99999:7:::
+
+[root@panda ~]# passwd xuegod-1
+复制代码
+Changing password for user xuegod-1.
+New password:
+BAD PASSWORD: The password is shorter than 8 characters
+Retype new password:
+passwd: all authentication tokens updated successfully.
+
+[root@panda ~]# grep xuegod-1 /etc/shadow
+复制代码
+xuegod-1:$6$bfeWip/u$S1KmpF5UWUO0Nl5hdNw1QA0MyO1Mwgc5YszcIFk6ydWcPveBYFY3j3/mqD9M6.sU2PkCrTDguR9TwuCFBJBds1:17258:0:99999:7:::
+
+列说明：
+xuegod-1:$6$bfeWip/u$S1KmpF5UWUO0Nl5hdNw1QA0MyO1Mwgc5YszcIFk6ydWcPveBYFY3j3/mqD9M6.sU2PkCrTDguR9TwuCFBJBds1:17258:0:99999:7:::
+格式说明如下（9个冒号分隔的字段）：
+
+
+
+1
+
+name
+登录名称，这个必须是系统中的有效账户名
+2
+password
+已加密密码，查看帮助说明：盐
+
+man 5 passwd
+
+man 5 shadow
+
+man 5 group
+
+man 3 crypt
+3
+lastchange
+最近一次更改密码的日期，以距离1970/1/1的天数表示
+4
+min-age
+不能更改密码的最少天数，最近更改过后几天才可以更改；如果为0表示“最短期限要求”
+5
+maxage
+密码过期时间，必须更改密码前的最多天数
+6
+warning
+密码即将到期的警告期，以天数表示，0表示“不提供警告”
+7
+inactive
+宽限天数，密码到期后
+8
+expire
+账号过期时间，以距离1970/1/1的天数计算
+9
+blank
+预留字段
+
+
+
+扩展：
+另外一种添加密码
+
+[root@panda ~]# echo 123456|passwd --stdin xuegod-2
+复制代码
+
+
+.2.10 修改密码信息（扩展）
+Ø  useradd在创建用户时，会参照的文件如下：
+
+
+[root@panda ~]# vim /etc/login.defs
+[root@panda ~]# cat /etc/login.defs |grep -v "^#\|^[        DISCUZ_CODE_23        ]quot;
+复制代码
+MAIL_DIR        /var/spool/mail
+PASS_MAX_DAYS        99999
+PASS_MIN_DAYS        0
+PASS_MIN_LEN        5
+PASS_WARN_AGE        7
+UID_MIN                  1000
+UID_MAX                 60000
+SYS_UID_MIN               201
+SYS_UID_MAX               999
+GID_MIN                  1000
+GID_MAX                 60000
+SYS_GID_MIN               201
+SYS_GID_MAX               999
+CREATE_HOME        yes
+UMASK           077
+USERGROUPS_ENAB yes
+ENCRYPT_METHOD SHA512
+
+[root@panda ~]# vim /etc/default/useradd
+[root@panda ~]# cat !$
+复制代码
+cat /etc/default/useradd
+# useradd defaults file
+GROUP=100
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/bash
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=yes
+
+Ø  密码的年龄问题 password aging
+下图显示了密码过期的相关参数，可以通过chage对其进行调整，以实施密码过期策略
+
+
+
+
+命令：chage
+它是用来更改用户密码过期信息，用到的几个参数如下：
+l  -m：密码可更改的最小天数。为0时代表任何时候都可以更改密码
+l  -M：密码保持有效的最大天数
+l  -W：用户密码到期前，提前收到警告信息的天数
+l  -E：帐号到期的日期。过了这天，此帐号将不可用
+l  -d：上一次更改的日期，为0表示强制在下次登录时更新密码
+l  -I：停滞时期。如果一个密码已过期这些天，那么此帐号将不可用
+l  -l：（list）列出当前的设置，由非特权用户来确定他们的密码或帐号何时过期
+
+
+[root@panda ~]# chage -l xuegod-1
+复制代码
+Last password change                                        : Apr 02, 2017
+Password expires                                        : never
+Password inactive                                        : never
+Account expires                                                : never
+Minimum number of days between password change                : 0
+Maximum number of days between password change                : 99999
+Number of days of warning before password expires        : 7
+
+我们修改用户xuegod-1的密码信息：让这个用户在首次登录系统时更改其密码，之后每30天被要求更改密码，还要求这个账户在90天后到期，禁止使用
+
+[root@panda ~]# chage -d 0 -M 30 -W 3 xuegod-1
+[root@panda ~]# chage -l xuegod-1
+[root@panda ~]# date -d "+90 days"
+[root@panda ~]# chage -E "2017-07-05" xuegod-1
+[root@panda ~]# date -s 2017-7-6
+复制代码
+
+
+
+
+1.2.11 修改用户信息
+语法：usermod 【参数】用户名
+常用参数：
+q  -u           UID
+q  -d           宿主目录
+q  -g           起始组                          #只能有一个
+q  -G           附加组                          #可以有多个
+q  -s           登录shell
+q  -L      锁定
+举例如下：
+例1：修改UID
+
+
+[root@panda ~]# tail -1 /etc/passwd
+复制代码
+zabbix:x:1105:1105::/home/zabbix:/sbin/nologin
+
+[root@panda ~]# usermod -s /bin/bash zabbix
+[root@panda~]# tail -1 /etc/passwd
+复制代码
+zabbix:x:1105:1105::/home/zabbix:/bin/bash
+
+再次尝试登录
+例3：修改登录用户名
+
+[root@panda~]# usrmod -l xuegod-1 zabbix
+复制代码
+
+
+例4：更改用户主目录
+
+[root@panda~]# usrmod -d /my/new/home –m username
+复制代码
+
+
+-m选项会自动创建新目录并移动内容
+例5：添加用户说明信息
+[root@panda~]# chfn [用户名]
+复制代码
+（这样将会以交互式模式启动chfn）,查看用户具体信息用finger(需要安装这个包)
+
+此外，也可以通过下面这种方式添加GECOS（用户的全名）
+[root@panda~]# usermod -c "Comment" username
+复制代码
+
+
+第3章 组分类
+根据帐号的功能：超级用户组（root）　　GID：0
+　　　　　　　　普通用户组
+　　　　　　　　系统用户组  GID：1－999  redhat6 是1-499
+　　　　　　　　本地用户 组 GID：1000＋  redhat6 是500+
+组的配置文件
+/etc/group
+[root@panda ~]# tail -5 /etc/group
+复制代码
+miao:x:1000:
+fd:x:1002:
+xuegod-1:x:1005:xuegod-2
+xuegod-2:x:1100:
+xuegod-3:x:1101:
+
+
+
+组名：组密码占位符：用户组的GID：用户名：组成员
+将多个用户加入到指定的组：
+
+
+[root@tianyun~]# gpasswd -a jack wheel //usermod -aG hr zhuzhu
+[root@tianyun~]# gpasswd -M zhuzhu,maomao100 hr
+[root@panda ~]# gpasswd -d xuegod-2 xuegod-1   --->删除用户xuegod-2从组xuegod-1中
+[root@panda ~]# gpasswd -a xuegod-2 xuegod-1  --->添加用户xuegod-2到组xuegod-1
+复制代码
+
+
+
+3.1 控制添加用户规则的文件
+当添加新的用户帐户时，默认会执行下列操作
+
+它的主目录就会被创建(一般是"/home/用户名"，除非你特别设置)
+一些隐藏文件 如.bash_logout, .bash_profile     以及 .bashrc 会被复制到用户的主目录。
+会创建一个和用户名同样的组（注：除非你给新创建的用户指定了组）
+
+
+3.2 解决模板文件被删之后显示不正常的问题
+
+
+删除后出现的情况
+
+
+
+进行恢复：
+
+
+
+
+扩展：
+q  加上 - ，在切换时会把环境变量一起进行切换
+q  不加 -，保留原本的环境变量
+
+
+第4章 查看用户信息相关命令：
+id ：显示当前有效用户的UID和GID信息
+
+
+[root@xuegod1611 ~]#
+[root@xuegod1611 ~]# id san
+复制代码
+w：用于显示已经登录系统的用户列表，并显示正在执行的指令与程序
+[root@xuegod1611 ~]# w
+复制代码
+22:10:02 up  3:17,  4 users,  load average: 0.00, 0.01, 0.05
+USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
+root     pts/0    192.168.1.107    18:53    2.00s  1.08s  0.00s w
+root     pts/1    192.168.1.107    22:09   46.00s  0.06s  0.06s -bash
+zabbix   pts/2    192.168.1.107    22:09    5.00s  0.06s  0.06s -bash
+
+who：显示目前登录系统的用户信息
+[root@xuegod1611 ~]# who
+复制代码
+(unknown) :0           2016-12-03 18:52 (:0)
+root     pts/0        2016-12-03 18:53 (192.168.1.107)
+root     pts/1        2016-12-03 22:09 (192.168.1.107)
+zabbix   pts/2        2016-12-03 22:09 (192.168.1.107)
+
+whoami：打印当前有效的用户名称
+
+
+[root@xuegod1611 ~]# whoami
+复制代码
+root
+[root@xuegod1611 ~]# who am i
+复制代码
+root     pts/0        2016-12-03 18:53 (192.168.1.107)
+
+finger：查找并显示用户信息
+安装一个包
+
+
+[root@xuegod1611 ~]# yum -y install finger
+复制代码
+Loaded plugins: langpacks, product-id, search-disabled-repos, subscription-manager
+This system is not registered to Red Hat Subscription Management. You can use subscription-manager to register.
+rhel7-server                                                  | 4.1 kB  00:00:00
+Resolving Dependencies
+--> Running transaction check
+---> Package finger.x86_64 0:0.17-52.el7 will be installed
+--> Finished Dependency Resolution
+
+Dependencies Resolved
+
+=====================================================================================
+Package         Arch            Version                 Repository             Size
+=====================================================================================
+Installing:
+finger          x86_64          0.17-52.el7             rhel7-server           26 k
+
+Transaction Summary
+=====================================================================================
+Install  1 Package
+
+Total download size: 26 k
+Installed size: 32 k
+Downloading packages:
+Running transaction check
+Running transaction test
+Transaction test succeeded
+Running transaction
+Warning: RPMDB altered outside of yum.
+  Installing : finger-0.17-52.el7.x86_64                                         1/1
+rhel7-server/productid                                        | 1.6 kB  00:00:00
+  Verifying  : finger-0.17-52.el7.x86_64                                         1/1
+
+Installed:
+  finger.x86_64 0:0.17-52.el7
+Complete!
+[root@xuegod1611 ~]# finger zabbix
+复制代码
+Login: zabbix                                 Name:
+Directory: /home/zabbix                     Shell: /bin/bash
+On since Sat Dec  3 22:09 (CST) on pts/2 from 192.168.1.107
+   4 minutes 13 seconds idle
+No mail.
+No Plan.
+[root@xuegod1611 ~]# finger root
+复制代码
+Login: root                                   Name: root
+Directory: /root                            Shell: /bin/bash
+On since Sat Dec  3 18:53 (CST) on pts/0 from 192.168.1.107
+   1 second idle
+On since Sat Dec  3 22:09 (CST) on pts/1 from 192.168.1.107
+   5 minutes 9 seconds idle
+Mail last read Sat Dec  3 19:48 2016 (CST)
+No Plan.
+
+给普通用户进行提权操作的两种方法：
+1、  通过su切换用户
+2、  在普通用户下以root身份授权普通用户执行命令
+
+
+[root@panda ~]# vim /etc/sudoers   --->在RHEL7中默认是打开wheel这个功能的
+复制代码
+## Allows people in group wheel to run all commands
+%wheel  ALL=(ALL)       ALL
+## Same thing without a password
+# %wheel        ALL=(ALL)       NOPASSWD: ALL
+
+上面两个区别就是要不要输入密码在使用sudo时。有%表示一个组的名字，不带是一个用户的名字
+
+[root@panda ~]# useradd xuegod-1 -G wheel
+[root@panda ~]# id xuegod-1
+[xuegod-1@panda ~]$ useradd liumang  --->提示没有权限
+[xuegod@panda ~]$ sudo useradd liumang
+[xuegod@panda ~]$ id liumang
+
+复制代码
+
+
+
+第5章 实战：RHEL7恢复root密码
+
+首先关闭SELINUX
+
+
+[root@xuegod1611 ~]# getenforce
+复制代码
+Disabled
+
+然后重启，按↑↓键，进入如下界面，选择第一项，按下e键进行编辑
+
+
+
+在此界面找到ro这一项，并进行修改，改为rw  init=/sysroot/bin/sh
+
+
+改完之后，按下Ctrl+X进入紧急模式
+原理：启动一个shell环境，系统并没有真正的启动
+
+
+
+换根，修改密码
+注：当前目录默认是根（/）
+chroot命令用来在指定的根目录下运行指令
+chroot，即 change root directory （更改 root 目录）。在 linux 系统中，系统默认的目录结构都是以/，即是以根 (root) 开始的。而在使用 chroot 之后，系统的目录结构将以指定的位置作为/位置
+在经过 chroot 命令之后，系统读取到的目录和文件将不在是旧系统根下的而是新根下（即被指定的新的位置）的目录结构和文件，
+
+
+
+如何之前系统启用了selinux，必须运行以下命令，否则将无法正常启动系统：touch /.autorelabel
+重启系统
+先退出当前根，执行/bin/sh shutdown –r now
+
+
+实测如下方法方便：
+进入system虚拟机后，重启按E进入编辑启动菜单，找到内核项，在后面加入（rd.break console=tty0）可以只写rd.break
+crtl+x
+重启后的那个界面，我们挂载一下根目录，因为你输入一个df命令都不存在。所以要挂载
+mount -o remount,rw /sysroot
+chroot /sysroot
+passwd
+touch /.autorelabel  如果守护进程关闭可以省略此步
+Exit
+reboot

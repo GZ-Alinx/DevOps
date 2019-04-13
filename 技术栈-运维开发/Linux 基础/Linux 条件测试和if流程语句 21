@@ -1,0 +1,533 @@
+1-20-条件测试语句和if流程控制语句的使用
+
+本节所讲内容：
+
+判断语句
+if表达式
+第0章 Read命令
+
+0.1 定义
+Read作用从键盘读入数据，赋给变量
+[root@panda67 ~]# read a b c
+nihao 123 laile
+[root@panda67 ~]# echo $a
+nihao
+[root@panda67 ~]# echo $b
+123
+[root@panda67 ~]# echo $c
+laile
+【例20】在shell中使用read命令
+
+[root@panda scripts]# cat 20.sh
+
+#!/bin/bash
+
+echo "input first second third :"
+
+read  first second third
+
+echo "the first parameter is $first"
+
+echo "the second parameter is  $second"
+
+echo "the third parameter is $third"
+
+测试：
+
+[root@panda scripts]# sh 20.sh
+
+input first second third :
+
+aa 11 33
+
+the first parameter is aa
+
+the second parameter is  11
+
+the third parameter is 33
+
+0.2 参数用法
+read answer    从标准输入读取一行并赋值给变量answer
+read first last   从标准输入读取一行，直至遇到第一个空白符或换行符。把用户键入的第一个词存到变量first中，把该行的剩余部分保存到变量last中
+read –s passwd 将你输入的东西隐藏起来，值赋给passwd
+read –t 2 test 输入的时间限制
+read –n 2 test 输入的长度限制
+read –r line     允许输入包含反斜杠
+[root@panda ~]# read -p "请输入你的准考证号: " ID
+
+请输入你的准考证号: 20160308
+
+[root@panda ~]# echo $ID
+
+20160308
+
+【例21】
+
+[root@panda ~]# vim 21.sh
+
+#!/bin/bash
+
+read -p "请输入你的姓名：" NAME
+
+read -p "请输入你的年龄：" AGE
+
+read -p "请输入你的性别：" SEX
+
+
+
+echo "你的基本信息如下："
+
+echo "姓名：$NAME"
+
+echo "年龄：$AGE"
+
+echo "性别：$SEX"
+
+执行结果如下：
+
+[root@panda scripts]# sh 21.sh
+
+请输入你的姓名：awk
+
+请输入你的年龄：10
+
+请输入你的性别：nan
+
+你的基本信息如下：
+
+姓名：awk
+
+年龄：10
+
+性别：nan
+
+第1章 变量测试语句
+Shell中的 test 命令用于检查某个条件是否成立，它可以进行数值、字符和文件三个方面的测试
+格式：test 测试条件
+
+如果结果是对的，也叫结果为真，用$?=0表示，反之为假，用$?=1表示
+文件测试
+参数
+.说明
+示例
+-e 文件名.
+如果文件存在则为真
+[ -e file ]
+-r 文件名.
+如果文件存在且可读则为真
+[ -r file ]
+-w 文件名.
+如果文件存在且可写则为真
+[ -w file ]
+-x 文件名.
+如果文件存在且可执行则为真
+[ -x file ]
+-s 文件名
+.如果文件存在且至少有一个字符则为真
+[ -s file ]
+-d 文件名.
+如果文件存在且为目录则为真
+[ -d file ]
+-f 文件名.
+如果文件存在且为普通文件则为真
+[ -f file ]
+-c 文件名.
+如果文件存在且为字符型特殊文件则为真
+[ -c file ]
+-b 文件名..
+如果文件存在且为块特殊文件则为真
+[ -b file ]
+实验演示（1）：
+[root@panda scripts]# ls
+10.sh  11.sh  8.sh  9.sh  test.sh
+[root@panda scripts]# test -e 10.sh;echo $?
+0
+[root@panda scripts]# test -e 12.sh;echo $?
+1
+[root@panda scripts]# test -d /root;echo $?
+0
+[root@panda scripts]# test -d /xuegod;echo $?
+1
+[root@panda scripts]# test -x 10.sh;echo $?
+1
+[root@panda scripts]# chmod +x 10.sh
+[root@panda scripts]# test -x 10.sh;echo $?
+0
+1.2 数值测试
+参数
+说明
+示例
+-eq
+等于则为真
+[ “$a” –eq “$b” ]
+-ne
+不等于则为真
+[ “$a” –ne “$b” ]
+-gt
+大于则为真
+[ “$a” –gt “$b” ]
+-ge
+大于等于则为真
+[ “$a” –ge “$b” ]
+-lt
+小于则为真
+[ “$a” –lt “$b” ]
+-le
+小于等于则为真
+[ “$a” –le “$b” ]
+实验演示（2）：
+[root@panda scripts]# test 2 -gt 1;echo $?
+0
+[root@panda scripts]# test 2 -eq 1;echo $?
+1
+1.3 字符串测试
+参数.
+说明
+示例
+=
+.等于则为真
+[ “$a” = “$b” ]
+!=.
+不相等则为真
+[ “$a” != “$b” ]
+-z 字符串.
+字符串的长度为零则为真
+[ -z “$a” ]
+-n 字符串
+.字符串的长度不为空则为真
+[ -n “$a” ]
+实验演示（3）
+
+[root@panda scripts]# test abc = abc ;echo $?
+0
+[root@panda scripts]# test abc = ab ;echo $?
+1
+[root@panda scripts]#
+[root@panda scripts]# test "abc" = "ab" ;echo $?
+1
+[root@panda scripts]# test "abc" = "ab c" ;echo $?
+1
+[root@panda scripts]# a=""
+[root@panda scripts]# test -z $a;echo $?
+0
+[root@panda scripts]# a="xuegod"
+[root@panda scripts]# test -z $a;echo $?
+1
+[root@panda scripts]# test -n $a;echo $?
+0
+1.4 测试语句另一种常用的使用方法
+1.4.1 数值变量比较
+比如可以省略test写成：[ init1 –lt init2 ]，也可以使用最新扩展测试命令语法[[init1 –lt init2]]
+注意：在使用"["简写test时，左中括号后面的空格和右括号前面的空格是必需的，如果没有空格，Shell不可能辨别表达式何时开始何时结束．
+
+数值比较
+字符比较
+-eq
+== 等于
+-ne
+!= 不等于
+-gt
+> 大于
+-ge
+>=  大于等于
+-lt
+< 小于
+-le
+<= 小于等于
+提示：“<”和“>””=”分别为小于 大于 等于，并且在[ ]中“<”“>”都要使用转义字符 \ ,在[[ ]]中不需要
+
+[root@panda scripts]# [ 3 -eq 5 ];echo $?
+
+1
+[root@panda scripts]# test 3 -eq 5;echo $?
+
+1
+[root@panda scripts]# [ 3 -eq 5 ];echo $?
+
+1
+[root@panda scripts]# [ 3 -eq 5];echo $?
+
+-bash: [: 缺少 `]'
+2
+[root@panda scripts]# [3 -eq 5 ];echo $?
+
+bash: [3: 未找到命令...
+127
+[root@panda scripts]# [3 -eq 5];echo $?
+
+bash: [3: 未找到命令...
+127
+[root@panda scripts]# [ 3 < 5 ];echo $?
+
+-bash: 5: 没有那个文件或目录
+1
+[root@panda scripts]# [ 3 \< 5 ];echo $?
+
+0
+[root@panda scripts]# [ 3 \> 5 ];echo $?
+
+1
+1.4.2 文件判断
+实验演示（5）
+[root@panda scripts]# [ -d /etc/hosts ];echo $?
+1
+[root@panda scripts]# [ -f /etc/hosts ];echo $?
+0
+[root@panda scripts]# [ -x /etc/hosts ];echo $?
+1
+1.4.3 符号&&和||的使用
+&&：逻辑与；仅当两个条件都成立时，结果为真
+|| ： 逻辑或 ；两个条件有一个成立 ，结果为真
+
+注：脚本中的逻辑或和逻辑与不能用and和or来表示
+
+[root@panda scripts]# [ -f /etc/passwd ]&&[ -w /etc/passwd ];echo $?
+0
+[root@panda scripts]# [ -f /etc/passwd ]&&[ -x /etc/passwd ];echo $?
+1
+[root@panda scripts]# [ 2 -gt 1 ]||[ 3 -lt 5 ];echo $?
+0
+[root@panda scripts]# [ 2 -gt 1 ]||[ 8 -lt 5 ];echo $?
+0
+第2章 流程控制--if语句
+2.1 单分支if语句
+它的语法格式如下：
+if 条件
+then
+语句
+fi
+����֧if����.bmp
+扩展 ；分号，表示两个命令写在一行，互不影响。
+
+if   条件  ; then
+语句
+fi
+[root@panda67 ~]# cat /home/if-1.sh
+#!/bin/bash
+if [ "$USER" != "root" ];then
+       echo "当前用户不是ROOT用户"
+fi
+退出码：根据我的退出码来判断我的脚本或程序哪个地方出了问题  0-255
+例：日志清理
+[root@panda67 ~]# cat /home/log_clean.sh
+#!/bin/bash
+#日志清理脚本
+LOG_DIR=/var/log
+ERR_1=10  #用户不是root
+ERR_2=11  #目录切换错误
+#1、判断当前用户是不是ROOT用户
+if [ "$USER" != "root" ];then
+       echo "你必须使用root用户来执行这个脚本"
+       exit $ERR_1
+fi
+#2、切换日志目录，并且判断是否切换成功
+cd $LOG_DIR
+if [ `pwd` != "$LOG_DIR" ];then
+       echo "当前目录切换不成功"
+       exit $ERR_2
+fi
+#3、保留100行日志内容
+tail -100 messages > mesg.tmp
+#4、清理日志
+cat /dev/null > messages
+>messages
+mv mesg.tmp messages
+echo "Logs clean up"
+2.2 双分支if语句
+它的语法格式如下：
+if  条件1  ； then
+    命令1
+else
+       命令2
+fi
+˫��֧if����.bmp
+
+实验演示（10）：检测一个IP是否存活
+
+[root@panda scripts]# cat ip_up.sh
+#!/bin/bash
+ping -c2 $1 > /dev/null
+if [ $? -eq 0 ];then
+       echo "Host is up"
+else
+       echo "Host is down"
+fi
+[root@panda scripts]# sh ip_up.sh www.baidu.com
+Host is up
+[root@panda scripts]# sh ip_up.sh 192.168.5.10
+Host is down
+实验演示（11）判断一个服务是不是启动状态
+
+[root@panda scripts]# cat service_up.sh
+#!/bin/bash
+systemctl status $1 &> /dev/null
+if [ $? -eq 0 ];then
+       echo "service $1 is running"
+else
+       echo "service $1 is stopping"
+fi
+[root@panda scripts]# sh service_up.sh atd
+service atd is stopping
+[root@panda scripts]# sh service_up.sh sshd
+service sshd is runing
+[root@panda scripts]# sh service_up.sh httpd
+service httpd is stopping
+2.3 多分支if语句
+更复杂的if语句,语法结构如下：
+if  条件1  ； then
+命令1
+elif  条件2  ； then
+       命令2:
+elif  条件3  ； then
+       命令3
+……………………
+else
+       命令n
+fi
+����֧if����.bmp
+
+实验演示（12）判断性别
+
+[root@panda67 ~]# cat if-3.sh
+#!/bin/bash
+m=man
+w=woman
+echo "Please input you's sex [man/woman] "
+read -p "请输入你的性别：" ss
+if  [ "$ss" == "man" ]||[ "$ss" == "MAN" ];then
+       echo "你是男人"
+elif [ "$ss" == "woman" ]||[ "$ss" == "WOMAN" ];then
+       echo "你是女人"
+else
+       echo "恭喜你！从泰国旅游回来"
+fi
+[root@panda67 ~]# sh if-3.sh
+Please input you's sex [man/woman]
+请输入你的性别：MAN
+你是男人
+[root@panda67 ~]# sh if-3.sh
+Please input you's sex [man/woman]
+请输入你的性别：SFSD
+恭喜你！从泰国旅游回来
+例：测试一个文件类型
+[root@panda67 ~]# cat if_file.sh
+#!/bin/bash
+read -p "Input a file name: " fn
+if [ -d $fn ];then
+       echo "$fn is a directory"
+elif [ -f $fn ];then
+       echo "$fn is a file"
+elif [ -c $fn ];then
+       echo "$fn is a device"
+else
+       echo "$fn is unknow file"
+fi
+第3章 扩展—判断
+3.1 写法一
+if [ 条件判断一 ] && (||) [ 条件判断二 ]; then
+命令一
+elif [ 条件判断三 ] && (||) [ 条件判断四 ]; then
+命令二
+else
+   执行其它
+fi
+实验演示（14）
+
+[root@panda scripts]# cat 14.sh
+#!/bin/bash
+read -p "input a file : " file_n
+if [ -f $file_n ]&&[ -w $file_n ];then
+       echo "Hello world " > $file_n
+       echo "write success"
+else
+       echo "$file_n not is file"
+fi
+[root@panda scripts]# touch a.txt
+[root@panda scripts]# sh 14.sh
+input a file : a.txt
+write success
+[root@panda scripts]# cat a.txt
+Hello world
+3.2 写法二
+if [[条件判断一 && (||) 条件判断二 ]]; then
+elif [[ 条件判断三 && (||) 条件判断四 ]]; then
+else
+   执行其它
+fi
+实验演示（15）
+
+[root@panda scripts]# cat 15.sh
+#!/bin/bash
+read -p "请输入要添加的文件名称：" file_name
+if [[ -e $file_name && -r $file_name && -w $file_name ]];then
+       echo "Hello world,awk" > $file_name
+       echo success
+else
+       echo "$file_name not is a file"
+fi
+[root@panda scripts]# sh 15.sh
+请输入要添加的文件名称：b.txt
+b.txt not is a file
+[root@panda scripts]# sh 15.sh
+请输入要添加的文件名称：a.txt
+success
+[root@panda scripts]# cat a.txt
+Hello world,awk
+3.3 写法三
+if [条件判断一 -a (-o) 条件判断二 ]; then
+elif [条件判断三  -a (-o) 条件判断四 ]; then
+else
+   执行其它
+fi
+实验演示（16）
+[root@xuegod67 scripts]# [ 1 -lt 2 -a b > a ] && echo true || echo false
+true
+
+[root@xuegod67 scripts]# [[ 2 < 3 && 4 > 5 ]] && echo ok || echo error
+error
+
+[root@xuegod67 scripts]# [[ 2 < 3 -a 4 > 5 ]] && echo ok || echo error
+-bash: syntax error in conditional expression
+
+-bash: syntax error near `-a'
+
+[root@xuegod67 scripts]# [ 1 -lt 2 -o b > a ] && echo ok
+ok
+
+[root@panda scripts]# [ 1 -lt 2 -a b > a ];echo $?
+0
+[root@panda scripts]# [ 1 -lt 2 -a b > a ] && echo ture|| echo false
+ture
+[root@panda scripts]# [ 1 -lt 2 -o b > c ] && echo ture|| echo false
+ture
+[root@panda scripts]# [ 5 -lt 2 -o b > c ] && echo ture|| echo false
+ture
+[root@panda scripts]# [ 5 -lt 2 -a b > c ] && echo ture|| echo false
+false
+[root@panda scripts]# [[ 1 < 5 || 4 > 5 ]] && echo ture|| echo false
+ture
+[root@panda scripts]# [[ 1 < 5 && 4 > 5 ]] && echo ture|| echo false
+false
+3.4 总结
+所有的字符与逻辑运算符直接用“空格”分开，不能连到一起。
+在[… ]表达式中，常见的> 、<需要加转义符\，大小比较
+进行逻辑运算符&& 、||比较时；如果用的[ ]符号，则用在外面，如[… ] && [… ] || [ …]如果在[…]里面进行逻辑与或，则用-a、-o进行表示，如[ x = y –a x < z –o x > m ]
+[[… ]] 运算符只是[… ]运算符的扩充；能够支持< 、>符号运算不需要转义符；它还是以字符串比较大小。里面支持逻辑运算符 || 、 && 不再使用-a 、-o
+[[…]] 用 && 而不是 –a 表示逻辑“与”；用 || 而不是 -o表示逻辑“或”
+[[… ]]可以进行算术扩展，而[ ... ]不可以
+[root@panda scripts]# [[ 99+1 -eq 100 ]]&& echo ok || echo error
+ok
+[root@panda scripts]# [ 99+1 -eq 100 ]&& echo ok || echo error
+-bash: [: 99+1: 期待整数表达式
+error
+[[…]]能用正则，而[…]不行
+[root@xuegod63 ~]# [ "a.txt" == [a-z].txt ]&& echo ok || echo error
+error
+[root@xuegod63 ~]# [[ "a.txt" == [a-z].txt ]]&& echo ok || echo error
+ok
+[root@xuegod63 ~]# [ "a.txt" == *.txt ]&& echo ok || echo error
+error
+[root@xuegod63 ~]# [ a.txt == *.txt ]&& echo ok || echo error
+error
+[root@xuegod63 ~]# [[ a.txt == *.txt ]]&& echo ok || echo error
+ok

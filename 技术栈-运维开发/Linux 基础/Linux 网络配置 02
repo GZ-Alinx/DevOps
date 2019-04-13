@@ -1,0 +1,381 @@
+第1 章 网络的配置
+1.1 网卡的命名规则
+       RHEL6的网卡命名方式：它会根据情况有所改变而非唯一且固定，在RHEL6之前，网络接口使用连续号码命名： eth0、 eth1等,当增加或删除网卡时，名称可能会发生变化
+       RHEL7采用dmidecode采集命名方案，以此来得到主板信息；它可以实现网卡名字永久唯一化（dmidecode这个命令可以采集有关硬件方面的信息）
+对网络设备的命名方式：
+1）如果Firmware或BIOS为主板上集成的设备提供的索引信息可用，且可预测则根据此索引进行命名，例如eno1
+2）如果Firmware或BIOS为PCI-E扩展槽所提供的索引信息可用，且可预测，则根据此索引进行命名，例如ens1
+3）如果硬件接口的物理位置信息可用，则根据此信息进行命名，例如enp2s0
+上述均不可用时，则使用传统命名机制
+在RHEL7中，enX(X常见有下面3种类型) ，en(ethernet)有线局域网
+u  o：主板板载网卡，集成设备的设备索引号
+u  p：独立网卡，PCI网卡
+u  s：热插拔网卡，usb之类，扩展槽的索引号
+u  x：基于MAC地址命名
+nnnnnnnn(数字)表示：MAC地址+主板信a息计算得出唯一的序列
+
+1.2 添加临时IP
+
+注意：下面操作使用root用户（动态修改）
+
+Ø  第一种情况：
+<font face="微软雅黑"><font face="微软雅黑">ifconfig 网卡名称 IP地址     ---直接修改网卡的IP地址，重启失效
+[root@panda Desktop]# ifconfig eno16777736
+</font></font>
+复制代码
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.103  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 2000  bytes 196601 (191.9 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 365  bytes 48248 (47.1 KiB)
+TX errors0  dropped 0 overruns 0  carrier 0 collisions 0
+
+
+
+
+[root@panda Desktop]# ifconfig eno16777736 192.168.1.110
+[root@panda Desktop]# ifconfig eno16777736
+
+
+
+
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.110  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 2028  bytes 198715 (194.0 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 385  bytes 51073 (49.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda Desktop]# systemctl restart network     //RHEL7的网卡重启方法
+[root@panda Desktop]# service network restart     //RHEL6的网卡重启方法
+[root@panda Desktop]# ifconfig eno16777736
+</font></font>
+复制代码
+
+
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.103  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 2317  bytes 231940 (226.5 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 520  bytes 70026 (68.3 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+
+Ø  第二种情况
+<font face="微软雅黑"><font face="微软雅黑">ifconfig 网卡名称:0 第一个IP地址 （netmask 子网掩码） ---增加一个IP
+ifconfig 网卡名称:1 第二个IP地址 （netmask 子网掩码） ---增加一个IP
+[root@panda ~]# ifconfig eno16777736
+</font></font>
+复制代码
+
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.103  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 2481  bytes 248306 (242.4 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 565  bytes 79745 (77.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# ifconfig eno16777736:0 192.168.1.110
+[root@panda ~]# ifconfig
+</font></font>
+复制代码
+
+
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.103  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 2562  bytes 255370 (249.3 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 623  bytes 87113 (85.0 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eno16777736:0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.110  netmask 255.255.255.0  broadcast 192.168.1.255
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+
+
+
+
+Ø  删除临时IP
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# ifconfig eno16777736:0 del 192.168.1.110
+[root@panda ~]# ifconfig
+</font></font>
+复制代码
+
+
+eno16777736: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.103  netmask 255.255.255.0  broadcast 192.168.1.255
+        inet6 fe80::20c:29ff:fee8:ac4  prefixlen 64  scopeid 0x20<link>
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+        RX packets 3056  bytes 311813 (304.5 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 961  bytes 145297 (141.8 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+eno16777736:1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.1.111  netmask 255.255.255.0  broadcast 192.168.1.255
+        ether 00:0c:29:e8:0a:c4  txqueuelen 1000  (Ethernet)
+
+
+
+
+
+1.3 查看networkmanager服务是是否启动
+
+NeworkManager是管理和监控网络设置的守护进程，RHEL7更加注重使用NetworkManager服务来实现网络的配置和管理
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# systemctl status NetworkManager</font></font>
+复制代码
+
+
+
+
+
+1.4 永久添加IP-图形配置
+
+Ø  第一种：文本框方式配置
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda Desktop]# nmtui</font></font>
+复制代码
+
+
+
+
+
+
+上面三个选项分别表示：
+q  编辑
+q  激活
+
+q  修改主机名
+
+
+
+上图右边三个选项分别表示：
+q  添加
+q  编辑
+q  删除
+
+添加IP地址
+
+
+
+重启网卡服务生效：
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# systemctl restart network   ---重启服务</font></font>
+复制代码
+
+
+Ø  第二种：图形化方式（在终端和服务器当中都可以操作）
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda Desktop]# nm-connection-editor</font></font>
+复制代码
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ø  1.5 永久添加IP-配置文件修改IP
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# vi /etc/sysconfig/network-scripts/ifcfg-eno16777736  </font></font>
+复制代码
+                                                                                                                        非常重要！！！
+
+[root@panda ~]# vi /etc/sysconfig/network-scripts/ifcfg-eno16777736
+TYPE=Ethernet
+BOOTPROTO=none  dhcp  satic
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+NAME=eno16777736
+UUID=50eff37c-72b4-407a-a3ee-9ef8ca746b95
+DEVICE=eno16777736
+ONBOOT=yes
+DNS1=192.168.1.1
+NETMASK=255.255.255.0
+IPADDR=192.168.1.222
+PREFIX=24
+GATEWAY=192.168.1.1
+IPV6_PEERDNS=yes
+IPV6_PEERROUTES=yes
+IPV6_PRIVACY=no
+
+
+
+
+
+参数说明：
+   DEVICE：此配置文件应用到的设备
+   HWADDR：对应的设备的MAC地址
+   BOOTPROTO：激活此设备时使用的地址配置协议，常用的dhcp, static, none,bootp
+   NM_CONTROLLED： NM是NetworkManager的简写，此网卡是否接受NM控制；建议CentOS6为“no”
+   ONBOOT：在系统引导时是否激活此设备
+   TYPE：接口类型；常见有的Ethernet, Bridge
+   UUID：设备的惟一标识
+   IPADDR：指明IP地址
+   NETMASK：子网掩码
+   GATEWAY: 默认网关
+   DNS1：第一个DNS服务器指向
+   DNS2：第二个DNS服务器指向
+   USERCTL：普通用户是否可控制此设备
+   IPV4_FAILURE_FATAL 如果为yes，则ipv4配置失败禁用设备
+
+
+
+第2 章关闭防火墙并设置开机自动关闭
+2.1 查看当前状态
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# systemctl status firewalld.service </font></font>
+复制代码
+
+
+● firewalld.service - firewalld - dynamic firewall daemon
+   Loaded: loaded (/usr/lib/systemd/system/firewalld.service; enabled; vendor preset: enabled)
+   Active: active (running) since 三 2017-06-07 20:25:39 CST; 1h 16min ago
+Main PID: 917 (firewalld)
+   CGroup: /system.slice/firewalld.service
+           └─917 /usr/bin/python -Es /usr/sbin/firewalld --nofork --nopid
+
+6月 08 04:18:38 panda systemd[1]: Starting firewalld - dynamic firewall daemon...
+6月 07 20:25:39 panda systemd[1]: Started firewalld - dynamic firewall daemon.
+Hint: Some lines were ellipsized, use -l to show in full.
+
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# systemctl stop firewalld       #关闭
+[root@panda ~]# systemctl start firewalld       #开启
+[root@panda ~]# systemctl disable firewalld     #开机自动关闭   //RHLE7
+[root@panda ~]# chkconfig --list|grep network    #查看开机是否启动   //RHLE6
+[root@panda ~]# systemctl enable firewalld     #开机自动启动
+</font></font>
+复制代码
+
+
+2.2 关闭selinux并设置开机自动关闭
+
+     2.2.1 临时关闭
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# getenforce</font></font>
+复制代码
+Enforcing
+
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# setenforce 0</font></font>
+复制代码
+setenforce: SELinux is disabled
+
+
+
+     2.2.2 永久关闭
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# vim /etc/selinux/config </font></font>
+复制代码
+lrwxrwxrwx. 1 root root 17 Jul 28 06:28 /etc/sysconfig/selinux -> ../selinux/config
+
+     修改参数disable 关闭    enable 开启
+
+
+
+第3章光盘自动挂载
+3.1 编辑配置文件
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda ~]# echo "/dev/sr0 /media iso9660 defaults 0 0" >> /etc/fstab  追加内容的方式到配置文件
+[root@panda ~]# cat /etc/fstab </font></font>
+复制代码
+
+
+
+
+
+3.2 验证挂载是否成功
+可以通过两条如下命令进行验证：
+q  mount -a  验证
+q  df  查看当前的挂载点
+
+
+
+
+
+
+第4章 YUM源的配置
+yum的一切配置信息都储存在一个叫yum.repos.d的配置文件中，通常位于/etc/yum.repos.d目录下
+
+
+4.1 删除原有的文件
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda yum.repos.d]#rm -fr /etc/yum.repos.d/*</font></font>
+复制代码
+
+
+
+删除旧的后，我们再创建一个新的配置文件
+文件的格式必须是.repo
+
+
+4.2 编辑配置文件
+假设我们把镜像盘挂载到目录（/mnt）下面
+
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda yum.repos.d]#vim rhel7.repo
+[root@panda yum.repos.d]# cat rhel7.repo
+</font></font>
+复制代码
+
+
+[rhel7]        --->名称
+name=rhel-server     ----->描述信息
+baseurl=file:///mnt    -------> /mnt表示的是光盘的挂载点
+enabled=1   ------>启用
+gpgcheck=0   ---->取消验证
+
+
+
+4.3 清空并生成缓存列表
+
+<font face="微软雅黑"><font face="微软雅黑">[root@localhost ~]# yum clean all                    #清空yum缓存
+[root@localhost ~]# yum list                                                #生成缓存列表
+</font></font>
+复制代码
+
+
+4.4 验证一下
+
+
+<font face="微软雅黑"><font face="微软雅黑">[root@panda yum.repos.d]# yum -y install httpd</font></font>
+复制代码
+
+
+
+
+第五章 虚拟机的使用技巧
+1、使用快照
+2、网络配置
