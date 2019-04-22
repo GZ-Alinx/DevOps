@@ -32,4 +32,27 @@ mv firefox /usr/local/bin/
 
 驱动下载： https://chromedriver.storage.googleapis.com/index.html?path=73.0.3683.68/
 
+# Linux 版本
+    $ wget https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_linux64.zip
+    $ unzip chromedriver_linux64.zip
+
+# mac 版本
+    $ wget https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_mac64.zip
+
+#win 版本
+    $ https://chromedriver.storage.googleapis.com/73.0.3683.68/chromedriver_win32.zip
+
+
+谷歌浏览器：
+$ vim /etc/yum.repo.d/chrome.repo
+    [google-chrome]
+    name=google-chrome
+    baseurl=http://dl.google.com/linux/chrome/rpm/stable/$basearch
+    enabled=1
+    gpgcheck=1
+    gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub
+
+    $ yum -y install google-chrome-stable --nogpgcheck
+    $ which google-chrome-stable
+    $ ln -sv /usr/bin/google-chrome-stable /usr/bin/chrome
 

@@ -42,7 +42,7 @@ cd /usr/local/php-7.1.27/
 
 ./configure --prefix=/usr/local/php --with-config-file-path=/usr/local/php --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-iconv-dir --with-freetype-dir --with-jpeg-dir --with-png-dir --with-zlib --with-libxml-dir=/usr --enable-xml --disable-rpath --enable-bcmath --enable-shmop --enable-sysvsem --enable-inline-optimization --with-curl --enable-mbregex  --enable-fpm --enable-mbstring --with-gd --enable-mysqlnd --enable-gd-native-ttf --with-openssl --with-mhash --enable-pcntl --enable-sockets --with-xmlrpc --enable-soap --with-gettext --with-mcrypt=/usr/local/libmcrypt  --with-gettex --enable-opcache=no
 
-make -j 4 && make install
+make -j 8 && make install
 
 php配置文件
 cp /usr/local/php-7.1.27/php.ini-production /usr/local/php/php.ini
