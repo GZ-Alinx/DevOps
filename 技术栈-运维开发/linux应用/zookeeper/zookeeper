@@ -1,0 +1,17 @@
+
+官方地址：https://zookeeper.apache.org/
+
+
+下载地址：http://archive.apache.org/dist/zookeeper/
+
+
+	# 下载
+	$ wget http://archive.apache.org/dist/zookeeper/zookeeper-3.4.9/zookeeper-3.4.9.tar.gz
+
+	# 安装
+    $ tar -zxf zookeeper-3.4.9.tar.gz -C /usr/local/
+    $ cd  /usr/local/zookeeper-3.4.9/
+    $ ./bin/zkServer.sh start
+    $ netstat -antup | grep 2181
+
+

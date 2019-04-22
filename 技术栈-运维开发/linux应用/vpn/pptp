@@ -1,0 +1,74 @@
+linux pptp 全局代理
+
+工具安装配置
+
+yum install ppp pptp pptp-setup
+
+sudo pptpsetup --create lxvpn  --server www.alinx.top  --username lx  --password  1 --encrypt --start
+
+--create lxvpn   		#自定义名称
+--server www.alinx.top 	#服务器地址
+--username lxvpn 		#服务器账号
+--password  1 			#服务器密码
+--encrypt --start    	#加密 启动
+
+
+全局代理：  route add -net 0.0.0.0 dev ppp0
+查看路由：  route -n
+
+
+快捷连接:  pppd call 42vpn  //这里的42vpn是上面创建vpn连接
+
+关闭连接:  ifconfig ppp0 down
+
+
+
+1.报错：
+
+FATAL: Module ppp_mppe not found.
+/usr/sbin/pptpsetup: couldn't find MPPE support in kernel.
+
+modprobe ppp_mppe
+
+
+
+
+2.报错：
+
+Using interface ppp0
+Connect: ppp0 <--> /dev/pts/3
+CHAP authentication succeeded
+LCP terminated by peer (MPPE required but peer refused)
+Modem hangup
+
+解决方法：
+
+# vim /etc/ppp/peers/test  //test是上面创建的连接
+
+文件尾部，加上以下内容
+
+require-mppe-128
+
+
+
+
+
+
+最后搭建成功后查看
+
+
+全局代理路由：  route add -net 0.0.0.0 dev ppp0
+加全局代理路由后
+[root@localhost ~]# route -n
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         0.0.0.0         0.0.0.0         U     0      0        0 ppp0
+0.0.0.0         192.168.5.1     0.0.0.0         UG    100    0        0 ens33
+10.1.1.254      0.0.0.0         255.255.255.255 UH    0      0        0 ppp0
+113.128.64.165  192.168.5.1     255.255.255.255 UGH   0      0        0 ens33
+192.168.5.0     0.0.0.0         255.255.255.0   U     100    0        0 ens33
+192.168.74.0    0.0.0.0         255.255.255.0   U     100    0        0 ens33
+
+
+
+其他类型： l2tp/sstp/openvpn

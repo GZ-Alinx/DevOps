@@ -1,0 +1,192 @@
+
+#  CI 流程
+
+
+
+
+# 杀程序
+	$ ps aux | grep "进程名" |grep -v grep | awk '{print $2}' | xargs kill -9
+
+
+Jenkins
+
+	# 下载Jenkins
+	$ wget http://mirrors.jenkins.io/war-stable/latest/jenkins.war
+
+	#启动jenkins
+	$ nohup java -jar jenkins.war --httpPort=8888 >/dev/null  2>&1 &
+
+	登录： http://ip:8888
+	用户: admin
+	密码：cat ~/.jenkins/secrets/initialAdminPassword
+
+		自启动bash代码：
+			#!/bin/bash
+			ps aux | grep -v grep | grep "jenkins.war --httpPort=8888"
+			if [ $? -eq 0 ];then
+				echo "正常运行"
+			else
+				$java -jar $jenkins.war --httpPort=8888 >/dev/null 2>&1 &
+			fi
+
+	docker run \
+  --rm \
+  -u root \
+  -p 8080:8080 \
+  -v jenkins-data:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "$HOME":/home \
+  jenkinsci/blueocean
+
+
+Gitlab
+	#docker安装gitlab
+
+	$ docker pull gitlab/gitlab-ce
+	$ docker run -d \
+    --hostname gitlab \
+    --publish 8443:443 --publish 8081:80 --publish 2222:22 \
+    --name gitlab \
+    --restart always \
+    --volume /data/gitlab/config:/etc/gitlab \
+    --volume /data/gitlab/logs:/var/log/gitlab \
+    --volume /data/gitlab/data:/var/opt/gitlab \
+    gitlab/gitlab-ce
+
+	配置文件：
+		$ docker exec -t -i gitlab vim /etc/gitlab/gitlab.rb
+	重启gitlab:
+		$ docker restart gitlab
+
+	登录地址：http://ip:8081
+	首次登录，需要设置管理员密码！
+
+
+
+Gitlab钩子触发构建：
+
+	Jenkins配置：	构建触发器 >> 触发远程构建 (例如,使用脚本) >> 88888888
+	Gitlab配置：	进项目>> 设置 >> 集成 >> 填入webhook地址（全部填入URL内即可） 添加并test
+
+	特别注意：  Test 通了，但是403；jenkins系统设置 >> 全局安全配置 >> 勾上-登陆用户可以做任何事(匿名用户具有可读权限) 
+				跨站请求伪造保护： 关闭
+				再次测试即可互通，那么现在就完美了！！！！
+
+	特别注意：	随着打包结束，程序也跟着停止。这个在界面管理当中添加一个环境变了就好了！
+					键： BUILD_ID
+					值： DontKillMe
+					
+
+	
+	webhook:	http://218.17.119.243:8888/job/python_sort-api/build?token=88888888
+	webhook:	http://218.17.119.243:8888/job/fms/build?token=7777777
+
+				Jenkins的maven工程打包的时候怎么指定不同环境的配置文件
+					$ clean package install -Ppertest	指定 pertest 配置文件打包
+				
+
+	Git 操作
+
+	Git安装$ yum install git
+
+	$ git -version
+
+	   
+	生成一个git仓库
+
+	   [root@server ~]# mkdir /data
+	   [root@server ~]# cd /data/
+	   [root@server data]# git init /data
+	   Initialized empty Git repository in /data/.git/
+	   [root@server data]# ls -a
+	   .  ..  .git
+
+	$ git add filename
+	$ git commit -m "说明"
+
+	第一次做提交之前需要设置：
+
+	$ git config --global user.email "you@example.com"
+	$ git config --global user.name "Your Name"
+
+	设置好邮箱和名字后方可继续提交到库；
+
+	设置要对接的库
+
+	要关联一个远程库，使用命令
+	$ git remote add origin git@server-name:path/repo-name.git；
+	$ git remote add origin https://gitee.com/laiziguizhou/java
+
+	关联后，使用命令
+	$ git push -u origin master 第一次推送master分支的所有内容；
+
+	此后，每次本地提交后，只要有必要，就可以使用命令
+	$ git push origin master推送，最新修改；
+
+	如果需要修改对接的库，可以删掉对接的库，重新对接
+
+	$ git remote remove origin
+
+
+
+Gitlab 免密码设置
+	
+	ssh:  	ssh-keygen -t rsa  >> 将公钥放入项目的ssh内即可
+			$ git clone ssh://git@218.17.119.243:8081/python/iig_center.git
+
+
+	直接命令包含：git clone https://username:password@git.oschina.net/wdm/familycloud.git
+
+
+
+
+
+发布到服务器：
+
+
+	cd /home/admin/build/python/sort_api/ &&　rm -rf *
+	git clone http://root:password@git@218.17.119.243:8081:java/fms.git
+
+
+
+	bash /home/admin/build/python/restart.sh
+
+	#自启动脚本
+	restart.sh
+		#!/bin/bash
+
+		ps aux | grep -v grep| grep "/usr/local/bin/python3.6 /home/admin/build/python/sort_api/sort_api.py"
+		if [ $? -eq 0 ];then
+        	echo "Running"
+		else
+        	echo "python down"
+        	chmod +x /home/admin/build/python/sort_api/sort_api.py
+        	/usr/local/bin/python3.6 /home/admin/build/python/sort_api/sort_api.py >> /usr/local/nginx/html/log/sort_api.log 2>&1 &
+        	/usr/local/bin/python3.6 /home/admin/build/python/mail.py >> /home/admin/python.log
+        fi
+
+
+
+
+Jenkins 错误
+
+	17:55:03 Waiting for Jenkins to finish collecting data
+	17:55:03 [ERROR] Failed to execute goal on project fms-frame: Could not resolve dependencies for project com.daydayupseo:fms-frame:jar:1.0.1: Failure to find apache:shiro-all:jar:1.3.2 in http://maven.aliyun.com/nexus/content/groups/public// was cached in the local repository, resolution will not be reattempted until the update interval of maven-ali has elapsed or updates are forced -> [Help 1]
+	17:55:03 [ERROR] 
+	17:55:03 [ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+	17:55:03 [ERROR] Re-run Maven using the -X switch to enable full debug logging.
+	17:55:03 [ERROR] 
+	17:55:03 [JENKINS] Archiving /root/.jenkins/workspace/fms/fms-api/pom.xml to com.daydayupseo/fms-api/1.0.1/fms-api-1.0.1.pom
+	17:55:03 [ERROR] For more information about the errors and possible solutions, please read the following articles:
+	17:55:03 [ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/DependencyResolutionException
+	17:55:03 [ERROR] 
+	17:55:03 [ERROR] After correcting the problems, you can resume the build with the command
+	17:55:03 [ERROR]   mvn <goals> -rf :fms-frame
+
+
+解决：
+	# 下载mvn依赖包
+	$ wget http://www.java2s.com/Code/JarDownload/maven-archetype/maven-archetype-webapp-1.0.jar.zip
+	# 导入包
+	$ mvn install:install-file -DgroupId=org.apache.maven.archetypes -DartifactId=maven-archetype-quickstart -Dversion=1.1 -Dpackaging=jar -Dfile=/root/maven-archetype-webapp-1.0.jar
+
