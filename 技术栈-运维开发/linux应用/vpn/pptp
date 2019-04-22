@@ -72,3 +72,5 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 
 其他类型： l2tp/sstp/openvpn
+
+L2tp: https://my.oschina.net/u/3499376/blog/910334
