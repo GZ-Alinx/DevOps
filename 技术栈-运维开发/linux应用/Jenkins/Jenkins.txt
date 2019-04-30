@@ -78,8 +78,8 @@ Gitlab钩子触发构建：
 					
 
 	
-	webhook:	http://218.17.119.243:8888/job/python_sort-api/build?token=88888888
-	webhook:	http://218.17.119.243:8888/job/fms/build?token=7777777
+	webhook:	http://218.17.119.24:8888/job/python_sort-api/build?token=
+	webhook:	http://218.17.119.24:8888/job/fms/build?token=
 
 				Jenkins的maven工程打包的时候怎么指定不同环境的配置文件
 					$ clean package install -Ppertest	指定 pertest 配置文件打包
@@ -132,7 +132,7 @@ Gitlab钩子触发构建：
 Gitlab 免密码设置
 	
 	ssh:  	ssh-keygen -t rsa  >> 将公钥放入项目的ssh内即可
-			$ git clone ssh://git@218.17.119.243:8081/python/iig_center.git
+			$ git clone ssh://git@218.17.119.24:8081/python/iig_center.git
 
 
 	直接命令包含：git clone https://username:password@git.oschina.net/wdm/familycloud.git
@@ -145,7 +145,7 @@ Gitlab 免密码设置
 
 
 	cd /home/admin/build/python/sort_api/ &&　rm -rf *
-	git clone http://root:password@git@218.17.119.243:8081:java/fms.git
+	git clone http://root:password@git@218.17.119.24:8081:java/fms.git
 
 
 
