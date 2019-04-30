@@ -23,3 +23,8 @@ python2 get-pip.py
 
 安装pip3
 python3 get-pip.py
+
+
+
+安装包：
+pip3 install lxml -i http://pypi.douban.com/simple/ --trusted-host pypi.douban.com

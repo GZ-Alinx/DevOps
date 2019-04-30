@@ -1,0 +1,31 @@
+禅道Docker安装包发布
+
+
+一、下载地址
+
+禅道开源版：   http://dl.cnezsoft.com/zentao/docker/docker_zentao.zip
+数据库用户名： root,默认密码： 123456。
+运行时，可以设置 MYSQL_ROOT_PASSWORD变量来更改密码。
+
+
+可挂载目录
+
+/app/zentaopms:该目录为禅道目录，里面包含禅道代码及附件上传目录。
+/var/lib/mysql:该目录为数据库的数据目录。
+
+
+docker run --name [容器名称] -p [主机端口]:80 \
+           -v [主机代码目录]:/app/zentaopms \
+           -v [主机数据目录]:/var/lib/mysql \
+           -e MYSQL_ROOT_PASSWORD=[数据库密码] \
+           --always-restart=yes \
+           -d [镜像名]:latest
+
+docker run --name zentao -p 9111:80 \
+	       -v /home/zentao/www/:/app/zentaopms \
+	       -v /home/zentao/data:/var/lib/mysql \
+	       -e MYSQL_ROOT_PASSWORD=soothaeboex0Fau6ixat \
+	       --always-restart=yes \
+	       -d zentao:latest
+
+首次登录需要设置登录与公司信息 比老版本智能多了！！！

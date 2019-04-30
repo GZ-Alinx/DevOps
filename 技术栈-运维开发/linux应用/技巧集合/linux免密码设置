@@ -1,0 +1,28 @@
+免密码配置
+第一步 生成密钥：
+rm -rf ~/.ssh/*
+ssh-keygen -t rsa
+每次执行 ssh-keygen -t rsa 产生的私钥文件都会不同
+
+
+
+第二步  将公钥发送到需要远程的服务器
+
+scp ~/.ssh/id_rsa.pub root@192.168.125.*:/root/.ssh/
+ssh-copy-id -i-i ~/.ssh/id_rsa.pub 用户@ip
+ssh-copy-id -i ~/.ssh/id_rsa.pub tb@120.79.147.49
+ssh tb@120.79.147.49
+
+第三步  被远程的服务器中操作
+
+如果文件存在 将公钥追加进去否则
+cp  id_rsa.pub  authorized_keys
+
+如果失败，有可能是以下原因：
+1、权限问题
+.ssh目录，以及/home/当前用户 需要700权限，参考以下操作调整
+sudo chmod 700 ~/.ssh
+sudo chmod 700 /home/当前用户
+.ssh目录下的authorized_keys文件需要600或644权限，参考以下操作调整
+sudo chmod 600 ~/.ssh/authorized_keys
+

@@ -1,0 +1,19 @@
+
+linux中ssh/scp连接远程ssh非22端口的服务器方法
+
+    ssh  连接远程ssh非22端口的服务器方法
+    $ ssh -p 20086 user@ssh服务器ip
+
+
+
+scp 远程拷贝ssh非22端口的服务器文件是使用方法
+    OpenOpenSSH是openBSD项目组开发的，基于BSD协议。一般linux发行版自带Openssh。2008年7月出了5.1版。 openssh包含一套程序。scp替换rcp,sftp替换了ftp. 包含sshd和sftp server端。scp: 远程文件拷贝（scp指定了远端的非默认22端口）：
+    $ scp -P 20022 src.tar.gz
+    $ scp -P 20022   .
+    $ scp -o port=60066  .
+    $ scp  -P 60066 -r /home/zhouhh/src/.*
+    拷贝目录,-r是将目录下的目录递归拷贝。".*"是将隐藏文件也拷贝过去。需要先在远端创建好相应的目录。
+
+
+然后重启sshd:
+    $ systemctl restart sshd

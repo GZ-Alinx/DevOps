@@ -1,0 +1,22 @@
+
+
+#Docker安装Gitlab
+
+		$ docker pull gitlab/gitlab-ce
+		$ docker run -d \
+	    --hostname gitlab \
+	    --publish 8443:443 --publish 8081:80 --publish 2222:22 \
+	    --name gitlab \
+	    --restart always \
+	    --volume /data/gitlab/config:/etc/gitlab \
+	    --volume /data/gitlab/logs:/var/log/gitlab \
+	    --volume /data/gitlab/data:/var/opt/gitlab \
+	    gitlab/gitlab-ce
+
+		配置文件：
+			$ docker exec -t -i gitlab vim /etc/gitlab/gitlab.rb
+		重启gitlab:
+			$ docker restart gitlab
+
+		登录地址：http://ip:8081
+		首次登录，需要设置管理员密码！

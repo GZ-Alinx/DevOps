@@ -1,0 +1,9 @@
+
+
+Tomcat docker 安装
+
+$ docker pull tomcat
+$ docker run -itd -p 8080:8080 \
+       --always-restart=yes \
+       --name tomcat-1 \
+       tomcat:latest
