@@ -1,7 +1,7 @@
 禅道Docker安装包发布
 
 
-一、下载地址
+一、Images下载地址
 
 禅道开源版：   http://dl.cnezsoft.com/zentao/docker/docker_zentao.zip
 数据库用户名： root,默认密码： 123456。
