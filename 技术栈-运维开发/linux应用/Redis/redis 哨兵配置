@@ -77,7 +77,7 @@ $ vim sentinel.conf
     # 当前Sentinel节点监控 218.172.11.24:6379 这个主节点
     # 1代表判断主节点失败至少需要2个Sentinel节点节点同意
     # mymaster是主节点的别名
-    sentinel auth-pass mymaster 6Iih0gshfeia3qusakohz   # 填入密码 和主一样即可
+    sentinel auth-pass mymaster 6Iih0gshfeia3qusak   # 填入密码 和主一样即可
     sentinel config-epoch mymaster 0
     sentinel leader-epoch mymaster 0
     sentinel known-slave mymaster 218.17.119.242 6380
