@@ -17,50 +17,62 @@ ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that 
 your MySQL server version for the right syntax to use near 'identified by '123456'' at line 1
 
 
-2. MySQL8.0 的远程链接
-    MySQL 安装完成后只支持 localhost 访问，我们必须设置一下才可以远程访问，另外还有一些 MySQL 8.0 连接时的一些问题.
 
 
-在 mysql 数据库的 user 表中查看当前 root 用户的相关信息
-    select host, user, authentication_string, plugin from user;
-    执行完上面的命令后会显示一个表格
-    查看表格中 root 用户的 host，默认应该显示的 localhost，只支持本地访问，不允许远程访问.
-
-授权 root 用户的所有权限并设置远程访问
-GRANT ALL ON *.* TO 'root'@'%';
-GRANT ALL ON 表示所有权限，% 表示通配所有 host，可以访问远程。
-ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '你自己的密码';
-
-所有操作后，应执行
-flush privileges;
-
-查看 root 用户的 host
-use mysql;
-select host, user from mysql.user;
-会发现 root 用户的 host 已经变成 %，说明我们的修改已经成功，可以远程访问了。
 
 
-3. 加密方式不同 密码不对
 
-远程访问数据库的可视化工具比较多如：Navicat、SQLyog、MySQL workbench 等，我这里使用 Navicat
+远程连接原因
 
-输入访问的 host 和密码，报 2059 错误，这是因为 MySql8.0 版本 和 5.7 的加密规则不一样，而现在的可视化工具只支持旧的加密方式。
+-------------------------------------
+        2. MySQL8.0 的远程链接
+            MySQL 安装完成后只支持 localhost 访问，我们必须设置一下才可以远程访问，另外还有一些 MySQL 8.0 连接时的一些问题.
 
-出现这个原因是mysql8 之前的版本中加密规则是mysql_native_password,而在mysql8之后,加密规则是caching_sha2_password.
-解决问题方法有两种,一种是升级navicat驱动,一种是把mysql用户登录密码加密规则还原成mysql_native_password.
-这里采用第二种方式 ：
 
-    修改加密规则:
-    ALTER USER 'root'@'%' IDENTIFIED BY 'password' PASSWORD EXPIRE NEVER;
-    password 为你当前密码。
+        在 mysql 数据库的 user 表中查看当前 root 用户的相关信息
+            select host, user, authentication_string, plugin from user;
+            执行完上面的命令后会显示一个表格
+            查看表格中 root 用户的 host，默认应该显示的 localhost，只支持本地访问，不允许远程访问.
 
-    更新 root 用户密码:
-    ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
-    password 为你新设置的密码。
+        授权 root 用户的所有权限并设置远程访问
+        GRANT ALL ON *.* TO 'root'@'%';
+        GRANT ALL ON 表示所有权限，% 表示通配所有 host，可以访问远程。
+        ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '你自己的密码';
 
-    刷新权限:
-    FLUSH PRIVILEGES;
-    OK，设置完成，再次使用 Navicat 连接数据库
+
+        所有操作后，应执行
+        flush privileges;
+
+        查看 root 用户的 host
+        use mysql;
+        select host, user from mysql.user;
+        会发现 root 用户的 host 已经变成 %，说明我们的修改已经成功，可以远程访问了。
+
+
+
+        3. 加密方式不同 密码不对
+
+            远程访问数据库的可视化工具比较多如：Navicat、SQLyog、MySQL workbench 等，我这里使用 Navicat
+
+            输入访问的 host 和密码，报 2059 错误，这是因为 MySql8.0 版本 和 5.7 的加密规则不一样，而现在的可视化工具只支持旧的加密方式。
+
+            出现这个原因是mysql8 之前的版本中加密规则是mysql_native_password,而在mysql8之后,加密规则是caching_sha2_password.
+            解决问题方法有两种,一种是升级navicat驱动,一种是把mysql用户登录密码加密规则还原成mysql_native_password.
+            这里采用第二种方式 ：
+
+            修改加密规则:
+            ALTER USER 'root'@'%' IDENTIFIED BY 'password' PASSWORD EXPIRE NEVER;
+            password 为你当前密码。
+
+            更新 root 用户密码:
+            ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+            password 为你新设置的密码。
+
+            刷新权限:
+            FLUSH PRIVILEGES;
+            OK，设置完成，再次使用 Navicat 连接数据库
+-------------------------------------
+
 
 
 mysql> ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'root';  
