@@ -1,7 +1,9 @@
 1、下载二进制包
 
-[root@app ~]# wget https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.23-linux-glibc2.12-x86_64.tar.gz
-
+        5.7.23
+            $ wget https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-5.7.23-linux-glibc2.12-x86_64.tar.gz
+        8.0.16
+            $ wget https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-8.0.16-linux-glibc2.12-x86_64.tar
 
 2、解压到指定目录
 [root@app ~]# tar -zxf mysql-5.7.23-linux-glibc2.12-x86_64.tar.gz -C /usr/local/
